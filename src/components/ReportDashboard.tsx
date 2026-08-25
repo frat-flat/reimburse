@@ -64,13 +64,14 @@ export default function ReportDashboard({
 
       {/* 印刷用の見出しヘッダー (画面上は非表示、印刷時のみ表示) */}
       <div className="hidden print:block border-b-2 border-gray-900 pb-4 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 font-black">プロジェクト精算レポート</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          プロジェクト名: <strong className="text-gray-800">{projectName}</strong>
-          {projectDescription && ` | ${projectDescription}`}
+        <h1 className="text-2xl font-bold text-gray-900 font-black">
+          精算レポート：{projectName}
+        </h1>
+        <p className="text-xs text-gray-500 mt-1">
+          {projectDescription && `プロジェクト説明: ${projectDescription}`}
           {selectedMemberName && ` | 対象メンバー: ${selectedMemberName}`}
         </p>
-        <p className="text-xs text-gray-400 mt-0.5">出力日: {new Date().toLocaleDateString('ja-JP')}</p>
+        <p className="text-[10px] text-gray-400 mt-0.5">出力日: {new Date().toLocaleDateString('ja-JP')}</p>
       </div>
 
       {/* メンバー選択フィルター (印刷時は非表示) */}
@@ -194,7 +195,7 @@ export default function ReportDashboard({
       </div>
 
       {/* 支出明細テーブル */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4 print:border-none print:shadow-none print:p-0 print:pt-4">
+      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4 print:border-none print:shadow-none print:p-0 print:pt-4 print:break-before-page">
         <h2 className="text-base font-bold text-gray-900 border-l-4 border-indigo-600 pl-2">
           支出明細一覧
         </h2>
@@ -229,9 +230,9 @@ export default function ReportDashboard({
       </div>
 
       {/* メンバー個別明細セクション (フィルタリング連動) */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-6 print:border-none print:shadow-none print:p-0 print:pt-4">
+      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-6 print:border-none print:shadow-none print:p-0 print:pt-4 print:break-before-page">
         <h2 className="text-base font-bold text-gray-900 border-l-4 border-indigo-600 pl-2 print:border-l-4">
-          メンバー別個別詳細明細 {selectedMemberName && `(${selectedMemberName}のみ表示中)`}
+          メンバー別明細 {selectedMemberName && `(${selectedMemberName})`}
         </h2>
         <div className="space-y-8 divide-y divide-gray-200 print:divide-y-0 print:space-y-6">
           {filteredMemberSummaries.map((m) => (

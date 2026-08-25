@@ -50,7 +50,10 @@ export default function ReportDashboard({
   const [showExpenseTable, setShowExpenseTable] = useState<boolean>(true);
   const [showMemberDetails, setShowMemberDetails] = useState<boolean>(true);
 
-
+  // 印刷時に自分の前に「出力対象として選択された主要テーブル」がすでに印刷されているかどうかを判定
+  const hasMemberTablePrinted = showMemberTable;
+  const shouldBreakBeforeExpenseTable = showExpenseTable && hasMemberTablePrinted;
+  const shouldBreakBeforeMemberDetails = showMemberDetails && (hasMemberTablePrinted || showExpenseTable);
 
   // 選択されたメンバーに基づいて個別明細をフィルタリング
   const filteredMemberSummaries = selectedMemberName
@@ -209,7 +212,7 @@ export default function ReportDashboard({
 
       {/* メンバー別集計テーブル */}
       {showMemberTable && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4 print:border-none print:shadow-none print:p-0 print:break-before-page">
+        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4 print:border-none print:shadow-none print:p-0">
           <h2 className="text-base font-bold text-gray-900 border-l-4 border-indigo-600 pl-2">
             メンバー別支払・負担内訳
           </h2>
@@ -268,7 +271,9 @@ export default function ReportDashboard({
 
       {/* 支出明細テーブル */}
       {showExpenseTable && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4 print:border-none print:shadow-none print:p-0 print:pt-4 print:break-before-page">
+        <div className={`bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4 print:border-none print:shadow-none print:p-0 print:pt-4 ${
+          shouldBreakBeforeExpenseTable ? 'print:break-before-page' : ''
+        }`}>
           <h2 className="text-base font-bold text-gray-900 border-l-4 border-indigo-600 pl-2">
             支出明細一覧
           </h2>
@@ -305,7 +310,9 @@ export default function ReportDashboard({
 
       {/* メンバー個別明細セクション (フィルタリング連動) */}
       {showMemberDetails && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-6 print:border-none print:shadow-none print:p-0 print:pt-4 print:break-before-page">
+        <div className={`bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-6 print:border-none print:shadow-none print:p-0 print:pt-4 ${
+          shouldBreakBeforeMemberDetails ? 'print:break-before-page' : ''
+        }`}>
           <h2 className="text-base font-bold text-gray-900 border-l-4 border-indigo-600 pl-2 print:border-l-4">
             メンバー別明細 {selectedMemberName && `(${selectedMemberName})`}
           </h2>

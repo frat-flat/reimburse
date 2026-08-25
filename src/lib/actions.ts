@@ -302,11 +302,19 @@ export async function actionCreateExpense(
         },
         shares: {
           createMany: {
-            data: calculatedShares.map(s => ({
-              memberId: s.userId, // calculateShares は id フィールドを userId として返すため
-              shareAmount: s.shareAmount,
-              percentage: s.percentage ?? null,
-            })),
+            data: calculatedShares.map(s => {
+              const inputShare = inputShares.find(is => is.memberId === s.userId);
+              return {
+                memberId: s.userId, // calculateShares は id フィールドを userId として返すため
+                shareAmount: s.shareAmount,
+                percentage: splitType === 'fixed_equal' 
+                  ? (inputShare?.fixedAmount ?? null) 
+                  : (s.percentage ?? null),
+                ratio: splitType === 'fixed_equal'
+                  ? (inputShare?.isRemainderParticipant ? 1 : 0)
+                  : (inputShare?.ratio ?? null),
+              };
+            }),
           },
         },
       },
@@ -438,11 +446,19 @@ export async function actionUpdateExpense(
         shares: {
           deleteMany: {},
           createMany: {
-            data: calculatedShares.map(s => ({
-              memberId: s.userId, // calculateShares は id フィールドを userId として返すため
-              shareAmount: s.shareAmount,
-              percentage: s.percentage ?? null,
-            })),
+            data: calculatedShares.map(s => {
+              const inputShare = inputShares.find(is => is.memberId === s.userId);
+              return {
+                memberId: s.userId, // calculateShares は id フィールドを userId として返すため
+                shareAmount: s.shareAmount,
+                percentage: splitType === 'fixed_equal' 
+                  ? (inputShare?.fixedAmount ?? null) 
+                  : (s.percentage ?? null),
+                ratio: splitType === 'fixed_equal'
+                  ? (inputShare?.isRemainderParticipant ? 1 : 0)
+                  : (inputShare?.ratio ?? null),
+              };
+            }),
           },
         },
       },

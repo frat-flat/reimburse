@@ -25,6 +25,7 @@ interface ExpenseFormProps {
     shares: {
       memberId: string;
       percentage?: number | null;
+      ratio?: number | null;
     }[];
     sharesData?: {
       memberId: string;
@@ -89,8 +90,8 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
     const participants: Record<string, boolean> = {};
     members.forEach((m) => {
       if (expense && expense.splitType === 'fixed_equal') {
-        const shareData = expense.sharesData?.find((s) => s.memberId === m.id);
-        participants[m.id] = shareData ? shareData.shareAmount > 0 : true;
+        const share = expense.shares.find((s) => s.memberId === m.id);
+        participants[m.id] = share?.ratio !== 0;
       } else {
         participants[m.id] = true;
       }
@@ -351,12 +352,19 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
 
   // 編集時初期金額のロード（fixed/fixed_equal指定の場合のロード）
   useEffect(() => {
-    if (expense && (expense.splitType === 'fixed' || expense.splitType === 'fixed_equal') && expense.sharesData) {
-      const sData = expense.sharesData;
+    if (expense && expense.sharesData) {
       const values: Record<string, string> = {};
-      sData.forEach((s) => {
-        values[s.memberId] = s.shareAmount.toString();
-      });
+      if (expense.splitType === 'fixed') {
+        expense.sharesData.forEach((s) => {
+          values[s.memberId] = s.shareAmount.toString();
+        });
+      } else if (expense.splitType === 'fixed_equal') {
+        // fixed_equal の場合は、DBの percentage カラムから元の指定金額をロードする
+        expense.shares.forEach((s) => {
+          const val = s.percentage;
+          values[s.memberId] = val && val > 0 ? val.toString() : '';
+        });
+      }
       setFixedValues(values);
     }
   }, [expense]);

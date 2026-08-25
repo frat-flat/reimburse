@@ -4,7 +4,7 @@ import { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { calculateShares } from '@/lib/settlement';
 import { actionCreateExpense, actionUpdateExpense } from '@/lib/actions';
-import { ArrowLeft, Save, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Save, AlertCircle, RotateCw } from 'lucide-react';
 import Link from 'next/link';
 
 interface MemberItem {
@@ -120,6 +120,9 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
   const [calculatedShares, setCalculatedShares] = useState<
     { memberId: string; shareAmount: number; name: string }[]
   >([]);
+
+  // 手動で再計算・プレビュー更新をトリガーするためのカウンター
+  const [calcTrigger, setCalcTrigger] = useState(0);
   
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -254,7 +257,7 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
     } catch (e) {
       console.error(e);
     }
-  }, [amount, splitType, selectedShares, pctValues, fixedValues, ratioValues, remainderParticipants, members, checkedMembers]);
+  }, [amount, splitType, selectedShares, pctValues, fixedValues, ratioValues, remainderParticipants, calcTrigger, members, checkedMembers]);
 
   // 残金均等割の参加メンバー切り替え
   const handleRemainderParticipantToggle = (memberId: string) => {
@@ -350,9 +353,10 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
     });
   };
 
-  // 編集時初期金額のロード（fixed/fixed_equal指定の場合のロード）
+  // 編集時初期データ（固定指定金額・残金割チェック）のロード
   useEffect(() => {
     if (expense && expense.sharesData) {
+      // 1. 固定指定額のロード
       const values: Record<string, string> = {};
       if (expense.splitType === 'fixed') {
         expense.sharesData.forEach((s) => {
@@ -366,8 +370,18 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
         });
       }
       setFixedValues(values);
+
+      // 2. 残金割チェックのロード
+      if (expense.splitType === 'fixed_equal') {
+        const participants: Record<string, boolean> = {};
+        members.forEach((m) => {
+          const share = expense.shares.find((s) => s.memberId === m.id);
+          participants[m.id] = share?.ratio !== 0; // 0 (OFF) 以外は true
+        });
+        setRemainderParticipants(participants);
+      }
     }
-  }, [expense]);
+  }, [expense, members]);
 
   return (
     <div className="max-w-xl mx-auto bg-white border border-gray-200 rounded-xl p-5 md:p-6 shadow-sm space-y-6">
@@ -608,9 +622,20 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
         {calculatedShares.length > 0 && (
           <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4 space-y-2.5">
             <div className="flex justify-between items-center pb-1.5 border-b border-indigo-200">
-              <h4 className="text-xs font-bold text-indigo-800 uppercase tracking-wider">
-                負担額計算プレビュー（端数調整済）
-              </h4>
+              <div className="flex items-center gap-2">
+                <h4 className="text-xs font-bold text-indigo-800 uppercase tracking-wider">
+                  負担額計算プレビュー（端数調整済）
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => setCalcTrigger((prev) => prev + 1)}
+                  className="inline-flex items-center gap-1 text-[10px] text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-100 hover:bg-indigo-200/80 px-1.5 py-0.5 rounded shadow-sm transition active:scale-95"
+                  title="プレビューの再計算"
+                >
+                  <RotateCw className="h-2.5 w-2.5" />
+                  <span>再計算</span>
+                </button>
+              </div>
               <span className="text-xs text-indigo-700 font-bold">
                 合計: {calculatedShares.reduce((sum, s) => sum + s.shareAmount, 0).toLocaleString()}円
               </span>

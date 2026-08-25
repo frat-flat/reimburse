@@ -118,7 +118,7 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
 
   // リアルタイム計算プレビューの結果
   const [calculatedShares, setCalculatedShares] = useState<
-    { memberId: string; shareAmount: number; name: string }[]
+    { memberId: string; shareAmount: number; name: string; isFixedAmount?: boolean }[]
   >([]);
 
   // 手動で再計算・プレビュー更新をトリガーするためのカウンター
@@ -248,11 +248,15 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
       });
 
       setCalculatedShares(
-        shares.map((s) => ({
-          memberId: s.userId, // calculateShares は id フィールドを userId として返すため
-          shareAmount: s.shareAmount,
-          name: members.find((m) => m.id === s.userId)?.name || '不明',
-        }))
+        shares.map((s) => {
+          const val = parseFloat(fixedValues[s.userId]) || 0;
+          return {
+            memberId: s.userId, // calculateShares は id フィールドを userId として返すため
+            shareAmount: s.shareAmount,
+            name: members.find((m) => m.id === s.userId)?.name || '不明',
+            isFixedAmount: splitType === 'fixed_equal' ? val > 0 : undefined,
+          };
+        })
       );
     } catch (e) {
       console.error(e);
@@ -642,9 +646,20 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               {calculatedShares.map((s) => (
-                <div key={s.memberId} className="flex justify-between bg-white px-2.5 py-1.5 rounded border border-indigo-100">
-                  <span className="text-gray-600 font-semibold">{s.name}</span>
-                  <strong className="text-indigo-950 font-black">{s.shareAmount.toLocaleString()}円</strong>
+                <div key={s.memberId} className="flex justify-between items-center bg-white px-2.5 py-1.5 rounded border border-indigo-100">
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="text-gray-600 font-semibold truncate">{s.name}</span>
+                    {splitType === 'fixed_equal' && (
+                      <span className={`text-[9px] px-1 py-0.2 rounded font-bold flex-shrink-0 ${
+                        s.isFixedAmount 
+                          ? 'bg-amber-100 text-amber-800' 
+                          : 'bg-emerald-100 text-emerald-800'
+                      }`}>
+                        {s.isFixedAmount ? '指定' : '均等'}
+                      </span>
+                    )}
+                  </div>
+                  <strong className="text-indigo-950 font-black flex-shrink-0">{s.shareAmount.toLocaleString()}円</strong>
                 </div>
               ))}
             </div>

@@ -71,6 +71,7 @@ export default async function EditExpensePage({ params }: EditExpensePageProps) 
     shares: expense.shares.map((s) => ({
       memberId: s.memberId,
       percentage: s.percentage,
+      ratio: s.ratio,
     })),
     // クライアントで金額指定時の初期値として使うため追加
     sharesData: expense.shares.map((s) => ({

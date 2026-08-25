@@ -9,6 +9,8 @@ interface MemberSummary {
   totalPaid: number;
   totalShared: number;
   diff: number;
+  paidDetails: { title: string; date: string; amount: number }[];
+  sharedDetails: { title: string; date: string; amount: number }[];
 }
 
 interface ExpenseSummary {
@@ -51,6 +53,27 @@ export default function ReportActions({ projectName, projectId, members, expense
     csv += `項目名,利用日,支払者,金額,負担人数\n`;
     expenses.forEach((e) => {
       csv += `"${e.title.replace(/"/g, '""')}","${e.date}","${e.payer.replace(/"/g, '""')}",${e.amount},${e.shareCount}\n`;
+    });
+    csv += `\n`;
+
+    // 4. メンバー個別明細
+    csv += `■ メンバー別個別明細\n`;
+    members.forEach((m) => {
+      csv += `\n[ ${m.name.replace(/"/g, '""')} の明細 ]\n`;
+      csv += `● 支払った立替明細\n`;
+      csv += `利用日,項目名,支払金額\n`;
+      m.paidDetails.forEach((pd) => {
+        csv += `"${pd.date}","${pd.title.replace(/"/g, '""')}",${pd.amount}\n`;
+      });
+      csv += `支払小計,,${m.totalPaid}\n`;
+
+      csv += `● 参加した負担明細\n`;
+      csv += `利用日,項目名,負担金額\n`;
+      m.sharedDetails.forEach((sd) => {
+        csv += `"${sd.date}","${sd.title.replace(/"/g, '""')}",${sd.amount}\n`;
+      });
+      csv += `負担小計,,${m.totalShared}\n`;
+      csv += `差額(精算金額),,${m.diff}\n`;
     });
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

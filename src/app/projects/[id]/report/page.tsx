@@ -35,24 +35,50 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
     notFound();
   }
 
-  // 1. 各メンバーの支払・負担集計
+  // 1. 各メンバーの支払・負担集計および個別明細の作成
   const memberSummaries = project.members.map((m) => {
-    // 支払合計 (立替額)
+    // 支払明細 (立替)
+    const paidDetails: { title: string; date: string; amount: number }[] = [];
     let totalPaid = 0;
     project.expenses.forEach((e) => {
       e.payments.forEach((p) => {
         if (p.memberId === m.id) {
           totalPaid += p.amount;
+          const formattedDate = e.expenseDate
+            ? new Date(e.expenseDate).toLocaleDateString('ja-JP', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+              })
+            : '-';
+          paidDetails.push({
+            title: e.title,
+            date: formattedDate,
+            amount: p.amount,
+          });
         }
       });
     });
 
-    // 負担合計 (消費額)
+    // 負担明細 (消費)
+    const sharedDetails: { title: string; date: string; amount: number }[] = [];
     let totalShared = 0;
     project.expenses.forEach((e) => {
       e.shares.forEach((s) => {
         if (s.memberId === m.id) {
           totalShared += s.shareAmount;
+          const formattedDate = e.expenseDate
+            ? new Date(e.expenseDate).toLocaleDateString('ja-JP', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+              })
+            : '-';
+          sharedDetails.push({
+            title: e.title,
+            date: formattedDate,
+            amount: s.shareAmount,
+          });
         }
       });
     });
@@ -62,6 +88,8 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
       totalPaid,
       totalShared,
       diff: totalPaid - totalShared,
+      paidDetails,
+      sharedDetails,
     };
   });
 
@@ -244,6 +272,85 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
             </table>
           </div>
         )}
+      </div>
+
+      {/* メンバー個別明細セクション */}
+      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-6 print:border-none print:shadow-none print:p-0 print:pt-4">
+        <h2 className="text-base font-bold text-gray-900 border-l-4 border-indigo-600 pl-2 print:border-l-4">
+          メンバー別個別詳細明細
+        </h2>
+        <div className="space-y-8 divide-y divide-gray-200 print:divide-y-0 print:space-y-6">
+          {memberSummaries.map((m) => (
+            <div key={m.name} className="space-y-3 pt-6 first:pt-0 print:break-inside-avoid print:pt-4 print:border-t print:border-gray-200">
+              <div className="flex justify-between items-center bg-gray-50 p-2.5 rounded-lg border border-gray-100 print:bg-gray-100/50">
+                <h3 className="font-extrabold text-sm text-gray-900">{m.name} の明細</h3>
+                <span className="text-xs font-bold text-indigo-750">
+                  差額: {m.diff > 0 ? `+${m.diff.toLocaleString()}` : m.diff.toLocaleString()}円
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* 支払った立替明細 */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-1 rounded">
+                    ● 支払った立替明細 (小計: {m.totalPaid.toLocaleString()}円)
+                  </h4>
+                  {m.paidDetails.length === 0 ? (
+                    <p className="text-[11px] text-gray-400 italic pl-2">支払った項目はありません。</p>
+                  ) : (
+                    <table className="w-full text-xs text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-gray-200 text-gray-500 font-semibold">
+                          <th className="pb-1 px-2">利用日</th>
+                          <th className="pb-1 px-2">項目名</th>
+                          <th className="pb-1 px-2 text-right">金額</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {m.paidDetails.map((pd, i) => (
+                          <tr key={i} className="text-gray-700">
+                            <td className="py-1.5 px-2">{pd.date}</td>
+                            <td className="py-1.5 px-2 font-semibold">{pd.title}</td>
+                            <td className="py-1.5 px-2 text-right">{pd.amount.toLocaleString()}円</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+
+                {/* 参加した負担明細 */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-amber-800 bg-amber-50 px-2 py-1 rounded">
+                    ● 参加した負担明細 (小計: {m.totalShared.toLocaleString()}円)
+                  </h4>
+                  {m.sharedDetails.length === 0 ? (
+                    <p className="text-[11px] text-gray-400 italic pl-2">負担した項目はありません。</p>
+                  ) : (
+                    <table className="w-full text-xs text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-gray-200 text-gray-500 font-semibold">
+                          <th className="pb-1 px-2">利用日</th>
+                          <th className="pb-1 px-2">項目名</th>
+                          <th className="pb-1 px-2 text-right">自己負担額</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {m.sharedDetails.map((sd, i) => (
+                          <tr key={i} className="text-gray-700">
+                            <td className="py-1.5 px-2">{sd.date}</td>
+                            <td className="py-1.5 px-2 font-semibold">{sd.title}</td>
+                            <td className="py-1.5 px-2 text-right">{sd.amount.toLocaleString()}円</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

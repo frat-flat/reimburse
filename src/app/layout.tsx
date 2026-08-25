@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
+import FloatingCalculator from "@/components/FloatingCalculator";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,6 +33,7 @@ export default function RootLayout({
         <main className="flex-1 w-full max-w-6xl mx-auto p-4 md:p-6">
           {children}
         </main>
+        <FloatingCalculator />
       </body>
     </html>
   );

@@ -192,7 +192,7 @@ export async function actionCreateExpense(
   data: {
     title: string;
     amount: number;
-    splitType: 'equal' | 'percentage' | 'fixed' | 'ratio';
+    splitType: 'equal' | 'percentage' | 'fixed' | 'ratio' | 'fixed_equal';
     payerMemberId: string;
     expenseDate?: string;
     shares: {
@@ -200,6 +200,7 @@ export async function actionCreateExpense(
       percentage?: number;
       fixedAmount?: number;
       ratio?: number;
+      isRemainderParticipant?: boolean;
     }[];
   }
 ) {
@@ -237,11 +238,29 @@ export async function actionCreateExpense(
     return acc;
   }, {} as Record<string, number>);
 
+  const remainderMemberIds = inputShares
+    .filter(s => s.isRemainderParticipant)
+    .map(s => s.memberId);
+
   // 入力された固定値の検証
   if (splitType === 'fixed') {
     const totalFixed = Object.values(fixedAmounts).reduce((sum, val) => sum + val, 0);
     if (totalFixed !== amount) {
       return { error: `負担額の合計（${totalFixed}円）が支出金額（${amount}円）と一致しません。` };
+    }
+  }
+
+  if (splitType === 'fixed_equal') {
+    const totalFixed = Object.values(fixedAmounts).reduce((sum, val) => sum + val, 0);
+    const specifiedCount = Object.keys(fixedAmounts).filter(id => (fixedAmounts[id] || 0) > 0).length;
+    const totalMembersCount = members.length;
+
+    if (totalFixed > amount) {
+      return { error: `指定金額の合計（${totalFixed}円）が支出総額（${amount}円）を超えています。` };
+    }
+
+    if (specifiedCount === totalMembersCount && totalFixed !== amount) {
+      return { error: `全員分の金額を指定する場合は、負担合計（${totalFixed}円）が支出総額（${amount}円）と一致しなければなりません。` };
     }
   }
 
@@ -257,6 +276,7 @@ export async function actionCreateExpense(
     percentages,
     fixedAmounts,
     ratios,
+    remainderMemberIds,
   });
 
   // 2. 不変条件チェック
@@ -304,7 +324,7 @@ export async function actionUpdateExpense(
   data: {
     title: string;
     amount: number;
-    splitType: 'equal' | 'percentage' | 'fixed' | 'ratio';
+    splitType: 'equal' | 'percentage' | 'fixed' | 'ratio' | 'fixed_equal';
     payerMemberId: string;
     expenseDate?: string;
     shares: {
@@ -312,6 +332,7 @@ export async function actionUpdateExpense(
       percentage?: number;
       fixedAmount?: number;
       ratio?: number;
+      isRemainderParticipant?: boolean;
     }[];
   }
 ) {
@@ -351,11 +372,29 @@ export async function actionUpdateExpense(
     return acc;
   }, {} as Record<string, number>);
 
+  const remainderMemberIds = inputShares
+    .filter(s => s.isRemainderParticipant)
+    .map(s => s.memberId);
+
   // バリデーション
   if (splitType === 'fixed') {
     const totalFixed = Object.values(fixedAmounts).reduce((sum, val) => sum + val, 0);
     if (totalFixed !== amount) {
       return { error: `負担額の合計（${totalFixed}円）が支出金額（${amount}円）と一致しません。` };
+    }
+  }
+
+  if (splitType === 'fixed_equal') {
+    const totalFixed = Object.values(fixedAmounts).reduce((sum, val) => sum + val, 0);
+    const specifiedCount = Object.keys(fixedAmounts).filter(id => (fixedAmounts[id] || 0) > 0).length;
+    const totalMembersCount = members.length;
+
+    if (totalFixed > amount) {
+      return { error: `指定金額の合計（${totalFixed}円）が支出総額（${amount}円）を超えています。` };
+    }
+
+    if (specifiedCount === totalMembersCount && totalFixed !== amount) {
+      return { error: `全員分の金額を指定する場合は、負担合計（${totalFixed}円）が支出総額（${amount}円）と一致しなければなりません。` };
     }
   }
 
@@ -370,6 +409,7 @@ export async function actionUpdateExpense(
     percentages,
     fixedAmounts,
     ratios,
+    remainderMemberIds,
   });
 
   // 不変条件チェック

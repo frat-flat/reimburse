@@ -19,7 +19,7 @@ interface ExpenseFormProps {
     id: string;
     title: string;
     amount: number;
-    splitType: 'equal' | 'percentage' | 'fixed' | 'ratio';
+    splitType: 'equal' | 'percentage' | 'fixed' | 'ratio' | 'fixed_equal';
     payerMemberId: string;
     expenseDate?: string;
     shares: {
@@ -49,7 +49,7 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
   const [expenseDate, setExpenseDate] = useState(expense?.expenseDate || getTodayString());
   const [amountStr, setAmountStr] = useState(expense?.amount?.toString() || '');
   const [payerMemberId, setPayerMemberId] = useState(expense?.payerMemberId || members[0]?.id || '');
-  const [splitType, setSplitType] = useState<'equal' | 'percentage' | 'fixed' | 'ratio'>(
+  const [splitType, setSplitType] = useState<'equal' | 'percentage' | 'fixed' | 'ratio' | 'fixed_equal'>(
     expense?.splitType || 'equal'
   );
 
@@ -82,6 +82,20 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
       selected[m.id] = true;
     });
     return selected;
+  });
+
+  // 残金均等割の参加メンバー
+  const [remainderParticipants, setRemainderParticipants] = useState<Record<string, boolean>>(() => {
+    const participants: Record<string, boolean> = {};
+    members.forEach((m) => {
+      if (expense && expense.splitType === 'fixed_equal') {
+        const shareData = expense.sharesData?.find((s) => s.memberId === m.id);
+        participants[m.id] = shareData ? shareData.shareAmount > 0 : true;
+      } else {
+        participants[m.id] = true;
+      }
+    });
+    return participants;
   });
 
   // 割合指定（%）の入力値
@@ -134,6 +148,10 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
       const fixedAmounts: Record<string, number> = {};
       const ratios: Record<string, number> = {};
 
+      const remainderMemberIds = checkedMembers
+        .filter((m) => remainderParticipants[m.id])
+        .map((m) => m.id);
+
       if (splitType === 'percentage') {
         let pctSum = 0;
         checkedMembers.forEach((m) => {
@@ -181,12 +199,48 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
         }
       }
 
+      if (splitType === 'fixed_equal') {
+        let fixedSum = 0;
+        const specifiedCount = checkedMembers.filter((m) => {
+          const val = parseFloat(fixedValues[m.id]) || 0;
+          fixedAmounts[m.id] = val;
+          fixedSum += val;
+          return val > 0;
+        }).length;
+
+        if (fixedSum > amount) {
+          setValidationError(
+            `指定金額の合計（${fixedSum}円）が支出総額（${amount}円）を超えています。`
+          );
+          setCalculatedShares([]);
+          return;
+        }
+
+        const remainingAmt = amount - fixedSum;
+        if (remainingAmt > 0 && remainderMemberIds.length === 0) {
+          setValidationError(
+            `残金（${remainingAmt.toLocaleString()}円）があります。残り均等割に参加する人を少なくとも1人選択してください。`
+          );
+          setCalculatedShares([]);
+          return;
+        }
+
+        if (specifiedCount === checkedMembers.length && fixedSum !== amount) {
+          setValidationError(
+            `全員分の金額を指定する場合は、負担合計（${fixedSum}円）が支出総額（${amount}円）と一致しなければなりません。`
+          );
+          setCalculatedShares([]);
+          return;
+        }
+      }
+
       setValidationError(null);
 
       const shares = calculateShares(amount, splitType, membersForSplit, {
         percentages,
         fixedAmounts,
         ratios,
+        remainderMemberIds,
       });
 
       setCalculatedShares(
@@ -199,7 +253,15 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
     } catch (e) {
       console.error(e);
     }
-  }, [amount, splitType, selectedShares, pctValues, fixedValues, ratioValues, members, checkedMembers]);
+  }, [amount, splitType, selectedShares, pctValues, fixedValues, ratioValues, remainderParticipants, members, checkedMembers]);
+
+  // 残金均等割の参加メンバー切り替え
+  const handleRemainderParticipantToggle = (memberId: string) => {
+    setRemainderParticipants((prev) => ({
+      ...prev,
+      [memberId]: !prev[memberId],
+    }));
+  };
 
   // 負担者チェック切り替え
   const handleMemberToggle = (memberId: string) => {
@@ -253,8 +315,9 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
       return {
         memberId: m.id,
         percentage: splitType === 'percentage' ? parseFloat(pctValues[m.id]) || 0 : undefined,
-        fixedAmount: splitType === 'fixed' ? parseFloat(fixedValues[m.id]) || 0 : undefined,
+        fixedAmount: (splitType === 'fixed' || splitType === 'fixed_equal') ? parseFloat(fixedValues[m.id]) || 0 : undefined,
         ratio: splitType === 'ratio' ? parseFloat(ratioValues[m.id]) || 0 : undefined,
+        isRemainderParticipant: splitType === 'fixed_equal' ? !!remainderParticipants[m.id] : undefined,
       };
     });
 
@@ -286,9 +349,9 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
     });
   };
 
-  // 編集時初期金額のロード（fixed指定の場合のロード）
+  // 編集時初期金額のロード（fixed/fixed_equal指定の場合のロード）
   useEffect(() => {
-    if (expense && expense.splitType === 'fixed' && expense.sharesData) {
+    if (expense && (expense.splitType === 'fixed' || expense.splitType === 'fixed_equal') && expense.sharesData) {
       const sData = expense.sharesData;
       const values: Record<string, string> = {};
       sData.forEach((s) => {
@@ -412,12 +475,13 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             分割方法
           </label>
-          <div className="flex gap-2 border border-gray-200 p-1 rounded-lg bg-gray-50 text-xs">
+          <div className="flex gap-1 border border-gray-200 p-1 rounded-lg bg-gray-50 text-[10px] sm:text-xs">
             {([
               { key: 'equal', label: '均等割' },
               { key: 'percentage', label: '割合指定' },
               { key: 'fixed', label: '金額指定' },
-              { key: 'ratio', label: '比率指定' }
+              { key: 'ratio', label: '比率指定' },
+              { key: 'fixed_equal', label: '一部指定+残り均等' }
             ] as const).map((item) => (
               <button
                 key={item.key}
@@ -435,64 +499,88 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
           </div>
         </div>
 
-        {/* 5. 分割方法に応じた追加入力 (割合・金額・比率指定) */}
+        {/* 5. 分割方法に応じた追加入力 (割合・金額・比率・一部固定指定) */}
         {checkedMembers.length > 0 && splitType !== 'equal' && (
           <div className="space-y-3 bg-gray-50 border border-gray-200 rounded-lg p-4">
             <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-              {splitType === 'percentage' ? '負担割合の設定' : splitType === 'fixed' ? '負担金額の設定' : '負担比率の設定'}
+              {splitType === 'percentage'
+                ? '負担割合の設定'
+                : splitType === 'fixed'
+                ? '負担金額の設定'
+                : splitType === 'ratio'
+                ? '負担比率の設定'
+                : '一部固定・残り自動均等割の設定'}
             </h4>
             <div className="space-y-2">
               {checkedMembers.map((m) => (
                 <div key={m.id} className="flex items-center justify-between gap-4 text-sm">
                   <span className="font-semibold text-gray-700">{m.name}</span>
-                  <div className="flex items-center gap-1.5 w-32">
-                    <input
-                      type="number"
-                      min={0}
-                      step={splitType === 'percentage' ? 0.1 : 1}
-                      required
-                      placeholder="0"
-                      value={
-                        splitType === 'percentage'
-                          ? pctValues[m.id] || ''
-                          : splitType === 'fixed'
-                          ? fixedValues[m.id] || ''
-                          : ratioValues[m.id] || ''
-                      }
-                      onChange={(e) => {
-                        if (splitType === 'percentage') {
-                          handlePctChange(m.id, e.target.value);
-                        } else if (splitType === 'fixed') {
-                          handleFixedChange(m.id, e.target.value);
-                        } else {
-                          handleRatioChange(m.id, e.target.value);
+                  <div className="flex items-center gap-3">
+                    {splitType === 'fixed_equal' && (
+                      <label className="flex items-center space-x-1 cursor-pointer select-none text-[10px] text-gray-500 font-semibold bg-white border border-gray-200 px-2 py-1 rounded shadow-sm hover:border-indigo-300 hover:text-indigo-600 transition">
+                        <input
+                          type="checkbox"
+                          checked={!!remainderParticipants[m.id]}
+                          onChange={() => handleRemainderParticipantToggle(m.id)}
+                          className="rounded text-indigo-600 focus:ring-indigo-500 h-3 w-3"
+                        />
+                        <span>残金割</span>
+                      </label>
+                    )}
+
+                    <div className="flex items-center gap-1.5 w-32">
+                      <input
+                        type="number"
+                        min={0}
+                        step={splitType === 'percentage' ? 0.1 : 1}
+                        required={splitType !== 'fixed_equal'}
+                        placeholder={splitType === 'fixed_equal' ? '残り均等' : '0'}
+                        value={
+                          splitType === 'percentage'
+                            ? pctValues[m.id] || ''
+                            : splitType === 'fixed' || splitType === 'fixed_equal'
+                            ? fixedValues[m.id] || ''
+                            : ratioValues[m.id] || ''
                         }
-                      }}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-right focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    />
-                    <span className="text-xs text-gray-500 font-bold">
-                      {splitType === 'percentage' ? '%' : splitType === 'fixed' ? '円' : '比'}
-                    </span>
+                        onChange={(e) => {
+                          if (splitType === 'percentage') {
+                            handlePctChange(m.id, e.target.value);
+                          } else if (splitType === 'fixed' || splitType === 'fixed_equal') {
+                            handleFixedChange(m.id, e.target.value);
+                          } else {
+                            handleRatioChange(m.id, e.target.value);
+                          }
+                        }}
+                        className="w-full px-2 py-1 border border-gray-300 rounded text-right focus:outline-none focus:ring-1 focus:ring-indigo-500 hover:border-gray-400 transition"
+                      />
+                      <span className="text-xs text-gray-500 font-bold">
+                        {splitType === 'percentage'
+                          ? '%'
+                          : splitType === 'fixed' || splitType === 'fixed_equal'
+                          ? '円'
+                          : '比'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* 金額指定用のリアルタイム合計・残額・エラー表示 */}
-            {splitType === 'fixed' && (
+            {/* 金額指定・一部指定用のリアルタイム合計・残額・エラー表示 */}
+            {(splitType === 'fixed' || splitType === 'fixed_equal') && (
               <div className="mt-3 bg-white border border-gray-200 rounded-lg p-3 text-xs space-y-1 shadow-sm">
                 <div className="flex justify-between font-bold">
                   <span className="text-gray-600">支出総額:</span>
                   <span className="text-gray-900">{amount.toLocaleString()}円</span>
                 </div>
                 <div className="flex justify-between font-bold">
-                  <span className="text-gray-600">入力合計:</span>
+                  <span className="text-gray-600">指定合計:</span>
                   <span className={isOverLimit ? "text-red-600 font-bold" : "text-indigo-600 font-bold"}>
                     {totalFixed.toLocaleString()}円
                   </span>
                 </div>
                 <div className="flex justify-between font-bold border-t border-gray-100 pt-1 mt-1">
-                  <span className="text-gray-600">残額:</span>
+                  <span className="text-gray-600">残り金額:</span>
                   <span className={remainingFixed < 0 ? "text-red-600 font-bold" : "text-gray-900"}>
                     {remainingFixed.toLocaleString()}円
                   </span>

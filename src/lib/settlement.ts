@@ -19,12 +19,13 @@ export interface SettlementItem {
  */
 export function calculateShares(
   totalAmount: number,
-  splitType: 'equal' | 'percentage' | 'fixed' | 'ratio',
+  splitType: 'equal' | 'percentage' | 'fixed' | 'ratio' | 'fixed_equal',
   members: Member[],
   options?: {
     percentages?: Record<string, number>; // userId -> percentage (0 to 100)
     fixedAmounts?: Record<string, number>; // userId -> amount
     ratios?: Record<string, number>; // userId -> ratio value
+    remainderMemberIds?: string[]; // userId[] -> participants for equal remainder splitting
   }
 ): ShareResult[] {
   if (members.length === 0) {
@@ -154,6 +155,79 @@ export function calculateShares(
         shares[targetIdx].shareAmount += 1;
       }
     }
+
+    return shares;
+  }
+
+  if (splitType === 'fixed_equal') {
+    const fixedAmounts = options?.fixedAmounts || {};
+    const remainderMemberIds = options?.remainderMemberIds;
+
+    // 指定金額があるメンバー (0より大きい値の入力がある場合)
+    const specifiedMembers = members.filter(m => {
+      const val = fixedAmounts[m.id];
+      return val !== undefined && val > 0;
+    });
+
+    // 残りの均等割に参加するメンバーを決定する
+    let remainderMembers: Member[] = [];
+    if (remainderMemberIds && remainderMemberIds.length > 0) {
+      remainderMembers = members.filter(m => remainderMemberIds.includes(m.id));
+    } else {
+      // remainderMemberIds の指定がない場合は、金額指定のないメンバー全員を対象とする
+      remainderMembers = members.filter(m => {
+        const val = fixedAmounts[m.id];
+        return val === undefined || val <= 0;
+      });
+    }
+
+    // 指定金額の合計
+    const totalSpecified = specifiedMembers.reduce((sum, m) => sum + (fixedAmounts[m.id] || 0), 0);
+    const remainder = totalAmount - totalSpecified;
+
+    // 初期化 (固定額があればそれを負担額のベースとする)
+    const shares = members.map(m => {
+      const isSpecified = specifiedMembers.some(sm => sm.id === m.id);
+      return {
+        userId: m.id,
+        shareAmount: isSpecified ? (fixedAmounts[m.id] || 0) : 0,
+        percentage: 0,
+      };
+    });
+
+    if (remainderMembers.length > 0 && remainder > 0) {
+      // 指定されたメンバーの間で残金額を均等割 (切り捨て)
+      const baseShare = Math.floor(remainder / remainderMembers.length);
+      
+      shares.forEach(s => {
+        const isRemainderMember = remainderMembers.some(rm => rm.id === s.userId);
+        if (isRemainderMember) {
+          s.shareAmount += baseShare; // 固定値がある人が残金均等割にも参加する場合、金額を加算する
+        }
+      });
+
+      // 残りの端数 (1円の余り) の配分
+      const currentTotal = shares.reduce((sum, s) => sum + s.shareAmount, 0);
+      const unspecifiedRemainder = totalAmount - currentTotal;
+
+      if (unspecifiedRemainder > 0) {
+        for (let i = 0; i < unspecifiedRemainder; i++) {
+          const targetMember = remainderMembers[i % remainderMembers.length];
+          const targetShare = shares.find(s => s.userId === targetMember.id);
+          if (targetShare) {
+            targetShare.shareAmount += 1;
+          }
+        }
+      }
+    } else if (remainder > 0 && remainderMembers.length === 0) {
+      // 均等割参加者がおらず残金がある場合は、先頭の人に端数調整 (フォールバック)
+      shares[0].shareAmount += remainder;
+    }
+
+    // パーセンテージを計算
+    shares.forEach(s => {
+      s.percentage = Math.round((s.shareAmount / totalAmount) * 10000) / 100;
+    });
 
     return shares;
   }

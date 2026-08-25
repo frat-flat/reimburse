@@ -58,7 +58,7 @@ export default async function EditExpensePage({ params }: EditExpensePageProps) 
     id: expense.id,
     title: expense.title,
     amount: expense.amount,
-    splitType: expense.splitType as 'equal' | 'percentage' | 'fixed' | 'ratio',
+    splitType: expense.splitType as 'equal' | 'percentage' | 'fixed' | 'ratio' | 'fixed_equal',
     payerMemberId: expense.payments[0]?.memberId || '',
     expenseDate: expense.expenseDate
       ? (() => {

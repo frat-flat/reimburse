@@ -49,7 +49,7 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
   const [title, setTitle] = useState(expense?.title || '');
   const [expenseDate, setExpenseDate] = useState(expense?.expenseDate || getTodayString());
   const [amountStr, setAmountStr] = useState(expense?.amount?.toString() || '');
-  const [payerMemberId, setPayerMemberId] = useState(expense?.payerMemberId || members[0]?.id || '');
+  const [payerMemberId, setPayerMemberId] = useState(expense?.payerMemberId || '');
   const [splitType, setSplitType] = useState<'equal' | 'percentage' | 'fixed' | 'ratio' | 'fixed_equal'>(
     expense?.splitType || 'equal'
   );
@@ -310,6 +310,10 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
       setErrorMsg('項目名および正しい金額を入力してください。');
       return;
     }
+    if (!payerMemberId) {
+      setErrorMsg('支払者を選択してください。');
+      return;
+    }
     if (checkedMembers.length === 0) {
       setErrorMsg('負担者を少なくとも1人選択してください。');
       return;
@@ -463,7 +467,9 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
               value={payerMemberId}
               onChange={(e) => setPayerMemberId(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              required
             >
+              <option value="">-- 選択してください --</option>
               {members.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.name}

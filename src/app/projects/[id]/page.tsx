@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { actionCreateMember, actionConfirmSettlements } from '@/lib/actions';
 import DeleteProjectButton from '@/components/DeleteProjectButton';
 import ExpenseList from '@/components/ExpenseList';
-import { Users, Plus, Edit2, ArrowRight, ArrowLeft, Landmark, AlertCircle } from 'lucide-react';
+import { Users, Plus, Edit2, ArrowRight, ArrowLeft, Landmark, AlertCircle, FileText } from 'lucide-react';
 
 interface ProjectPageProps {
   params: Promise<{ id: string }>;
@@ -93,8 +93,16 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-2">
             <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">{project.name}</h1>
             
-            {/* プロジェクト管理ボタン (編集/削除) */}
+            {/* プロジェクト管理ボタン (レポート/編集/削除) */}
             <div className="flex items-center gap-2">
+              <Link
+                href={`/projects/${projectId}/report`}
+                className="p-2 text-emerald-700 hover:text-emerald-900 hover:bg-emerald-50 rounded-lg border border-emerald-200 transition-colors shadow-sm flex items-center justify-center gap-1 text-sm font-semibold"
+                title="レポートを表示"
+              >
+                <FileText className="h-4 w-4 text-emerald-600" />
+                <span>レポート</span>
+              </Link>
               <Link
                 href={`/projects/${projectId}/edit`}
                 className="p-2 text-indigo-600 hover:text-indigo-850 hover:bg-indigo-50 rounded-lg border border-indigo-200 transition-colors shadow-sm flex items-center justify-center gap-1 text-sm font-semibold"

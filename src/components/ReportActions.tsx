@@ -26,9 +26,10 @@ interface ReportActionsProps {
   projectId: string;
   members: MemberSummary[];
   expenses: ExpenseSummary[];
+  selectedMemberName?: string;
 }
 
-export default function ReportActions({ projectName, projectId, members, expenses }: ReportActionsProps) {
+export default function ReportActions({ projectName, projectId, members, expenses, selectedMemberName }: ReportActionsProps) {
   const handlePrint = () => {
     window.print();
   };
@@ -38,6 +39,9 @@ export default function ReportActions({ projectName, projectId, members, expense
 
     // 1. プロジェクト基本情報
     csv += `■ プロジェクトレポート: ${projectName}\n`;
+    if (selectedMemberName) {
+      csv += `対象メンバー,${selectedMemberName}\n`;
+    }
     csv += `出力日時,${new Date().toLocaleString('ja-JP')}\n\n`;
 
     // 2. メンバー別集計テーブル
@@ -59,6 +63,10 @@ export default function ReportActions({ projectName, projectId, members, expense
     // 4. メンバー個別明細
     csv += `■ メンバー別個別明細\n`;
     members.forEach((m) => {
+      // メンバーフィルターが有効な場合は該当者以外をスキップ
+      if (selectedMemberName && m.name !== selectedMemberName) {
+        return;
+      }
       csv += `\n[ ${m.name.replace(/"/g, '""')} の明細 ]\n`;
       csv += `● 支払った立替明細\n`;
       csv += `利用日,項目名,支払金額\n`;
@@ -80,7 +88,10 @@ export default function ReportActions({ projectName, projectId, members, expense
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `report_${projectName}.csv`);
+    const downloadName = selectedMemberName 
+      ? `report_${projectName}_${selectedMemberName}.csv`
+      : `report_${projectName}.csv`;
+    link.setAttribute('download', downloadName);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

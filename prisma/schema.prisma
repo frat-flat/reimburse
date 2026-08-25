@@ -1,0 +1,130 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+}
+
+// 1. システムログイン用ユーザー（幹事）
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdProjects Project[] @relation("CreatedProjects")
+  masterMembers   MasterMember[]
+}
+
+// 1.5 共通メンバーマスタ（事前に登録するよく使うメンバー）
+model MasterMember {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name])
+}
+
+// 2. プロジェクト
+model Project {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  currency     String   @default("JPY")
+  roundingUnit Int      @default(1)
+  status       String   @default("active") // draft / active / settlement_confirmed / completed
+  createdBy    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  creator     User         @relation("CreatedProjects", fields: [createdBy], references: [id], onDelete: Cascade)
+  members     Member[]     // プロジェクト固有の割り勘メンバー
+  expenses    Expense[]
+  settlements Settlement[]
+}
+
+// 3. プロジェクト内の割り勘メンバー（名前のみ登録）
+model Member {
+  id        String   @id @default(uuid())
+  projectId String
+  name      String
+  createdAt DateTime @default(now())
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  payments  ExpensePayment[]
+  shares    ExpenseShare[]
+  paidSettlements Settlement[]     @relation("PayerMemberSettlements")
+  receivedSettlements Settlement[] @relation("ReceiverMemberSettlements")
+
+  @@unique([projectId, name]) // 同一プロジェクト内で名前が重複しないようにする
+}
+
+// 4. 支出
+model Expense {
+  id          String   @id @default(uuid())
+  projectId   String
+  title       String
+  amount      Float
+  splitType   String   // equal, percentage, fixed, ratio
+  category    String?
+  expenseDate DateTime @default(now())
+  memo        String?
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  payments    ExpensePayment[]
+  shares      ExpenseShare[]
+}
+
+// 5. 支払者
+model ExpensePayment {
+  id        String   @id @default(uuid())
+  expenseId String
+  memberId  String
+  amount    Float
+
+  expense   Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  member    Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+}
+
+// 6. 負担者
+model ExpenseShare {
+  id          String   @id @default(uuid())
+  expenseId   String
+  memberId    String
+  shareAmount Float
+  percentage  Float?
+  ratio       Float?
+
+  expense     Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  member      Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+}
+
+// 7. 精算
+model Settlement {
+  id               String    @id @default(uuid())
+  projectId        String
+  payerMemberId    String
+  receiverMemberId String
+  amount           Float
+  status           String    @default("pending") // pending, paid, cancelled
+  paidAt           DateTime?
+  createdAt        DateTime  @default(now())
+
+  project          Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  payerMember      Member    @relation("PayerMemberSettlements", fields: [payerMemberId], references: [id], onDelete: Cascade)
+  receiverMember   Member    @relation("ReceiverMemberSettlements", fields: [receiverMemberId], references: [id], onDelete: Cascade)
+}

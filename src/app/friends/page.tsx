@@ -4,10 +4,10 @@ import { redirect } from 'next/navigation';
 import { 
   actionSendFriendRequest, 
   actionAcceptFriendRequest, 
-  actionRejectFriendRequest,
-  actionRunDDL
+  actionRejectFriendRequest 
 } from '@/lib/actions';
-import { Users, UserPlus, Check, X, Mail, Clock, Database, AlertCircle } from 'lucide-react';
+import DbMigrateButton from '@/components/DbMigrateButton';
+import { Users, UserPlus, Check, X, Mail, Clock, AlertCircle } from 'lucide-react';
 
 export default async function FriendsPage() {
   const currentUser = await getCurrentUser();
@@ -87,12 +87,6 @@ export default async function FriendsPage() {
     await actionRejectFriendRequest(friendshipId);
   };
 
-  // DB更新アクション (手動マイグレーション用)
-  const handleRunDDL = async () => {
-    'use server';
-    await actionRunDDL();
-  };
-
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-2 border-b border-gray-200">
@@ -102,16 +96,7 @@ export default async function FriendsPage() {
             登録ユーザー間で友達になることで、作成したプロジェクトの共有が可能になります。
           </p>
         </div>
-        <form action={handleRunDDL} className="flex-shrink-0">
-          <button
-            type="submit"
-            className="inline-flex items-center gap-1.5 bg-gray-50 border border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900 font-bold px-3 py-2 rounded-lg text-xs transition shadow-sm cursor-pointer"
-            title="本番DBのスキーマを直接更新します"
-          >
-            <Database className="h-4 w-4 text-indigo-500" />
-            <span>データベース接続・テーブル更新</span>
-          </button>
-        </form>
+        <DbMigrateButton />
       </div>
 
       {dbError && (

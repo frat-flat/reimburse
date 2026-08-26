@@ -1263,3 +1263,45 @@ export async function actionRunDDL() {
     return { error: err.message || 'DDL実行中にエラーが発生しました。' };
   }
 }
+
+// ==========================================
+// 9. パスワード再設定用 Server Action
+// ==========================================
+
+export async function actionResetPassword(formData: FormData) {
+  const email = formData.get('email') as string;
+  const name = formData.get('name') as string;
+  const newPassword = formData.get('newPassword') as string;
+
+  if (!email || !name || !newPassword) {
+    return { error: 'すべての項目を入力してください。' };
+  }
+
+  try {
+    // メールアドレスと登録名が一致するユーザーを検索
+    const user = await prisma.user.findFirst({
+      where: {
+        email: email.trim(),
+        name: name.trim(),
+      },
+    });
+
+    if (!user) {
+      return { error: '入力されたメールアドレスとユーザー名の組み合わせが見つかりません。' };
+    }
+
+    // パスワードを更新
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: newPassword,
+      },
+    });
+
+    console.log(`Password reset successfully for user: ${email}`);
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error during password reset:', err);
+    return { error: err.message || 'パスワードの再設定中にエラーが発生しました。' };
+  }
+}

@@ -376,6 +376,11 @@ export async function actionUpdateExpense(
     return { error: '精算が確定または完了しているため、支出を編集できません。' };
   }
 
+  // 権限検証：発起人(project.createdBy) または この支出の作成者(existingExpense.createdBy) のみ編集可能
+  if (existingExpense.project.createdBy !== currentUser.id && existingExpense.createdBy !== currentUser.id) {
+    return { error: '他人が登録した支出を編集・削除する権限はありません。' };
+  }
+
   const { title, amount, splitType, payerMemberId, expenseDate, shares: inputShares, attachments } = data;
 
   if (!title || amount <= 0) {
@@ -512,6 +517,11 @@ export async function actionDeleteExpense(expenseId: string) {
   if (!existingExpense) return { error: '支出が見つかりません。' };
   if (existingExpense.project.status !== 'active') {
     return { error: '精算が確定または完了しているため、支出を削除できません。' };
+  }
+
+  // 権限検証：発起人(project.createdBy) または この支出の作成者(existingExpense.createdBy) のみ削除可能
+  if (existingExpense.project.createdBy !== currentUser.id && existingExpense.createdBy !== currentUser.id) {
+    return { error: '他人が登録した支出を削除する権限はありません。' };
   }
 
   try {
@@ -939,4 +949,317 @@ export async function actionDeleteMasterMember(id: string) {
   }
 
   return { success: true };
+}
+
+// ==========================================
+// 5. 友達（Friendship）関連 Server Actions
+// ==========================================
+
+export async function actionSendFriendRequest(email: string) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return { error: 'ログインが必要です。' };
+
+  const targetEmail = email.trim().toLowerCase();
+  if (targetEmail === currentUser.email.toLowerCase()) {
+    return { error: '自分自身に友達申請を送ることはできません。' };
+  }
+
+  try {
+    const friend = await prisma.user.findUnique({
+      where: { email: targetEmail },
+    });
+
+    if (!friend) {
+      return { error: '入力されたメールアドレスを持つユーザーが見つかりません。' };
+    }
+
+    // 既に友達関係または申請が存在するか確認
+    const existing = await prisma.friendship.findFirst({
+      where: {
+        OR: [
+          { userId: currentUser.id, friendId: friend.id },
+          { userId: friend.id, friendId: currentUser.id },
+        ],
+      },
+    });
+
+    if (existing) {
+      if (existing.status === 'accepted') {
+        return { error: 'すでに友達になっています。' };
+      }
+      if (existing.userId === currentUser.id) {
+        return { error: 'すでに友達申請を送信済みです。承認を待ってください。' };
+      }
+      return { error: '相手から友達申請が届いています。承認してください。' };
+    }
+
+    await prisma.friendship.create({
+      data: {
+        userId: currentUser.id,
+        friendId: friend.id,
+        status: 'pending',
+      },
+    });
+
+    revalidatePath('/friends');
+  } catch (e) {
+    console.error(e);
+    return { error: '友達申請中にエラーが発生しました。' };
+  }
+
+  return { success: true };
+}
+
+export async function actionAcceptFriendRequest(friendshipId: string) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return { error: 'ログインが必要です。' };
+
+  try {
+    const friendship = await prisma.friendship.findUnique({
+      where: { id: friendshipId },
+    });
+
+    if (!friendship) return { error: '友達申請が見つかりません。' };
+    if (friendship.friendId !== currentUser.id) {
+      return { error: '権限がありません。' };
+    }
+
+    await prisma.friendship.update({
+      where: { id: friendshipId },
+      data: { status: 'accepted' },
+    });
+
+    revalidatePath('/friends');
+  } catch (e) {
+    console.error(e);
+    return { error: '承認処理中にエラーが発生しました。' };
+  }
+
+  return { success: true };
+}
+
+export async function actionRejectFriendRequest(friendshipId: string) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return { error: 'ログインが必要です。' };
+
+  try {
+    const friendship = await prisma.friendship.findUnique({
+      where: { id: friendshipId },
+    });
+
+    if (!friendship) return { error: '友達申請が見つかりません。' };
+    if (friendship.friendId !== currentUser.id && friendship.userId !== currentUser.id) {
+      return { error: '権限がありません。' };
+    }
+
+    await prisma.friendship.delete({
+      where: { id: friendshipId },
+    });
+
+    revalidatePath('/friends');
+  } catch (e) {
+    console.error(e);
+    return { error: '申請の削除処理中にエラーが発生しました。' };
+  }
+
+  return { success: true };
+}
+
+// ==========================================
+// 6. プロジェクト共有（ProjectShare）関連 Server Actions
+// ==========================================
+
+export async function actionShareProject(
+  projectId: string,
+  memberId: string,
+  friendUserId: string,
+  role: 'viewer' | 'editor'
+) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return { error: 'ログインが必要です。' };
+
+  try {
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+    });
+
+    if (!project) return { error: 'プロジェクトが見つかりません。' };
+    if (project.createdBy !== currentUser.id) {
+      return { error: '発起人のみがプロジェクトを共有できます。' };
+    }
+
+    // 既に同じプロジェクト・同じユーザーへの共有があるかチェック
+    const existingShare = await prisma.projectShare.findUnique({
+      where: {
+        projectId_userId: {
+          projectId,
+          userId: friendUserId,
+        },
+      },
+    });
+
+    await prisma.$transaction(async (tx) => {
+      // 1. プロジェクトの精算メンバー(Member)に共有相手のUser IDを紐付ける
+      await tx.member.update({
+        where: { id: memberId },
+        data: { userId: friendUserId },
+      });
+
+      // 2. 共有設定を作成または更新
+      if (existingShare) {
+        await tx.projectShare.update({
+          where: { id: existingShare.id },
+          data: { role },
+        });
+      } else {
+        await tx.projectShare.create({
+          data: {
+            projectId,
+            userId: friendUserId,
+            role,
+          },
+        });
+      }
+    });
+
+    revalidatePath(`/projects/${projectId}`);
+  } catch (e) {
+    console.error(e);
+    return { error: '共有処理中にエラーが発生しました。' };
+  }
+
+  return { success: true };
+}
+
+export async function actionRemoveProjectShare(projectShareId: string) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return { error: 'ログインが必要です。' };
+
+  try {
+    const share = await prisma.projectShare.findUnique({
+      where: { id: projectShareId },
+      include: { project: true },
+    });
+
+    if (!share) return { error: '共有設定が見つかりません。' };
+    if (share.project.createdBy !== currentUser.id) {
+      return { error: '発起人のみが共有を解除できます。' };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // 1. 紐付いているメンバーから userId を削除
+      const member = await tx.member.findFirst({
+        where: {
+          projectId: share.projectId,
+          userId: share.userId,
+        },
+      });
+
+      if (member) {
+        await tx.member.update({
+          where: { id: member.id },
+          data: { userId: null },
+        });
+      }
+
+      // 2. 共有設定を削除
+      await tx.projectShare.delete({
+        where: { id: projectShareId },
+      });
+    });
+
+    revalidatePath(`/projects/${share.projectId}`);
+  } catch (e) {
+    console.error(e);
+    return { error: '共有解除処理中にエラーが発生しました。' };
+  }
+
+  return { success: true };
+}
+
+// ==========================================
+// 7. 類似・重複支出関連 Server Actions
+// ==========================================
+
+export async function actionConfirmDuplicate(expenseId: string) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return { error: 'ログインが必要です。' };
+
+  try {
+    await prisma.expense.update({
+      where: { id: expenseId },
+      data: { duplicateConfirmed: true },
+    });
+
+    // 関連するリロードを走らせる
+    const exp = await prisma.expense.findUnique({
+      where: { id: expenseId },
+    });
+    if (exp) {
+      revalidatePath(`/projects/${exp.projectId}`);
+    }
+  } catch (e) {
+    console.error(e);
+    return { error: '重複の確認処理中にエラーが発生しました。' };
+  }
+
+  return { success: true };
+}
+
+// ==========================================
+// 8. データベース自動マイグレーション用臨時 Server Action
+// ==========================================
+
+export async function actionRunDDL() {
+  try {
+    console.log('Running manual DDL migrations...');
+
+    // 1. Friendship テーブルの作成
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "Friendship" (
+        "id" TEXT NOT NULL,
+        "userId" TEXT NOT NULL,
+        "friendId" TEXT NOT NULL,
+        "status" TEXT NOT NULL,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL,
+        CONSTRAINT "Friendship_pkey" PRIMARY KEY ("id")
+      );
+    `);
+    await prisma.$executeRawUnsafe(`
+      CREATE UNIQUE INDEX IF NOT EXISTS "Friendship_userId_friendId_key" ON "Friendship"("userId", "friendId");
+    `);
+
+    // 2. ProjectShare テーブルの作成
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "ProjectShare" (
+        "id" TEXT NOT NULL,
+        "projectId" TEXT NOT NULL,
+        "userId" TEXT NOT NULL,
+        "role" TEXT NOT NULL,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL,
+        CONSTRAINT "ProjectShare_pkey" PRIMARY KEY ("id")
+      );
+    `);
+    await prisma.$executeRawUnsafe(`
+      CREATE UNIQUE INDEX IF NOT EXISTS "ProjectShare_projectId_userId_key" ON "ProjectShare"("projectId", "userId");
+    `);
+
+    // 3. Member テーブルへの userId カラムの追加
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Member" ADD COLUMN IF NOT EXISTS "userId" TEXT;
+    `);
+
+    // 4. Expense テーブルへの duplicateConfirmed カラムの追加
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS "duplicateConfirmed" BOOLEAN NOT NULL DEFAULT false;
+    `);
+
+    console.log('Manual DDL migrations completed successfully.');
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error running manual DDL migrations:', err);
+    return { error: err.message || 'DDL実行中にエラーが発生しました。' };
+  }
 }

@@ -20,6 +20,9 @@ export default async function Header() {
             <Link href="/dashboard" className="text-xs font-bold text-gray-600 hover:text-indigo-600 transition">
               プロジェクト
             </Link>
+            <Link href="/friends" className="text-xs font-bold text-gray-600 hover:text-indigo-600 transition">
+              友達管理
+            </Link>
             <Link href="/members" className="text-xs font-bold text-gray-600 hover:text-indigo-600 transition">
               メンバー登録
             </Link>
@@ -36,6 +39,9 @@ export default async function Header() {
           <nav className="flex items-center gap-4">
             <Link href="/dashboard" className="text-sm font-bold text-gray-600 hover:text-indigo-600 transition">
               プロジェクト一覧
+            </Link>
+            <Link href="/friends" className="text-sm font-bold text-gray-600 hover:text-indigo-600 transition">
+              友達管理
             </Link>
             <Link href="/members" className="text-sm font-bold text-gray-600 hover:text-indigo-600 transition">
               メンバー登録

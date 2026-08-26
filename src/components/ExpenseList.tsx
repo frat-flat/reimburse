@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useTransition } from 'react';
 import Link from 'next/link';
-import { Edit2, MessageSquare, ArrowUpDown, Plus } from 'lucide-react';
+import { Edit2, MessageSquare, ArrowUpDown, Plus, AlertTriangle, CheckSquare, X } from 'lucide-react';
 import DeleteExpenseButton from './DeleteExpenseButton';
+import { actionConfirmDuplicate } from '@/lib/actions';
 
 interface ExpenseItem {
   id: string;
@@ -13,6 +14,8 @@ interface ExpenseItem {
   category?: string | null;
   expenseDate: Date | string;
   memo?: string | null;
+  createdBy: string;
+  duplicateConfirmed: boolean;
   createdAt: Date | string;
   payments: {
     memberId: string;
@@ -37,13 +40,25 @@ interface ExpenseListProps {
   initialExpenses: ExpenseItem[];
   projectId: string;
   projectStatus: string;
+  isOwner?: boolean;
+  userRole?: 'owner' | 'viewer' | 'editor';
+  currentUserId?: string;
 }
 
 type SortKey = 'expenseDate-desc' | 'expenseDate-asc' | 'createdAt-desc' | 'createdAt-asc' | 'amount-desc' | 'amount-asc';
 
-export default function ExpenseList({ initialExpenses, projectId, projectStatus }: ExpenseListProps) {
+export default function ExpenseList({
+  initialExpenses,
+  projectId,
+  projectStatus,
+  isOwner = true,
+  userRole = 'owner',
+  currentUserId,
+}: ExpenseListProps) {
   const [sortKey, setSortKey] = useState<SortKey>('expenseDate-desc');
   const [hoveredAttId, setHoveredAttId] = useState<string | null>(null);
+  const [openDuplicateId, setOpenDuplicateId] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   // ソート処理
   const getSortedExpenses = () => {
@@ -93,6 +108,32 @@ export default function ExpenseList({ initialExpenses, projectId, projectStatus 
     });
   };
 
+  // 類似支出（同一日付・同一金額）を検出するロジック
+  const getDuplicateExpenses = (exp: ExpenseItem) => {
+    if (exp.duplicateConfirmed) return [];
+
+    const dateA = exp.expenseDate ? new Date(exp.expenseDate).toDateString() : '';
+    return initialExpenses.filter((other) => {
+      if (other.id === exp.id) return false;
+      if (other.duplicateConfirmed) return false;
+
+      const dateB = other.expenseDate ? new Date(other.expenseDate).toDateString() : '';
+      return dateA === dateB && exp.amount === other.amount;
+    });
+  };
+
+  // 重複確認処理ハンドラ
+  const handleConfirmDuplicate = (expenseId: string) => {
+    startTransition(async () => {
+      const res = await actionConfirmDuplicate(expenseId);
+      if (res && res.error) {
+        alert(res.error);
+      } else {
+        setOpenDuplicateId(null);
+      }
+    });
+  };
+
   const sortedExpenses = getSortedExpenses();
 
   return (
@@ -120,13 +161,15 @@ export default function ExpenseList({ initialExpenses, projectId, projectStatus 
           </select>
 
           {projectStatus === 'active' ? (
-            <Link
-              href={`/projects/${projectId}/expenses/new`}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition inline-flex items-center gap-1 shadow-sm flex-shrink-0"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              支出を追加
-            </Link>
+            userRole !== 'viewer' && (
+              <Link
+                href={`/projects/${projectId}/expenses/new`}
+                className="bg-indigo-600 hover:bg-indigo-750 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition inline-flex items-center gap-1 shadow-sm flex-shrink-0"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                支出を追加
+              </Link>
+            )
           ) : (
             <span className="text-[10px] text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded border border-gray-200">
               追加不可 (ロック済)
@@ -164,6 +207,63 @@ export default function ExpenseList({ initialExpenses, projectId, projectStatus 
                           {formattedDate}
                         </span>
                       )}
+
+                      {/* 重複警告表示 */}
+                      {(() => {
+                        const duplicates = getDuplicateExpenses(expense);
+                        if (duplicates.length === 0) return null;
+
+                        return (
+                          <div className="relative inline-block z-30 print:hidden">
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setOpenDuplicateId(openDuplicateId === expense.id ? null : expense.id);
+                              }}
+                              className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-250 px-2 py-0.5 rounded-md transition shadow-sm animate-pulse"
+                              title="重複の可能性のある支出があります"
+                            >
+                              <AlertTriangle className="h-3 w-3 text-amber-500" />
+                              <span>重複の可能性あり</span>
+                            </button>
+
+                            {openDuplicateId === expense.id && (
+                              <div className="absolute left-0 mt-1 bg-white border border-amber-250 rounded-xl shadow-2xl p-4 w-72 text-xs space-y-3 text-gray-800 text-left">
+                                <div className="flex items-center justify-between border-b border-gray-100 pb-1.5">
+                                  <span className="font-extrabold text-amber-800 flex items-center gap-1">
+                                    <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                                    類似する支出を検出
+                                  </span>
+                                  <button
+                                    onClick={() => setOpenDuplicateId(null)}
+                                    className="text-gray-400 hover:text-gray-605 p-0.5"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                                <p className="text-[10px] text-gray-500 leading-relaxed font-semibold">
+                                  日付（{formattedDate}）と金額（{expense.amount.toLocaleString()}円）が一致する支出が存在します。
+                                </p>
+                                <div className="space-y-1.5 bg-amber-50 border border-amber-150 p-2.5 rounded-lg max-h-24 overflow-y-auto">
+                                  {duplicates.map((dup) => (
+                                    <div key={dup.id} className="text-[10px] text-amber-900 border-b border-amber-200/50 pb-1 last:border-b-0 last:pb-0">
+                                      ・<strong>{dup.title}</strong> ({dup.payments[0]?.member.name || '支払者不明'} 払)
+                                    </div>
+                                  ))}
+                                </div>
+                                <button
+                                  onClick={() => handleConfirmDuplicate(expense.id)}
+                                  disabled={isPending}
+                                  className="w-full inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold py-2 rounded-lg text-xs transition shadow-sm"
+                                >
+                                  <CheckSquare className="h-3.5 w-3.5" />
+                                  <span>違う支出であることを確認 (警告消去)</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
                       支払者: <strong className="text-gray-700">{payerName}</strong>
@@ -178,18 +278,24 @@ export default function ExpenseList({ initialExpenses, projectId, projectStatus 
                       {expense.amount.toLocaleString()}円
                     </strong>
                     
-                    {/* 編集・削除（ステータスactiveのみ） */}
-                    {projectStatus === 'active' && (
-                      <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                        <Link
-                          href={`/projects/${projectId}/expenses/${expense.id}/edit`}
-                          className="p-1.5 hover:bg-gray-50 border-r border-gray-200 text-gray-500 hover:text-indigo-600 transition"
-                          title="編集"
-                        >
-                          <Edit2 className="h-3.5 w-3.5" />
-                        </Link>
-                        <DeleteExpenseButton expenseId={expense.id} />
-                      </div>
+                    {/* 編集・削除（ステータスactiveのみ、かつ閲覧権限ではない場合） */}
+                    {projectStatus === 'active' && userRole !== 'viewer' && (
+                      (isOwner || expense.createdBy === currentUserId) ? (
+                        <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                          <Link
+                            href={`/projects/${projectId}/expenses/${expense.id}/edit`}
+                            className="p-1.5 hover:bg-gray-50 border-r border-gray-200 text-gray-500 hover:text-indigo-650 transition"
+                            title="編集"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                          </Link>
+                          <DeleteExpenseButton expenseId={expense.id} />
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-gray-400 font-semibold bg-gray-50 px-2 py-1 rounded border border-gray-200 flex-shrink-0" title="他人の支出は編集・削除できません">
+                          編集不可 (他人の支出)
+                        </span>
+                      )
                     )}
                   </div>
                 </div>

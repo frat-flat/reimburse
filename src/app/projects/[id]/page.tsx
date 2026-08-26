@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { actionCreateMember, actionConfirmSettlements } from '@/lib/actions';
 import DeleteProjectButton from '@/components/DeleteProjectButton';
 import ExpenseList from '@/components/ExpenseList';
+import ProjectShareSection from '@/components/ProjectShareSection';
 import { Users, Plus, Edit2, ArrowRight, ArrowLeft, Landmark, AlertCircle, FileText } from 'lucide-react';
 
 interface ProjectPageProps {
@@ -36,6 +37,11 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
           expenseDate: 'desc',
         },
       },
+      projectShares: {
+        include: {
+          user: true,
+        },
+      },
     },
   });
 
@@ -43,9 +49,41 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
     notFound();
   }
 
-  // 作成者が現在のログインユーザーか確認
-  if (project.createdBy !== currentUser.id) {
+  // アクセス権限チェック (作成者本人、または共有された友達)
+  const isOwner = project.createdBy === currentUser.id;
+  const projectShare = await prisma.projectShare.findUnique({
+    where: {
+      projectId_userId: {
+        projectId,
+        userId: currentUser.id,
+      },
+    },
+  });
+
+  if (!isOwner && !projectShare) {
     redirect('/dashboard');
+  }
+
+  const userRole = isOwner ? 'owner' : (projectShare?.role as 'viewer' | 'editor' || 'viewer');
+
+  // 友達一覧を取得（発起人の場合のみフェッチ）
+  let friends: { id: string; name: string; email: string }[] = [];
+  if (isOwner) {
+    const friendships = await prisma.friendship.findMany({
+      where: {
+        OR: [
+          { userId: currentUser.id, status: 'accepted' },
+          { friendId: currentUser.id, status: 'accepted' },
+        ],
+      },
+      include: {
+        user: true,
+        friend: true,
+      },
+    });
+    friends = friendships.map((f) => {
+      return f.userId === currentUser.id ? f.friend : f.user;
+    });
   }
 
   const totalExpense = project.expenses.reduce((sum, e) => sum + e.amount, 0);
@@ -104,15 +142,19 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
                 <FileText className="h-4 w-4 text-emerald-600" />
                 <span>レポート</span>
               </Link>
-              <Link
-                href={`/projects/${projectId}/edit`}
-                className="p-2 text-indigo-600 hover:text-indigo-850 hover:bg-indigo-50 rounded-lg border border-indigo-200 transition-colors shadow-sm flex items-center justify-center gap-1 text-sm font-semibold"
-                title="プロジェクトを編集"
-              >
-                <Edit2 className="h-4 w-4" />
-                <span>編集</span>
-              </Link>
-              <DeleteProjectButton projectId={projectId} />
+              {isOwner && (
+                <>
+                  <Link
+                    href={`/projects/${projectId}/edit`}
+                    className="p-2 text-indigo-600 hover:text-indigo-850 hover:bg-indigo-50 rounded-lg border border-indigo-200 transition-colors shadow-sm flex items-center justify-center gap-1 text-sm font-semibold"
+                    title="プロジェクトを編集"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                    <span>編集</span>
+                  </Link>
+                  <DeleteProjectButton projectId={projectId} />
+                </>
+              )}
             </div>
           </div>
           
@@ -157,15 +199,17 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
             </ul>
 
             {project.status === 'active' ? (
-              <div className="pt-2 border-t border-gray-100">
-                <Link
-                  href={`/projects/${projectId}/members`}
-                  className="w-full inline-flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2.5 rounded-lg text-xs transition border border-indigo-100 shadow-sm"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  メンバーを登録・管理する
-                </Link>
-              </div>
+              isOwner && (
+                <div className="pt-2 border-t border-gray-100">
+                  <Link
+                    href={`/projects/${projectId}/members`}
+                    className="w-full inline-flex items-center justify-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2.5 rounded-lg text-xs transition border border-indigo-100 shadow-sm"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    メンバーを登録・管理する
+                  </Link>
+                </div>
+              )
             ) : (
               <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-800 flex items-start gap-1.5 pt-2 border-t border-gray-100">
                 <AlertCircle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
@@ -185,15 +229,17 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
                   <Landmark className="h-4 w-4" />
                   精算結果プレビューを見る
                 </Link>
-                <form action={handleConfirmSettlements}>
-                  <button
-                    type="submit"
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-1.5 shadow-sm"
-                  >
-                    精算を確定する
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </form>
+                {isOwner && (
+                  <form action={handleConfirmSettlements}>
+                    <button
+                      type="submit"
+                      className="w-full bg-indigo-600 hover:bg-indigo-750 text-white font-bold py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-1.5 shadow-sm"
+                    >
+                      精算を確定する
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </form>
+                )}
               </>
             ) : (
               <Link
@@ -206,6 +252,16 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
               </Link>
             )}
           </div>
+
+          {/* プロジェクト共有設定 (オーナーのみ) */}
+          {isOwner && (
+            <ProjectShareSection
+              projectId={projectId}
+              friends={friends}
+              members={project.members}
+              projectShares={project.projectShares}
+            />
+          )}
         </div>
 
         {/* 右カラム：支出一覧 */}
@@ -214,6 +270,9 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
             initialExpenses={project.expenses}
             projectId={projectId}
             projectStatus={project.status}
+            isOwner={isOwner}
+            userRole={userRole}
+            currentUserId={currentUser.id}
           />
         </div>
       </div>

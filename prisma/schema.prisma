@@ -19,8 +19,16 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  createdProjects Project[] @relation("CreatedProjects")
+  createdProjects Project[]      @relation("CreatedProjects")
   masterMembers   MasterMember[]
+
+  // 友達関係
+  friendshipsInitiated Friendship[] @relation("UserFriendships")
+  friendshipsReceived  Friendship[] @relation("FriendFriendships")
+
+  // プロジェクト共有
+  projectShares        ProjectShare[]
+  projectMembers       Member[]
 }
 
 // 1.5 共通メンバーマスタ（事前に登録するよく使うメンバー）
@@ -48,10 +56,11 @@ model Project {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  creator     User         @relation("CreatedProjects", fields: [createdBy], references: [id], onDelete: Cascade)
-  members     Member[]     // プロジェクト固有の割り勘メンバー
+  creator     User           @relation("CreatedProjects", fields: [createdBy], references: [id], onDelete: Cascade)
+  members     Member[]       // プロジェクト固有の割り勘メンバー
   expenses    Expense[]
   settlements Settlement[]
+  projectShares ProjectShare[]
 }
 
 // 3. プロジェクト内の割り勘メンバー（名前のみ登録）
@@ -59,9 +68,11 @@ model Member {
   id        String   @id @default(uuid())
   projectId String
   name      String
+  userId    String?  // システム登録ユーザーと紐付ける場合
   createdAt DateTime @default(now())
 
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   payments  ExpensePayment[]
   shares    ExpenseShare[]
   paidSettlements Settlement[]     @relation("PayerMemberSettlements")
@@ -72,17 +83,18 @@ model Member {
 
 // 4. 支出
 model Expense {
-  id          String   @id @default(uuid())
-  projectId   String
-  title       String
-  amount      Float
-  splitType   String   // equal, percentage, fixed, ratio
-  category    String?
-  expenseDate DateTime @default(now())
-  memo        String?
-  createdBy   String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  projectId          String
+  title              String
+  amount             Float
+  splitType          String   // equal, percentage, fixed, ratio
+  category           String?
+  expenseDate        DateTime @default(now())
+  memo               String?
+  createdBy          String
+  duplicateConfirmed Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   project     Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
   payments    ExpensePayment[]
@@ -140,4 +152,34 @@ model ExpenseAttachment {
   createdAt DateTime @default(now())
 
   expense   Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+}
+
+// 9. 友達関係
+model Friendship {
+  id        String   @id @default(uuid())
+  userId    String   // 申請者
+  friendId  String   // 被申請者
+  status    String   // pending (申請中) / accepted (友達) / rejected (拒否)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation("UserFriendships", fields: [userId], references: [id], onDelete: Cascade)
+  friend    User     @relation("FriendFriendships", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+}
+
+// 10. プロジェクト共有
+model ProjectShare {
+  id        String   @id @default(uuid())
+  projectId String
+  userId    String   // 共有相手のUser
+  role      String   // viewer / editor
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
 }

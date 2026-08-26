@@ -80,7 +80,7 @@ export default function ReportDashboard({
           精算レポート：{projectName}
         </h1>
         <p className="text-xs text-gray-500 mt-1">
-          {projectDescription && `プロジェクト説明: ${projectDescription}`}
+          {projectDescription && `イベント説明: ${projectDescription}`}
           {selectedMemberName && ` | 対象メンバー: ${selectedMemberName}`}
         </p>
         <p className="text-[10px] text-gray-400 mt-0.5">出力日: {new Date().toLocaleDateString('ja-JP')}</p>
@@ -130,7 +130,7 @@ export default function ReportDashboard({
               onChange={(e) => setShowSummaryCards(e.target.checked)}
               className="rounded text-indigo-600 border-gray-300 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
             />
-            <span>プロジェクトデータ</span>
+            <span>イベントデータ</span>
           </label>
 
           <label className="flex items-center gap-1.5 cursor-pointer text-gray-700 hover:text-indigo-600">

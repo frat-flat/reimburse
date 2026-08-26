@@ -18,10 +18,10 @@ export default async function Header() {
           {/* モバイル用ナビゲーション & ログアウト */}
           <div className="flex items-center gap-2.5 md:hidden">
             <Link href="/dashboard" className="text-xs font-bold text-gray-600 hover:text-indigo-600 transition">
-              プロジェクト
+              イベント
             </Link>
             <Link href="/friends" className="text-xs font-bold text-gray-600 hover:text-indigo-600 transition">
-              友達管理
+              Mate管理
             </Link>
             <Link href="/members" className="text-xs font-bold text-gray-600 hover:text-indigo-600 transition">
               メンバー登録
@@ -38,10 +38,10 @@ export default async function Header() {
         <div className="hidden md:flex items-center gap-6">
           <nav className="flex items-center gap-4">
             <Link href="/dashboard" className="text-sm font-bold text-gray-600 hover:text-indigo-600 transition">
-              プロジェクト一覧
+              イベント一覧
             </Link>
             <Link href="/friends" className="text-sm font-bold text-gray-600 hover:text-indigo-600 transition">
-              友達管理
+              Mate管理
             </Link>
             <Link href="/members" className="text-sm font-bold text-gray-600 hover:text-indigo-600 transition">
               メンバー登録

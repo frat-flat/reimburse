@@ -147,7 +147,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
           className="inline-flex items-center text-sm text-gray-500 hover:text-indigo-600 font-medium transition"
         >
           <ArrowLeft className="h-4 w-4 mr-1" />
-          プロジェクト詳細へ戻る
+          イベント詳細へ戻る
         </Link>
         <div className="flex items-center gap-2 text-xs md:text-sm font-semibold text-gray-500 bg-white border border-gray-200 px-3 py-1 rounded-lg">
           <span>状態:</span>
@@ -292,10 +292,10 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
             )}
           </div>
 
-          {/* プロジェクト金額統計 */}
+          {/* イベント金額統計 */}
           <div className="bg-indigo-950 text-indigo-100 rounded-xl p-5 shadow-sm space-y-3">
             <h3 className="text-sm font-bold uppercase tracking-wider text-indigo-300">
-              プロジェクト統計
+              イベント統計
             </h3>
             <div className="space-y-2.5 divide-y divide-indigo-900 text-xs">
               <div className="flex justify-between py-1.5">

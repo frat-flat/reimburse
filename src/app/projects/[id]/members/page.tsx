@@ -47,7 +47,7 @@ export default async function MembersPage({ params }: MembersPageProps) {
           className="inline-flex items-center text-xs text-gray-500 hover:text-indigo-600 transition font-medium"
         >
           <ArrowLeft className="h-3.5 w-3.5 mr-0.5" />
-          プロジェクト詳細へ戻る
+          イベント詳細へ戻る
         </Link>
       </div>
 

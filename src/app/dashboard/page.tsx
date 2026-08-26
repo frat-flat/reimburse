@@ -97,24 +97,24 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">マイプロジェクト</h1>
+        <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">マイイベント</h1>
         <p className="text-sm text-gray-600 mt-1">
-          現在参加している精算プロジェクトの一覧です。
+          現在参加している精算イベントの一覧です。
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* 左側：プロジェクト一覧 */}
+        {/* 左側：イベント一覧 */}
         <div className="lg:col-span-2 space-y-8">
-          {/* マイプロジェクト (発起人) */}
+          {/* マイイベント (発起人) */}
           <div className="space-y-3">
             <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
-              <span>自分で作成したプロジェクト ({projects.length})</span>
+              <span>自分で作成したイベント ({projects.length})</span>
             </h2>
             {projects.length === 0 ? (
               <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-500 shadow-sm">
                 <FolderPlus className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-                <p className="font-semibold text-sm text-gray-700">作成したプロジェクトはありません</p>
+                <p className="font-semibold text-sm text-gray-700">作成したイベントはありません</p>
                 <p className="text-xs text-gray-500 mt-1">右側のフォームから新しく作成してください。</p>
               </div>
             ) : (
@@ -161,15 +161,15 @@ export default async function DashboardPage() {
             )}
           </div>
 
-          {/* 共有されたプロジェクト */}
+          {/* 共有されたイベント */}
           <div className="space-y-3 pt-6 border-t border-gray-200">
             <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
-              <span>友達から共有されたプロジェクト ({sharedProjects.length})</span>
+              <span>Mateから共有されたイベント ({sharedProjects.length})</span>
             </h2>
             {sharedProjects.length === 0 ? (
               <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-500 shadow-sm">
                 <Users className="mx-auto h-10 w-10 text-gray-300 mb-2" />
-                <p className="text-xs text-gray-500">共有されたプロジェクトはありません</p>
+                <p className="text-xs text-gray-500">共有されたイベントはありません</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -222,7 +222,7 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* 右側：プロジェクト作成フォーム */}
+        {/* 右側：イベント作成フォーム */}
         <CreateProjectForm masterMembers={masterMembers} />
       </div>
     </div>

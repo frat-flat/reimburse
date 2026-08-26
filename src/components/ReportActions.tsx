@@ -49,8 +49,8 @@ export default function ReportActions({
   const handleCSVExport = () => {
     let csv = '\uFEFF'; // UTF-8 BOM for Excel compatibility
 
-    // 1. プロジェクト基本情報
-    csv += `■ プロジェクトレポート: ${projectName}\n`;
+    // 1. イベント基本情報
+    csv += `■ イベントレポート: ${projectName}\n`;
     if (selectedMemberName) {
       csv += `対象メンバー,${selectedMemberName}\n`;
     }
@@ -123,9 +123,9 @@ export default function ReportActions({
           className="inline-flex items-center text-sm text-gray-500 hover:text-indigo-600 font-medium transition"
         >
           <ArrowLeft className="h-4 w-4 mr-1" />
-          プロジェクト詳細へ戻る
+          イベント詳細へ戻る
         </Link>
-        <h1 className="text-2xl font-extrabold text-gray-900 mt-1">プロジェクト内訳レポート</h1>
+        <h1 className="text-2xl font-extrabold text-gray-900 mt-1">イベント内訳レポート</h1>
       </div>
 
       <div className="flex items-center gap-2">

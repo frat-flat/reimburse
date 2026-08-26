@@ -57,7 +57,7 @@ export default function ProjectShareSection({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFriendId || !selectedMemberId) {
-      setErrorMsg('共有する友達と、対応する精算メンバーを選択してください。');
+      setErrorMsg('招待するMateと、対応する精算メンバーを選択してください。');
       return;
     }
 
@@ -74,7 +74,7 @@ export default function ProjectShareSection({
   };
 
   const handleRemove = (shareId: string) => {
-    if (!confirm('このユーザーとのプロジェクト共有を解除しますか？')) return;
+    if (!confirm('このcrewのイベント共有を解除しますか？')) return;
 
     setErrorMsg(null);
     startTransition(async () => {
@@ -88,8 +88,8 @@ export default function ProjectShareSection({
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
       <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
-        <Share2 className="h-5 w-5 text-indigo-600" />
-        <h2 className="text-base font-bold text-gray-900 font-bold">プロジェクトの共有設定</h2>
+        <Share2 className="h-5 w-5 text-indigo-650" />
+        <h2 className="text-base font-bold text-gray-900 font-bold">イベントの共有 (crew設定)</h2>
       </div>
 
       {errorMsg && (
@@ -103,20 +103,20 @@ export default function ProjectShareSection({
       {shareableFriends.length === 0 || unlinkedMembers.length === 0 ? (
         <p className="text-xs text-gray-400 italic bg-gray-50 p-2.5 rounded-lg border border-gray-100">
           {shareableFriends.length === 0
-            ? '共有可能な友達がいません（すべての友達に共有済みか、友達登録がありません）。'
+            ? '共有可能なMateがいません（すべてのMateに共有済みか、Mate登録がありません）。'
             : '紐付け可能な精算メンバーがいません。新たにメンバーを追加してください。'}
         </p>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-3 bg-gray-50 border border-gray-150 p-3.5 rounded-xl">
           <p className="text-[10px] text-gray-500 font-semibold leading-relaxed">
-            友達をプロジェクトの精算メンバーに紐付けて共有します。
+            Mateをイベントの精算メンバーに紐付けてcrewとして招待します。
           </p>
 
           <div className="grid grid-cols-1 gap-2.5 text-xs">
-            {/* 友達選択 */}
+            {/* Mate選択 */}
             <div>
               <label className="block text-[10px] font-bold text-gray-600 mb-1">
-                共有する友達
+                招待するMate
               </label>
               <select
                 value={selectedFriendId}
@@ -188,16 +188,16 @@ export default function ProjectShareSection({
             disabled={isPending}
             className="w-full bg-indigo-600 hover:bg-indigo-750 text-white font-bold py-2 rounded-lg text-xs transition shadow-sm disabled:opacity-50"
           >
-            {isPending ? '共有処理中...' : 'プロジェクトを共有'}
+            {isPending ? '共有処理中...' : 'crewを追加'}
           </button>
         </form>
       )}
 
       {/* 現在の共有リスト */}
       <div className="space-y-2 pt-2 border-t border-gray-100">
-        <span className="text-xs font-bold text-gray-500">共有中のメンバー ({projectShares.length}):</span>
+        <span className="text-xs font-bold text-gray-500">共有中のcrew ({projectShares.length}):</span>
         {projectShares.length === 0 ? (
-          <p className="text-[11px] text-gray-400 italic">まだ共有しているメンバーはいません</p>
+          <p className="text-[11px] text-gray-400 italic">まだ共有しているcrewはいません</p>
         ) : (
           <ul className="space-y-2">
             {projectShares.map((share) => (

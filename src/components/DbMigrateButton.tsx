@@ -27,7 +27,7 @@ export default function DbMigrateButton() {
       } else {
         console.log('Migration succeeded!');
         setStatus('success');
-        alert('データベースの更新が完了しました！\n新機能（友達・共有・重複警告）が利用可能になりました。ページをリフレッシュします。');
+        alert('データベースの更新が完了しました！\n新機能（Mate・crew共有・重複警告）が利用可能になりました。ページをリフレッシュします。');
         window.location.reload();
       }
     });

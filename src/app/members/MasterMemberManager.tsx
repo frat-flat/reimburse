@@ -60,7 +60,7 @@ export default function MasterMemberManager({ initialMembers }: MasterMemberMana
   };
 
   const handleDeleteMember = async (id: string, name: string) => {
-    if (!confirm(`共通メンバー「${name}」を削除しますか？\n(すでに作成済みのプロジェクト内のデータには影響しません)`)) return;
+    if (!confirm(`共通メンバー「${name}」を削除しますか？\n(すでに作成済みのイベント内のデータには影響しません)`)) return;
 
     setErrorMsg(null);
     startTransition(async () => {
@@ -104,7 +104,7 @@ export default function MasterMemberManager({ initialMembers }: MasterMemberMana
           </button>
         </div>
         <p className="text-[11px] text-gray-400 mt-2">
-          ※ ここで登録したメンバーは、今後新しく作成するすべてのプロジェクトに最初から自動で参加します。
+          ※ ここで登録したメンバーは、今後新しく作成するすべてのイベントに最初から自動で参加します。
         </p>
       </form>
 

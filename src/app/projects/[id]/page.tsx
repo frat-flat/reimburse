@@ -140,13 +140,13 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
         </div>
       </div>
 
-      {/* プロジェクト基本情報カード */}
+      {/* イベント基本情報カード */}
       <div className="bg-white border border-gray-200 rounded-xl p-5 md:p-6 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-2">
             <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">{project.name}</h1>
             
-            {/* プロジェクト管理ボタン (レポート/編集/削除) */}
+            {/* イベント管理ボタン (レポート/編集/削除) */}
             <div className="flex items-center gap-2">
               <Link
                 href={`/projects/${projectId}/report`}
@@ -161,7 +161,7 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
                   <Link
                     href={`/projects/${projectId}/edit`}
                     className="p-2 text-indigo-600 hover:text-indigo-850 hover:bg-indigo-50 rounded-lg border border-indigo-200 transition-colors shadow-sm flex items-center justify-center gap-1 text-sm font-semibold"
-                    title="プロジェクトを編集"
+                    title="イベントを編集"
                   >
                     <Edit2 className="h-4 w-4" />
                     <span>編集</span>
@@ -267,7 +267,7 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
             )}
           </div>
 
-          {/* プロジェクト共有設定 (オーナーのみ) */}
+          {/* イベント共有設定 (crew登録: 主催者のみ) */}
           {isOwner && (
             <ProjectShareSection
               projectId={projectId}

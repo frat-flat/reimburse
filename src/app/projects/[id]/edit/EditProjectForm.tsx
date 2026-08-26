@@ -25,7 +25,7 @@ export default function EditProjectForm({ project }: EditProjectFormProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setErrorMsg('プロジェクト名は必須です。');
+      setErrorMsg('イベント名は必須です。');
       return;
     }
 
@@ -48,7 +48,7 @@ export default function EditProjectForm({ project }: EditProjectFormProps) {
   return (
     <div className="max-w-xl mx-auto bg-white border border-gray-200 rounded-xl p-5 md:p-6 shadow-sm space-y-6">
       <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-        <h2 className="text-xl font-bold text-gray-900">プロジェクトを編集</h2>
+        <h2 className="text-xl font-bold text-gray-900">イベントを編集</h2>
         <Link
           href={`/projects/${project.id}`}
           className="inline-flex items-center text-xs text-gray-500 hover:text-indigo-600 transition font-medium"
@@ -60,16 +60,16 @@ export default function EditProjectForm({ project }: EditProjectFormProps) {
 
       {errorMsg && (
         <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg text-sm flex items-start gap-2">
-          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="h-5 w-5 text-red-650 flex-shrink-0 mt-0.5" />
           <p className="font-medium">{errorMsg}</p>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* プロジェクト名 */}
+        {/* イベント名 */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1">
-            プロジェクト名 <span className="text-red-500 text-xs">*</span>
+            イベント名 <span className="text-red-500 text-xs">*</span>
           </label>
           <input
             type="text"
@@ -88,7 +88,7 @@ export default function EditProjectForm({ project }: EditProjectFormProps) {
           </label>
           <textarea
             rows={4}
-            placeholder="プロジェクトの目的やメモ"
+            placeholder="イベントの目的やメモ"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none"

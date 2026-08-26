@@ -61,7 +61,7 @@ export default function CreateProjectForm({ masterMembers }: CreateProjectFormPr
     <div className="bg-white border border-gray-200 rounded-xl p-5 md:p-6 shadow-sm space-y-4">
       <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
         <FolderPlus className="h-5 w-5 text-indigo-600" />
-        <h2 className="text-lg font-bold text-gray-900">新しいプロジェクト</h2>
+        <h2 className="text-lg font-bold text-gray-900">新しいイベント</h2>
       </div>
 
       {errorMsg && (
@@ -69,10 +69,10 @@ export default function CreateProjectForm({ masterMembers }: CreateProjectFormPr
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* プロジェクト名 */}
+        {/* イベント名 */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1">
-            プロジェクト名 <span className="text-red-500 text-xs">*</span>
+            イベント名 <span className="text-red-500 text-xs">*</span>
           </label>
           <input
             type="text"
@@ -92,7 +92,7 @@ export default function CreateProjectForm({ masterMembers }: CreateProjectFormPr
           </label>
           <textarea
             rows={3}
-            placeholder="プロジェクトの目的やメモ"
+            placeholder="イベントの目的やメモ"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             disabled={isPending}
@@ -129,7 +129,7 @@ export default function CreateProjectForm({ masterMembers }: CreateProjectFormPr
           className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer disabled:cursor-not-allowed"
         >
           {isPending && <Loader2 className="h-4 w-4 animate-spin text-white" />}
-          <span>{isPending ? '作成中...' : 'プロジェクトを作成'}</span>
+          <span>{isPending ? '作成中...' : 'イベントを作成'}</span>
         </button>
       </form>
     </div>

@@ -31,6 +31,12 @@ interface ExpenseFormProps {
       memberId: string;
       shareAmount: number;
     }[];
+    attachments?: {
+      id: string;
+      fileName: string;
+      fileType: string;
+      fileData: string;
+    }[];
   };
 }
 
@@ -53,6 +59,40 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
   const [splitType, setSplitType] = useState<'equal' | 'percentage' | 'fixed' | 'ratio' | 'fixed_equal'>(
     expense?.splitType || 'equal'
   );
+  const [attachments, setAttachments] = useState<{ id?: string; fileName: string; fileType: string; fileData: string }[]>(
+    expense?.attachments || []
+  );
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newAttachments = [...attachments];
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      await new Promise<void>((resolve) => {
+        reader.onload = () => {
+          const result = reader.result as string;
+          newAttachments.push({
+            fileName: file.name,
+            fileType: file.type || 'application/octet-stream',
+            fileData: result,
+          });
+          resolve();
+        };
+      });
+    }
+
+    setAttachments(newAttachments);
+    e.target.value = ''; // Reset file input
+  };
+
+  const handleRemoveAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
 
   // 比率の入力値
   const [ratioValues, setRatioValues] = useState<Record<string, string>>(() => {
@@ -340,6 +380,11 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
       payerMemberId,
       expenseDate,
       shares: payloadShares,
+      attachments: attachments.map(att => ({
+        fileName: att.fileName,
+        fileType: att.fileType,
+        fileData: att.fileData,
+      })),
     };
 
     setErrorMsg(null);
@@ -671,6 +716,68 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
             </div>
           </div>
         )}
+
+        {/* 6.5 添付ファイル (領収書・請求書など) */}
+        <div className="border-t border-gray-100 pt-4 space-y-2">
+          <label className="block text-sm font-semibold text-gray-700">
+            領収書・請求書・明細の添付
+          </label>
+          <p className="text-[10px] text-gray-400">
+            ※ PDF, PNG, JPEG, HEIC形式のファイルをアップロード可能です (複数可)
+          </p>
+
+          <div className="flex items-center justify-center w-full">
+            <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors">
+              <div className="flex flex-col items-center justify-center pt-3 pb-3">
+                <p className="text-xs text-gray-500 font-medium px-4 text-center">
+                  クリックしてファイルを選択、またはドラッグ＆ドロップ
+                </p>
+              </div>
+              <input
+                type="file"
+                multiple
+                accept="image/*,application/pdf"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </label>
+          </div>
+
+          {attachments.length > 0 && (
+            <div className="mt-3 space-y-2">
+              <span className="text-xs font-bold text-gray-500">添付ファイル一覧 ({attachments.length}件):</span>
+              <div className="grid grid-cols-1 gap-2">
+                {attachments.map((att, index) => {
+                  return (
+                    <div key={index} className="flex items-center justify-between p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                      <div className="flex items-center gap-2 truncate">
+                        <span className="font-semibold text-gray-700 truncate max-w-[200px]" title={att.fileName}>
+                          {att.fileName}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={att.fileData}
+                          download={att.fileName}
+                          className="text-indigo-650 hover:text-indigo-800 font-bold hover:underline"
+                        >
+                          ダウンロード
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveAttachment(index)}
+                          className="text-red-500 hover:text-red-700 font-bold ml-2"
+                        >
+                          削除
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* バリデーションエラー表示 */}
         {validationError && (

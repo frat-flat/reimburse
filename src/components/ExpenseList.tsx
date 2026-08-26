@@ -25,6 +25,12 @@ interface ExpenseItem {
       name: string;
     };
   }[];
+  attachments?: {
+    id: string;
+    fileName: string;
+    fileType: string;
+    fileData: string;
+  }[];
 }
 
 interface ExpenseListProps {
@@ -191,6 +197,25 @@ export default function ExpenseList({ initialExpenses, projectId, projectStatus 
                   <div className="text-xs text-gray-600 bg-gray-50 p-2.5 rounded-lg border border-gray-100 flex items-start gap-1">
                     <MessageSquare className="h-3 w-3 text-gray-400 mt-0.5 flex-shrink-0" />
                     <p>{expense.memo}</p>
+                  </div>
+                )}
+
+                {expense.attachments && expense.attachments.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {expense.attachments.map((att) => (
+                      <a
+                        key={att.id}
+                        href={att.fileData}
+                        download={att.fileName}
+                        className="inline-flex items-center gap-1.5 text-[10px] text-indigo-650 bg-indigo-50/50 hover:bg-indigo-100/80 border border-indigo-100 hover:border-indigo-300 px-2.5 py-1 rounded-md transition font-bold"
+                        title={att.fileName}
+                      >
+                        <svg className="w-3.5 h-3.5 text-indigo-550 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                        </svg>
+                        <span className="truncate max-w-[150px]">{att.fileName}</span>
+                      </a>
+                    ))}
                   </div>
                 )}
               </div>

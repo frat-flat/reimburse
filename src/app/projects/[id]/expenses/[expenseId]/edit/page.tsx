@@ -41,6 +41,7 @@ export default async function EditExpensePage({ params }: EditExpensePageProps) 
     include: {
       payments: true,
       shares: true,
+      attachments: true,
     },
   });
 
@@ -77,6 +78,12 @@ export default async function EditExpensePage({ params }: EditExpensePageProps) 
     sharesData: expense.shares.map((s) => ({
       memberId: s.memberId,
       shareAmount: s.shareAmount,
+    })),
+    attachments: expense.attachments.map((att) => ({
+      id: att.id,
+      fileName: att.fileName,
+      fileType: att.fileType,
+      fileData: att.fileData,
     })),
   };
 

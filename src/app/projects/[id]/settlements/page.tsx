@@ -205,7 +205,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                     <div className="flex items-center gap-3">
                       <div className="flex flex-col items-center">
                         <span className="text-xs font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded-full mb-1">
-                          支払る
+                          支払う
                         </span>
                         <strong className="text-base font-extrabold text-gray-900">{s.fromUserName}</strong>
                       </div>

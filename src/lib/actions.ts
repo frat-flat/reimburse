@@ -202,6 +202,11 @@ export async function actionCreateExpense(
       ratio?: number;
       isRemainderParticipant?: boolean;
     }[];
+    attachments?: {
+      fileName: string;
+      fileType: string;
+      fileData: string;
+    }[];
   }
 ) {
   const currentUser = await getCurrentUser();
@@ -213,7 +218,7 @@ export async function actionCreateExpense(
     return { error: '精算が確定または完了しているため、支出を追加できません。' };
   }
 
-  const { title, amount, splitType, payerMemberId, expenseDate, shares: inputShares } = data;
+  const { title, amount, splitType, payerMemberId, expenseDate, shares: inputShares, attachments } = data;
 
   if (!title || amount <= 0) {
     return { error: '項目名および正しい金額を入力してください。' };
@@ -317,6 +322,15 @@ export async function actionCreateExpense(
             }),
           },
         },
+        attachments: {
+          createMany: {
+            data: attachments?.map(att => ({
+              fileName: att.fileName,
+              fileType: att.fileType,
+              fileData: att.fileData,
+            })) || [],
+          },
+        },
       },
     });
   } catch (e) {
@@ -342,6 +356,11 @@ export async function actionUpdateExpense(
       ratio?: number;
       isRemainderParticipant?: boolean;
     }[];
+    attachments?: {
+      fileName: string;
+      fileType: string;
+      fileData: string;
+    }[];
   }
 ) {
   const currentUser = await getCurrentUser();
@@ -357,7 +376,7 @@ export async function actionUpdateExpense(
     return { error: '精算が確定または完了しているため、支出を編集できません。' };
   }
 
-  const { title, amount, splitType, payerMemberId, expenseDate, shares: inputShares } = data;
+  const { title, amount, splitType, payerMemberId, expenseDate, shares: inputShares, attachments } = data;
 
   if (!title || amount <= 0) {
     return { error: '項目名および正しい金額を入力してください。' };
@@ -459,6 +478,16 @@ export async function actionUpdateExpense(
                   : (inputShare?.ratio ?? null),
               };
             }),
+          },
+        },
+        attachments: {
+          deleteMany: {},
+          createMany: {
+            data: attachments?.map(att => ({
+              fileName: att.fileName,
+              fileType: att.fileType,
+              fileData: att.fileData,
+            })) || [],
           },
         },
       },

@@ -30,6 +30,7 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
         include: {
           payments: { include: { member: true } },
           shares: { include: { member: true } },
+          attachments: true,
         },
         orderBy: {
           expenseDate: 'desc',

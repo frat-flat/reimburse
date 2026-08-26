@@ -96,7 +96,7 @@ export default async function FriendsPage() {
             登録ユーザー間で友達になることで、作成したプロジェクトの共有が可能になります。
           </p>
         </div>
-        <DbMigrateButton />
+        {dbError && <DbMigrateButton />}
       </div>
 
       {dbError && (

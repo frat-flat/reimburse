@@ -21,18 +21,23 @@ export default async function DashboardPage() {
   });
 
   // 友達から共有されたプロジェクト一覧を取得
-  const sharedSharesRaw = await prisma.projectShare.findMany({
-    where: { userId: currentUser.id },
-    include: {
-      project: {
-        include: {
-          members: true,
-          expenses: true,
-          creator: true,
+  let sharedSharesRaw: any[] = [];
+  try {
+    sharedSharesRaw = await prisma.projectShare.findMany({
+      where: { userId: currentUser.id },
+      include: {
+        project: {
+          include: {
+            members: true,
+            expenses: true,
+            creator: true,
+          },
         },
       },
-    },
-  });
+    });
+  } catch (err) {
+    console.error('Failed to fetch projectShares. Table might not exist yet:', err);
+  }
 
   // ログインユーザーの共通マスタメンバーを取得
   const masterMembers = await prisma.masterMember.findMany({
@@ -59,14 +64,14 @@ export default async function DashboardPage() {
   const sharedProjects = sharedSharesRaw
     .map((share) => {
       const proj = share.project;
-      const totalExpense = proj.expenses.reduce((sum, e) => sum + e.amount, 0);
+      const totalExpense = proj.expenses.reduce((sum: number, e: { amount: number }) => sum + e.amount, 0);
       return {
         id: proj.id,
         name: proj.name,
         description: proj.description,
         status: proj.status,
         memberCount: proj.members.length,
-        membersText: proj.members.map((mem) => mem.name).join(' / '),
+        membersText: proj.members.map((mem: { name: string }) => mem.name).join(' / '),
         totalExpense,
         createdAt: proj.createdAt,
         role: share.role as 'viewer' | 'editor',

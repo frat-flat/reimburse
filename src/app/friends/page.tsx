@@ -7,7 +7,7 @@ import {
   actionRejectFriendRequest,
   actionRunDDL
 } from '@/lib/actions';
-import { Users, UserPlus, Check, X, Mail, Clock, Database } from 'lucide-react';
+import { Users, UserPlus, Check, X, Mail, Clock, Database, AlertCircle } from 'lucide-react';
 
 export default async function FriendsPage() {
   const currentUser = await getCurrentUser();
@@ -16,44 +16,54 @@ export default async function FriendsPage() {
   }
 
   // 1. 友達一覧 (status === 'accepted') を取得
-  const friendships = await prisma.friendship.findMany({
-    where: {
-      OR: [
-        { userId: currentUser.id, status: 'accepted' },
-        { friendId: currentUser.id, status: 'accepted' },
-      ],
-    },
-    include: {
-      user: true,
-      friend: true,
-    },
-  });
+  let friendships: any[] = [];
+  let incomingRequests: any[] = [];
+  let outgoingRequests: any[] = [];
+  let dbError = false;
+
+  try {
+    friendships = await prisma.friendship.findMany({
+      where: {
+        OR: [
+          { userId: currentUser.id, status: 'accepted' },
+          { friendId: currentUser.id, status: 'accepted' },
+        ],
+      },
+      include: {
+        user: true,
+        friend: true,
+      },
+    });
+
+    // 2. 届いている申請 (friendId === 自分のID, status === 'pending')
+    incomingRequests = await prisma.friendship.findMany({
+      where: {
+        friendId: currentUser.id,
+        status: 'pending',
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    // 3. 送信した申請 (userId === 自分のID, status === 'pending')
+    outgoingRequests = await prisma.friendship.findMany({
+      where: {
+        userId: currentUser.id,
+        status: 'pending',
+      },
+      include: {
+        friend: true,
+      },
+    });
+  } catch (err) {
+    console.error('Failed to fetch friendships. Tables might not exist yet:', err);
+    dbError = true;
+  }
 
   const friends = friendships.map((f) => {
     // 自分が申請した側なら相手はfriend、自分が申請された側なら相手はuser
     return f.userId === currentUser.id ? f.friend : f.user;
-  });
-
-  // 2. 届いている申請 (friendId === 自分のID, status === 'pending')
-  const incomingRequests = await prisma.friendship.findMany({
-    where: {
-      friendId: currentUser.id,
-      status: 'pending',
-    },
-    include: {
-      user: true,
-    },
-  });
-
-  // 3. 送信した申請 (userId === 自分のID, status === 'pending')
-  const outgoingRequests = await prisma.friendship.findMany({
-    where: {
-      userId: currentUser.id,
-      status: 'pending',
-    },
-    include: {
-      friend: true,
-    },
   });
 
   // 友達追加アクション
@@ -103,6 +113,19 @@ export default async function FriendsPage() {
           </button>
         </form>
       </div>
+
+      {dbError && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 shadow-sm text-sm text-amber-800 space-y-2">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+            <h3 className="font-bold">データベースのセットアップが必要です</h3>
+          </div>
+          <p className="leading-relaxed text-xs">
+            新機能（友達機能・プロジェクト共有・重複支出警告）用のテーブルが本番データベースにまだ作成されていません。<br />
+            右上の「<strong>データベース接続・テーブル更新</strong>」ボタンを押して、テーブルの自動作成を実行してください。
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* 左カラム：友達追加フォーム & 届いている・送信した申請 */}

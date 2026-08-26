@@ -37,11 +37,6 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
           expenseDate: 'desc',
         },
       },
-      projectShares: {
-        include: {
-          user: true,
-        },
-      },
     },
   });
 
@@ -49,16 +44,35 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
     notFound();
   }
 
+  // プロジェクト共有リストを別途 try/catch で取得
+  let projectShares: any[] = [];
+  try {
+    projectShares = await prisma.projectShare.findMany({
+      where: { projectId },
+      include: { user: true },
+    });
+  } catch (err) {
+    console.error('Failed to fetch project shares. Table might not exist yet:', err);
+  }
+
   // アクセス権限チェック (作成者本人、または共有された友達)
   const isOwner = project.createdBy === currentUser.id;
-  const projectShare = await prisma.projectShare.findUnique({
-    where: {
-      projectId_userId: {
-        projectId,
-        userId: currentUser.id,
-      },
-    },
-  });
+  let projectShare: any = null;
+
+  if (!isOwner) {
+    try {
+      projectShare = await prisma.projectShare.findUnique({
+        where: {
+          projectId_userId: {
+            projectId,
+            userId: currentUser.id,
+          },
+        },
+      });
+    } catch (err) {
+      console.error('Failed to check individual project share:', err);
+    }
+  }
 
   if (!isOwner && !projectShare) {
     redirect('/dashboard');
@@ -259,7 +273,7 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
               projectId={projectId}
               friends={friends}
               members={project.members}
-              projectShares={project.projectShares}
+              projectShares={projectShares}
             />
           )}
         </div>

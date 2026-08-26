@@ -43,6 +43,7 @@ type SortKey = 'expenseDate-desc' | 'expenseDate-asc' | 'createdAt-desc' | 'crea
 
 export default function ExpenseList({ initialExpenses, projectId, projectStatus }: ExpenseListProps) {
   const [sortKey, setSortKey] = useState<SortKey>('expenseDate-desc');
+  const [hoveredAttId, setHoveredAttId] = useState<string | null>(null);
 
   // ソート処理
   const getSortedExpenses = () => {
@@ -202,20 +203,59 @@ export default function ExpenseList({ initialExpenses, projectId, projectStatus 
 
                 {expense.attachments && expense.attachments.length > 0 && (
                   <div className="flex flex-wrap gap-2 pt-1">
-                    {expense.attachments.map((att) => (
-                      <a
-                        key={att.id}
-                        href={att.fileData}
-                        download={att.fileName}
-                        className="inline-flex items-center gap-1.5 text-[10px] text-indigo-650 bg-indigo-50/50 hover:bg-indigo-100/80 border border-indigo-100 hover:border-indigo-300 px-2.5 py-1 rounded-md transition font-bold"
-                        title={att.fileName}
-                      >
-                        <svg className="w-3.5 h-3.5 text-indigo-550 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                        </svg>
-                        <span className="truncate max-w-[150px]">{att.fileName}</span>
-                      </a>
-                    ))}
+                    {expense.attachments.map((att) => {
+                      const isPdf = att.fileType.includes('pdf') || att.fileName.toLowerCase().endsWith('.pdf');
+                      const isHeic = att.fileType.includes('heic') || att.fileName.toLowerCase().endsWith('.heic');
+                      const isImage = att.fileType.includes('image') && !isHeic;
+
+                      return (
+                        <div 
+                          key={att.id}
+                          className="relative inline-block"
+                          onMouseEnter={() => setHoveredAttId(att.id)}
+                          onMouseLeave={() => setHoveredAttId(null)}
+                        >
+                          <a
+                            href={att.fileData}
+                            download={att.fileName}
+                            className="inline-flex items-center gap-1.5 text-[10px] text-indigo-650 bg-indigo-50/50 hover:bg-indigo-100/80 border border-indigo-100 hover:border-indigo-300 px-2.5 py-1 rounded-md transition font-bold"
+                            title={att.fileName}
+                          >
+                            <svg className="w-3.5 h-3.5 text-indigo-550 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                            <span className="truncate max-w-[150px]">{att.fileName}</span>
+                          </a>
+
+                          {/* ホバープレビューポップオーバー */}
+                          {hoveredAttId === att.id && (
+                            <div className="absolute bottom-full mb-2 left-0 z-50 bg-white border border-gray-200 rounded-lg shadow-xl p-2 max-w-[320px] pointer-events-none">
+                              {isImage ? (
+                                <img src={att.fileData} alt={att.fileName} className="max-w-[280px] max-h-[200px] object-contain rounded" />
+                              ) : isPdf ? (
+                                <div className="w-[280px] h-[200px] flex flex-col items-center justify-center bg-gray-50 rounded border border-gray-150 p-2 text-center">
+                                  <span className="text-sm font-bold text-red-650 bg-red-50 border border-red-150 px-2 py-0.5 rounded-full mb-2">PDF</span>
+                                  <p className="text-[10px] text-gray-500 font-semibold truncate w-full">{att.fileName}</p>
+                                  <iframe src={att.fileData} className="w-full h-full mt-2 rounded border border-gray-200 pointer-events-none bg-white" />
+                                </div>
+                              ) : isHeic ? (
+                                <div className="w-[280px] p-3 text-center bg-gray-50 border border-gray-100 rounded flex flex-col items-center gap-1.5">
+                                  <span className="text-sm font-bold text-indigo-600 bg-indigo-50 border border-indigo-150 px-2 py-0.5 rounded-full">HEIC</span>
+                                  <p className="text-[10px] text-gray-500 font-semibold">{att.fileName}</p>
+                                  <p className="text-[9px] text-amber-600 font-bold bg-amber-50 border border-amber-100 px-2 py-1 rounded">
+                                    ※ HEIC 形式はブラウザ直接プレビュー非対応です。ダウンロードしてご覧ください。
+                                  </p>
+                                </div>
+                              ) : (
+                                <div className="w-[280px] p-3 text-center bg-gray-50 border border-gray-100 rounded">
+                                  <p className="text-[10px] text-gray-500 font-semibold truncate">{att.fileName}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

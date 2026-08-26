@@ -62,6 +62,7 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
   const [attachments, setAttachments] = useState<{ id?: string; fileName: string; fileType: string; fileData: string }[]>(
     expense?.attachments || []
   );
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -748,13 +749,50 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
               <span className="text-xs font-bold text-gray-500">添付ファイル一覧 ({attachments.length}件):</span>
               <div className="grid grid-cols-1 gap-2">
                 {attachments.map((att, index) => {
+                  const isPdf = att.fileType.includes('pdf') || att.fileName.toLowerCase().endsWith('.pdf');
+                  const isHeic = att.fileType.includes('heic') || att.fileName.toLowerCase().endsWith('.heic');
+                  const isImage = att.fileType.includes('image') && !isHeic;
+
                   return (
-                    <div key={index} className="flex items-center justify-between p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                    <div 
+                      key={index} 
+                      className="relative flex items-center justify-between p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-xs"
+                      onMouseEnter={() => setHoveredIndex(index)}
+                      onMouseLeave={() => setHoveredIndex(null)}
+                    >
                       <div className="flex items-center gap-2 truncate">
                         <span className="font-semibold text-gray-700 truncate max-w-[200px]" title={att.fileName}>
                           {att.fileName}
                         </span>
                       </div>
+
+                      {/* ホバープレビューポップオーバー */}
+                      {hoveredIndex === index && (
+                        <div className="absolute bottom-full mb-2 left-0 z-50 bg-white border border-gray-200 rounded-lg shadow-xl p-2 max-w-[320px] pointer-events-none">
+                          {isImage ? (
+                            <img src={att.fileData} alt={att.fileName} className="max-w-[280px] max-h-[200px] object-contain rounded" />
+                          ) : isPdf ? (
+                            <div className="w-[280px] h-[200px] flex flex-col items-center justify-center bg-gray-50 rounded border border-gray-150 p-2 text-center">
+                              <span className="text-sm font-bold text-red-650 bg-red-50 border border-red-150 px-2 py-0.5 rounded-full mb-2">PDF</span>
+                              <p className="text-[10px] text-gray-500 font-semibold truncate w-full">{att.fileName}</p>
+                              <iframe src={att.fileData} className="w-full h-full mt-2 rounded border border-gray-200 pointer-events-none bg-white" />
+                            </div>
+                          ) : isHeic ? (
+                            <div className="w-[280px] p-3 text-center bg-gray-50 border border-gray-100 rounded flex flex-col items-center gap-1.5">
+                              <span className="text-sm font-bold text-indigo-600 bg-indigo-50 border border-indigo-150 px-2 py-0.5 rounded-full">HEIC</span>
+                              <p className="text-[10px] text-gray-500 font-semibold">{att.fileName}</p>
+                              <p className="text-[9px] text-amber-600 font-bold bg-amber-50 border border-amber-100 px-2 py-1 rounded">
+                                ※ HEIC 形式はブラウザ直接プレビュー非対応です。ダウンロードしてご覧ください。
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="w-[280px] p-3 text-center bg-gray-50 border border-gray-100 rounded">
+                              <p className="text-[10px] text-gray-500 font-semibold truncate">{att.fileName}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       <div className="flex items-center gap-2">
                         <a
                           href={att.fileData}

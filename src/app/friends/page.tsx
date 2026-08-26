@@ -2,12 +2,12 @@ import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { 
-  actionSendFriendRequest, 
   actionAcceptFriendRequest, 
   actionRejectFriendRequest 
 } from '@/lib/actions';
 import DbMigrateButton from '@/components/DbMigrateButton';
-import { Users, UserPlus, Check, X, Mail, Clock, AlertCircle } from 'lucide-react';
+import AddMateForm from '@/components/AddMateForm';
+import { Users, Check, X, Clock, AlertCircle } from 'lucide-react';
 
 export default async function FriendsPage() {
   const currentUser = await getCurrentUser();
@@ -66,12 +66,7 @@ export default async function FriendsPage() {
     return f.userId === currentUser.id ? f.friend : f.user;
   });
 
-  // 友達追加アクション
-  const handleAddFriend = async (formData: FormData) => {
-    'use server';
-    const email = formData.get('email') as string;
-    await actionSendFriendRequest(email);
-  };
+
 
   // 承認アクション
   const handleAccept = async (formData: FormData) => {
@@ -116,35 +111,7 @@ export default async function FriendsPage() {
         {/* 左カラム：Mate追加フォーム & 届いている・送信した申請 */}
         <div className="md:col-span-1 space-y-6">
           {/* Mate申請フォーム */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
-              <UserPlus className="h-5 w-5 text-indigo-650" />
-              <h2 className="text-base font-bold text-gray-900">Mateを追加する</h2>
-            </div>
-            <form action={handleAddFriend} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">
-                  メールアドレス
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                  <input
-                    type="email"
-                    name="email"
-                    required
-                    placeholder="example@mail.com"
-                    className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                className="w-full bg-indigo-600 hover:bg-indigo-750 text-white font-bold py-2 rounded-lg text-xs transition shadow-sm"
-              >
-                Mate申請を送る
-              </button>
-            </form>
-          </div>
+          <AddMateForm />
 
           {/* 届いている申請 */}
           <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">

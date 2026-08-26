@@ -24,7 +24,7 @@ export default async function Header() {
               Mate管理
             </Link>
             <Link href="/members" className="text-xs font-bold text-gray-600 hover:text-indigo-600 transition">
-              メンバー登録
+              ベースクルー登録
             </Link>
             <form action={actionLogout}>
               <button type="submit" className="text-xs text-red-600 hover:text-red-800 border border-red-200 hover:bg-red-50 px-2 py-1 rounded">
@@ -44,7 +44,7 @@ export default async function Header() {
               Mate管理
             </Link>
             <Link href="/members" className="text-sm font-bold text-gray-600 hover:text-indigo-600 transition">
-              メンバー登録
+              ベースクルー登録
             </Link>
           </nav>
 

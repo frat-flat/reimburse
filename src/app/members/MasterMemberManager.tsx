@@ -60,7 +60,7 @@ export default function MasterMemberManager({ initialMembers }: MasterMemberMana
   };
 
   const handleDeleteMember = async (id: string, name: string) => {
-    if (!confirm(`共通メンバー「${name}」を削除しますか？\n(すでに作成済みのイベント内のデータには影響しません)`)) return;
+    if (!confirm(`ベースクルー「${name}」を削除しますか？\n(すでに作成済みのイベント内のデータには影響しません)`)) return;
 
     setErrorMsg(null);
     startTransition(async () => {
@@ -84,12 +84,12 @@ export default function MasterMemberManager({ initialMembers }: MasterMemberMana
 
       {/* 追加フォーム */}
       <form onSubmit={handleAddMember} className="bg-white border border-gray-200 rounded-xl p-4 md:p-5 shadow-sm">
-        <h3 className="text-sm font-semibold text-gray-800 mb-3">共通メンバーを追加</h3>
+        <h3 className="text-sm font-semibold text-gray-800 mb-3">ベースクルーを追加</h3>
         <div className="flex gap-2">
           <input
             type="text"
             required
-            placeholder="例: Aさん、Bさん、山田さん"
+            placeholder="例: 山田 太郎、佐藤 花子"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -104,20 +104,20 @@ export default function MasterMemberManager({ initialMembers }: MasterMemberMana
           </button>
         </div>
         <p className="text-[11px] text-gray-400 mt-2">
-          ※ ここで登録したメンバーは、今後新しく作成するすべてのイベントに最初から自動で参加します。
+          ※ ここで登録したベースクルーは、今後新しく作成するすべてのイベントに最初から自動で追加されます。
         </p>
       </form>
 
-      {/* メンバー一覧 */}
+      {/* ベースクルー一覧 */}
       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
         <h3 className="text-base font-bold text-gray-900 pb-2 border-b border-gray-100 flex items-center gap-2">
-          <Users className="h-5 w-5 text-indigo-600" />
-          <span>共通登録メンバー ({initialMembers.length}名)</span>
+          <Users className="h-5 w-5 text-indigo-650" />
+          <span>登録ベースクルー ({initialMembers.length}名)</span>
         </h3>
 
         {initialMembers.length === 0 ? (
           <div className="text-center py-8 text-gray-400 text-sm italic">
-            共通メンバーは登録されていません。よく割り勘する友達などを追加してください。
+            ベースクルーは登録されていません。よくイベントに一緒に行くMateなどを追加してください。
           </div>
         ) : (
           <div className="divide-y divide-gray-100">

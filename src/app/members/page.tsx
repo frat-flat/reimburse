@@ -18,7 +18,7 @@ export default async function MembersPage() {
   return (
     <div className="space-y-6 max-w-xl mx-auto py-4">
       <div className="flex items-center justify-between pb-3 border-b border-gray-200">
-        <h2 className="text-xl font-bold text-gray-900">共通メンバー登録・管理</h2>
+        <h2 className="text-xl font-bold text-gray-900">ベースクルー登録・管理</h2>
       </div>
 
       <MasterMemberManager initialMembers={masterMembers} />

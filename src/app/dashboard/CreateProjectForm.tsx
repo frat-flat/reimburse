@@ -100,11 +100,11 @@ export default function CreateProjectForm({ masterMembers }: CreateProjectFormPr
           />
         </div>
 
-        {/* 共通メンバー選択 */}
+        {/* ベースクルー選択 */}
         {masterMembers.length > 0 && (
           <div className="space-y-1.5">
             <label className="block text-sm font-semibold text-gray-700">
-              参加メンバーを選択 (複数選択可)
+              追加するベースクルーを選択 (複数選択可)
             </label>
             <div className="max-h-36 overflow-y-auto border border-gray-200 p-2.5 rounded-lg bg-gray-50 text-xs space-y-1.5 shadow-inner">
               {masterMembers.map((mm) => (

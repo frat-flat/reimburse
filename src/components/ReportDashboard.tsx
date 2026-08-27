@@ -31,6 +31,7 @@ interface ReportDashboardProps {
   expenseCount: number;
   dateRange: string;
   projectDescription?: string | null;
+  userRole?: 'owner' | 'editor' | 'viewer';
 }
 
 export default function ReportDashboard({
@@ -43,6 +44,7 @@ export default function ReportDashboard({
   expenseCount,
   dateRange,
   projectDescription,
+  userRole = 'owner',
 }: ReportDashboardProps) {
   const [selectedMemberName, setSelectedMemberName] = useState<string>('');
   const [showSummaryCards, setShowSummaryCards] = useState<boolean>(true);
@@ -72,6 +74,7 @@ export default function ReportDashboard({
         showMemberTable={showMemberTable}
         showExpenseTable={showExpenseTable}
         showMemberDetails={showMemberDetails}
+        userRole={userRole}
       />
 
       {/* 印刷用の見出しヘッダー (画面上は非表示、印刷時のみ表示) */}

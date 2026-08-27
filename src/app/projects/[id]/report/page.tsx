@@ -30,9 +30,25 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
     },
   });
 
-  if (!project || project.createdBy !== currentUser.id) {
+  if (!project) {
     notFound();
   }
+
+  // 共有状況を取得
+  const projectShares = await prisma.projectShare.findMany({
+    where: { projectId },
+  });
+
+  const isOwner = project.createdBy === currentUser.id;
+  const userShare = projectShares.find((s) => s.userId === currentUser.id);
+
+  // 主催者でもなく、共有もされていない場合はアクセス不可
+  if (!isOwner && !userShare) {
+    notFound();
+  }
+
+  // 閲覧権限ロール
+  const userRole = isOwner ? 'owner' : (userShare?.role as 'editor' | 'viewer' | undefined) || 'viewer';
 
   // 1. 各メンバーの支払・負担集計および個別明細の作成
   const memberSummaries = project.members.map((m) => {
@@ -142,6 +158,7 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
       expenseCount={expenseCount}
       dateRange={dateRange}
       projectDescription={project.description}
+      userRole={userRole}
     />
   );
 }

@@ -4,12 +4,13 @@ import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { calculateSettlements } from '@/lib/settlement';
 import ReceiptModal from '@/components/ReceiptModal';
+import BankInfoModal from '@/components/BankInfoModal';
 import {
   actionConfirmSettlements,
   actionUnlockSettlements,
   actionToggleSettlementPaid,
 } from '@/lib/actions';
-import { ArrowLeft, Landmark, AlertTriangle, ArrowRight, Sparkles, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Landmark, AlertTriangle, ArrowRight, Sparkles, RefreshCw, Smartphone } from 'lucide-react';
 
 interface SettlementsPageProps {
   params: Promise<{ id: string }>;
@@ -41,7 +42,11 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
       settlements: {
         include: {
           payerMember: true,
-          receiverMember: true,
+          receiverMember: {
+            include: {
+              user: true,
+            },
+          },
         },
       },
       projectShares: true,
@@ -229,15 +234,18 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
               </div>
             ) : (
               <div className="space-y-3">
-                {settlementsList.map((s, idx) => (
-                  <div
-                    key={s.id || idx}
-                    className={`flex items-center justify-between border rounded-xl p-4 transition-all ${
-                      s.status === 'paid'
-                        ? 'bg-gray-50 border-gray-200 opacity-60'
-                        : 'bg-white border-indigo-100 shadow-sm'
-                    }`}
-                  >
+                {settlementsList.map((s, idx) => {
+                  const recMember = project.members.find((m) => m.id === s.toUserId);
+                  const recUser = recMember?.user;
+                  return (
+                    <div
+                      key={s.id || idx}
+                      className={`flex items-center justify-between border rounded-xl p-4 transition-all ${
+                        s.status === 'paid'
+                          ? 'bg-gray-50 border-gray-200 opacity-60'
+                          : 'bg-white border-indigo-100 shadow-sm'
+                      }`}
+                    >
                     <div className="flex items-center gap-3">
                       <div className="flex flex-col items-center">
                         <span className="text-xs font-bold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded-full mb-1">
@@ -272,18 +280,45 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                               amount={s.amount}
                               projectName={project.name}
                               dateString={dateString}
-                              issuerInfo={(() => {
-                                const recMember = project.members.find((m) => m.id === s.toUserId);
-                                const recUser = recMember?.user;
-                                return {
-                                  name: recUser?.receiptIssuerName || recUser?.name || s.toUserName,
-                                  zip: recUser?.receiptIssuerZip || '',
-                                  address: recUser?.receiptIssuerAddress || '',
-                                  tel: recUser?.receiptIssuerTel || '',
-                                  regNo: recUser?.receiptIssuerRegNo || '',
-                                };
-                              })()}
+                              issuerInfo={{
+                                name: recUser?.receiptIssuerName || recUser?.name || s.toUserName,
+                                zip: recUser?.receiptIssuerZip || '',
+                                address: recUser?.receiptIssuerAddress || '',
+                                tel: recUser?.receiptIssuerTel || '',
+                                regNo: recUser?.receiptIssuerRegNo || '',
+                              }}
                             />
+                          )}
+
+                          {/* 送金元（支払う側）の時の送金アクションショートカット（または主催者のデモ用） */}
+                          {(isOwner || (linkedMember && s.fromUserId === linkedMember.id)) && (
+                            <div className="flex items-center gap-1.5 mr-1">
+                              {/* PayPayで送金 */}
+                              {recUser?.paypayUrl && (
+                                <a
+                                  href={recUser.paypayUrl.startsWith('http') ? recUser.paypayUrl : `https://paypay.me/${recUser.paypayUrl}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-[10px] bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-extrabold py-1 px-2.5 rounded-lg transition inline-flex items-center gap-1 shadow-sm cursor-pointer"
+                                >
+                                  <Smartphone className="h-3 w-3 text-red-500" />
+                                  <span>PayPayで送金</span>
+                                </a>
+                              )}
+
+                              {/* 銀行振込先口座情報 */}
+                              {recUser?.bankName && recUser?.accountNumber && recUser?.accountHolder && (
+                                <BankInfoModal
+                                  bankName={recUser.bankName}
+                                  bankCode={recUser.bankCode}
+                                  branchName={recUser.branchName || ''}
+                                  branchCode={recUser.branchCode}
+                                  accountType={recUser.accountType || '普通'}
+                                  accountNumber={recUser.accountNumber}
+                                  accountHolder={recUser.accountHolder}
+                                />
+                              )}
+                            </div>
                           )}
 
                           {isOwner ? (
@@ -318,7 +353,8 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                       )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

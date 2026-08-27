@@ -1369,6 +1369,20 @@ export async function actionUpdateProfile(formData: FormData) {
   const receiptIssuerTel = formData.get('receiptIssuerTel') as string;
   const receiptIssuerRegNo = formData.get('receiptIssuerRegNo') as string;
 
+  const bankCode = formData.get('bankCode') as string;
+  const bankName = formData.get('bankName') as string;
+  const branchCode = formData.get('branchCode') as string;
+  const branchName = formData.get('branchName') as string;
+  const accountType = formData.get('accountType') as string;
+  const accountNumber = formData.get('accountNumber') as string;
+  const accountHolder = formData.get('accountHolder') as string;
+  const paypayUrl = formData.get('paypayUrl') as string;
+
+  // 口座名義カナのサーバー側バリデーション (カタカナ、長音、スペース類のみ許容)
+  if (accountHolder && !/^[ァ-ヶーｱ-ﾝﾞﾟ\s　]+$/.test(accountHolder)) {
+    return { error: '口座名義は必ずカナ表記（カタカナ）で入力してください。' };
+  }
+
   try {
     await prisma.user.update({
       where: { id: currentUser.id },
@@ -1378,6 +1392,14 @@ export async function actionUpdateProfile(formData: FormData) {
         receiptIssuerAddress: receiptIssuerAddress ? receiptIssuerAddress.trim() : null,
         receiptIssuerTel: receiptIssuerTel ? receiptIssuerTel.trim() : null,
         receiptIssuerRegNo: receiptIssuerRegNo ? receiptIssuerRegNo.trim() : null,
+        bankCode: bankCode ? bankCode.trim() : null,
+        bankName: bankName ? bankName.trim() : null,
+        branchCode: branchCode ? branchCode.trim() : null,
+        branchName: branchName ? branchName.trim() : null,
+        accountType: accountType ? accountType.trim() : null,
+        accountNumber: accountNumber ? accountNumber.trim() : null,
+        accountHolder: accountHolder ? accountHolder.trim() : null,
+        paypayUrl: paypayUrl ? paypayUrl.trim() : null,
       },
     });
 

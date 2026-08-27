@@ -26,6 +26,18 @@ model User {
   receiptIssuerTel     String?
   receiptIssuerRegNo   String?
 
+  // 振込先・口座情報
+  bankCode             String?
+  bankName             String?
+  branchCode           String?
+  branchName           String?
+  accountType          String?
+  accountNumber        String?
+  accountHolder        String? // カナ表記
+
+  // 決済リンク情報
+  paypayUrl            String?
+
   createdProjects Project[]      @relation("CreatedProjects")
   masterMembers   MasterMember[]
 

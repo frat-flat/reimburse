@@ -29,7 +29,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-extrabold tracking-tight">クルー（crew）権限別アクションガイド</h1>
-                    <p class="text-xs text-indigo-200 mt-1">共有クルーの4つの権限の違いおよびマイページ登録（口座・PayPay送金連携）の違いをシミュレーションします</p>
+                    <p class="text-xs text-indigo-200 mt-1">共有クルーの4つの権限の違いおよびマイページ登録（口座・PayPay送金連携、開示制御）の違いをシミュレーションします</p>
                 </div>
             </div>
         </div>
@@ -98,6 +98,27 @@
                         </div>
                         <i data-lucide="chevron-right" class="h-3.5 w-3.5 invisible flex-shrink-0"></i>
                     </button>
+                </div>
+            </div>
+
+            <!-- 相手（受取人）の開示設定 (デモ用) -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                <h2 class="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
+                    <i data-lucide="eye-off" class="text-indigo-650 h-5 w-5"></i>
+                    <span>相手の支払い開示設定（デモ用）</span>
+                </h2>
+                <p class="text-xs text-slate-500 mb-4 leading-relaxed font-semibold">
+                    受取人「よしだ」がマイページで設定している「開示する・しない」のトグルをシミュレートできます。
+                </p>
+                <div class="space-y-3 text-xs">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="demo-toggle-paypay" checked onchange="toggleDemoVisibility()" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer">
+                        <label for="demo-toggle-paypay" class="font-bold text-slate-700 select-none cursor-pointer">PayPay送金リンクを開示する</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="demo-toggle-bank" checked onchange="toggleDemoVisibility()" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer">
+                        <label for="demo-toggle-bank" class="font-bold text-slate-700 select-none cursor-pointer">銀行口座情報を開示する</label>
+                    </div>
                 </div>
             </div>
 
@@ -297,7 +318,7 @@
                                     <div class="flex items-center gap-2.5">
                                         <strong class="text-indigo-950 text-sm font-extrabold">9,250円</strong>
                                         
-                                        <!-- 主主催者のみが支払済にトグルできるボタン -->
+                                        <!-- 主催者のみが支払済にトグルできるボタン -->
                                         <button onclick="toggleMockPaid()" id="mock-paid-toggle" class="bg-white hover:bg-slate-50 border border-slate-350 text-slate-700 font-extrabold py-1 px-2.5 rounded-lg text-[9px] shadow transition hidden">
                                             未支払
                                         </button>
@@ -317,8 +338,8 @@
                                 <!-- 精算ルート2 (たろう ➔ よしだ / 自分が支払う・送金アクション対応のデモ用ルート) -->
                                 <div id="route-row-2" class="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-3 rounded-lg border border-slate-200 gap-2">
                                     <div class="flex items-center gap-2">
-                                        <span class="text-[9px] bg-red-100 text-red-750 font-bold px-1.5 py-0.5 rounded">支払う</span>
-                                        <strong class="text-slate-800 font-bold">たろう (あなた)</strong>
+                                        <span class="text-[9px] bg-red-100 text-red-755 font-bold px-1.5 py-0.5 rounded">支払う</span>
+                                        <strong class="text-slate-800 font-bold">たろう (自然に支払う側)</strong>
                                         <i data-lucide="arrow-right" class="h-3 w-3 text-slate-400"></i>
                                         <span class="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">受け取る</span>
                                         <strong class="text-slate-800">よしだ</strong>
@@ -327,12 +348,12 @@
                                         <strong class="text-slate-900 text-sm font-extrabold">12,000円</strong>
                                         
                                         <!-- 送金アクションショートカット -->
-                                        <div class="flex items-center gap-1.5">
-                                            <button onclick="demoPayPaySend()" class="text-[8px] bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold py-1 px-1.5 rounded transition flex items-center gap-0.5 cursor-pointer">
+                                        <div class="flex items-center gap-1.5 animate-fade">
+                                            <button id="demo-route-paypay-btn" onclick="demoPayPaySend()" class="text-[8px] bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold py-1 px-1.5 rounded transition flex items-center gap-0.5 cursor-pointer">
                                                 <i data-lucide="smartphone" class="h-2.5 w-2.5 text-red-500"></i>
                                                 <span>PayPay送金</span>
                                             </button>
-                                            <button onclick="openDemoBankModal()" class="text-[8px] bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-700 font-bold py-1 px-1.5 rounded transition flex items-center gap-0.5 cursor-pointer">
+                                            <button id="demo-route-bank-btn" onclick="openDemoBankModal()" class="text-[8px] bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-700 font-bold py-1 px-1.5 rounded transition flex items-center gap-0.5 cursor-pointer">
                                                 <i data-lucide="landmark" class="h-2.5 w-2.5 text-slate-500"></i>
                                                 <span>口座表示</span>
                                             </button>
@@ -792,6 +813,27 @@
 
         function closeDemoBankModal() {
             document.getElementById('demo-bank-modal').classList.add('hidden');
+        }
+
+        // 開示トグルのデモ用連動処理
+        function toggleDemoVisibility() {
+            const paypayCheck = document.getElementById('demo-toggle-paypay').checked;
+            const bankCheck = document.getElementById('demo-toggle-bank').checked;
+
+            const paypayBtn = document.getElementById('demo-route-paypay-btn');
+            const bankBtn = document.getElementById('demo-route-bank-btn');
+
+            if (paypayCheck) {
+                paypayBtn.classList.remove('hidden');
+            } else {
+                paypayBtn.classList.add('hidden');
+            }
+
+            if (bankCheck) {
+                bankBtn.classList.remove('hidden');
+            } else {
+                bankBtn.classList.add('hidden');
+            }
         }
 
         function printReceiptMock() {

@@ -87,6 +87,8 @@ export default async function ProfilePage({
           accountNumber: user.accountNumber,
           accountHolder: user.accountHolder,
           paypayUrl: user.paypayUrl,
+          showBankAccount: user.showBankAccount,
+          showPaypay: user.showPaypay,
         }}
         updateAction={async (formData: FormData) => {
           'use server';

@@ -37,6 +37,8 @@ model User {
 
   // 決済リンク情報
   paypayUrl            String?
+  showBankAccount      Boolean  @default(true)
+  showPaypay           Boolean  @default(true)
 
   createdProjects Project[]      @relation("CreatedProjects")
   masterMembers   MasterMember[]

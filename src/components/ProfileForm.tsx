@@ -19,6 +19,8 @@ interface ProfileFormProps {
     accountNumber: string | null;
     accountHolder: string | null;
     paypayUrl: string | null;
+    showBankAccount: boolean | null;
+    showPaypay: boolean | null;
   };
   updateAction: (formData: FormData) => Promise<{ success?: boolean; error?: string }>;
 }
@@ -38,6 +40,8 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
   const [accountNumber, setAccountNumber] = useState(initialData.accountNumber || '');
   const [accountHolder, setAccountHolder] = useState(initialData.accountHolder || '');
   const [paypayUrl, setPaypayUrl] = useState(initialData.paypayUrl || '');
+  const [showBankAccount, setShowBankAccount] = useState(initialData.showBankAccount !== false);
+  const [showPaypay, setShowPaypay] = useState(initialData.showPaypay !== false);
 
   // API解決用の状態
   const [loadingBank, setLoadingBank] = useState(false);
@@ -290,6 +294,20 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
             <p className="text-[9px] text-gray-400 mt-1 leading-normal font-semibold">
               ※ PayPayアプリ内の「送る・受け取る」＞「マイコード」＞「受け取りリンクをコピー」したURLを入力してください。
             </p>
+
+            <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-100">
+              <input
+                type="checkbox"
+                id="showPaypay"
+                name="showPaypay"
+                checked={showPaypay}
+                onChange={(e) => setShowPaypay(e.target.checked)}
+                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+              />
+              <label htmlFor="showPaypay" className="text-xs font-bold text-slate-700 select-none cursor-pointer">
+                他のクルーにPayPay送金リンクを開示する
+              </label>
+            </div>
           </div>
         </div>
 
@@ -451,6 +469,20 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
                   ※ 銀行振込時に不整合が起きないよう、必ず全角または半角カタカナで登録してください。
                 </p>
               )}
+            </div>
+
+            <div className="flex items-center gap-2 mt-4 pt-2 border-t border-slate-100">
+              <input
+                type="checkbox"
+                id="showBankAccount"
+                name="showBankAccount"
+                checked={showBankAccount}
+                onChange={(e) => setShowBankAccount(e.target.checked)}
+                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
+              />
+              <label htmlFor="showBankAccount" className="text-xs font-bold text-slate-700 select-none cursor-pointer">
+                他のクルーに銀行口座情報を開示する
+              </label>
             </div>
           </div>
         </div>

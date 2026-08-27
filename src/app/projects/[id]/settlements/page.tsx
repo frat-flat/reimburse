@@ -294,7 +294,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                           {(isOwner || (linkedMember && s.fromUserId === linkedMember.id)) && (
                             <div className="flex items-center gap-1.5 mr-1">
                               {/* PayPayで送金 */}
-                              {recUser?.paypayUrl && recUser?.showPaypay !== false && (
+                              {project.allowPaypay !== false && recUser?.paypayUrl && recUser?.showPaypay !== false && (
                                 <a
                                   href={recUser.paypayUrl.startsWith('http') ? recUser.paypayUrl : `https://paypay.me/${recUser.paypayUrl}`}
                                   target="_blank"
@@ -307,7 +307,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                               )}
 
                               {/* 銀行振込先口座情報 */}
-                              {recUser?.bankName && recUser?.accountNumber && recUser?.accountHolder && recUser?.showBankAccount !== false && (
+                              {project.allowBankTransfer !== false && recUser?.bankName && recUser?.accountNumber && recUser?.accountHolder && recUser?.showBankAccount !== false && (
                                 <BankInfoModal
                                   bankName={recUser.bankName}
                                   bankCode={recUser.bankCode}

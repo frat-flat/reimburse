@@ -51,7 +51,7 @@
                 </p>
                 
                 <div class="flex flex-col gap-2.5">
-                    <!-- 主催者ボタン -->
+                    <!-- 主主催者ボタン -->
                     <button onclick="switchRole('owner')" id="btn-owner" class="flex items-center justify-between p-3 border-2 transition-all font-bold text-xs text-left bg-indigo-50 border-indigo-600 text-indigo-900 shadow-sm rounded-xl">
                         <div class="flex items-center gap-2">
                             <i data-lucide="crown" class="h-4.5 w-4.5 text-amber-500 flex-shrink-0"></i>
@@ -98,6 +98,27 @@
                         </div>
                         <i data-lucide="chevron-right" class="h-3.5 w-3.5 invisible flex-shrink-0"></i>
                     </button>
+                </div>
+            </div>
+
+            <!-- イベントの決済許可設定 (デモ用) -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                <h2 class="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
+                    <i data-lucide="settings" class="text-indigo-650 h-5 w-5"></i>
+                    <span>イベント全体の決済設定（デモ用）</span>
+                </h2>
+                <p class="text-xs text-slate-500 mb-4 leading-relaxed font-semibold">
+                    イベントの管理設定で「許可する決済方法」を切り替える設定をシミュレートできます。
+                </p>
+                <div class="space-y-3 text-xs">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="demo-project-paypay" checked onchange="toggleDemoVisibility()" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer">
+                        <label for="demo-project-paypay" class="font-bold text-slate-700 select-none cursor-pointer">PayPay支払いを許可する</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="demo-project-bank" checked onchange="toggleDemoVisibility()" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer">
+                        <label for="demo-project-bank" class="font-bold text-slate-700 select-none cursor-pointer">銀行口座振込を許可する</label>
+                    </div>
                 </div>
             </div>
 
@@ -157,7 +178,7 @@
                                 <span class="text-[10px] text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-1 rounded-lg font-bold flex items-center gap-1 cursor-pointer hover:bg-indigo-100 transition" id="action-event-edit">
                                     <i data-lucide="edit-2" class="h-3.5 w-3.5"></i> 編集
                                 </span>
-                                <span class="text-[10px] text-red-650 bg-red-50 border border-red-200 p-1.5 rounded-lg cursor-pointer hover:bg-red-100 transition" id="action-event-delete">
+                                <span class="text-[10px] text-red-655 bg-red-50 border border-red-200 p-1.5 rounded-lg cursor-pointer hover:bg-red-100 transition" id="action-event-delete">
                                     <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
                                 </span>
                             </div>
@@ -288,7 +309,7 @@
                     <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-4">
                             <div>
-                                <button onclick="hideReportView()" class="inline-flex items-center text-xs font-bold text-slate-500 hover:text-indigo-600 transition mb-1 cursor-pointer">
+                                <button onclick="hideReportView()" class="inline-flex items-center text-xs font-bold text-slate-500 hover:text-indigo-650 transition mb-1 cursor-pointer">
                                     <i data-lucide="arrow-left" class="h-3.5 w-3.5 mr-0.5"></i>
                                     イベント詳細へ戻る
                                 </button>
@@ -339,7 +360,7 @@
                                 <div id="route-row-2" class="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-3 rounded-lg border border-slate-200 gap-2">
                                     <div class="flex items-center gap-2">
                                         <span class="text-[9px] bg-red-100 text-red-755 font-bold px-1.5 py-0.5 rounded">支払う</span>
-                                        <strong class="text-slate-800 font-bold">たろう (自然に支払う側)</strong>
+                                        <strong class="text-slate-800 font-bold">たろう (あなた)</strong>
                                         <i data-lucide="arrow-right" class="h-3 w-3 text-slate-400"></i>
                                         <span class="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">受け取る</span>
                                         <strong class="text-slate-800">よしだ</strong>
@@ -468,7 +489,7 @@
                     <i data-lucide="landmark" class="h-4.5 w-4.5 text-indigo-650"></i>
                     <span>よしだ さんの振込先口座</span>
                 </div>
-                <button onclick="closeDemoBankModal()" class="text-slate-400 hover:text-slate-650">
+                <button onclick="closeDemoBankModal()" class="text-slate-400 hover:text-slate-655">
                     <i data-lucide="x" class="h-4 w-4"></i>
                 </button>
             </div>
@@ -523,7 +544,7 @@
                 description: `
                     <div class="p-3 bg-indigo-50 border border-indigo-150 rounded-xl text-indigo-900 font-semibold mb-3">
                         👑 <strong>イベントの管理者です。</strong><br>
-                        全アクションが可能。確定後は送金状況を「支払済/未支払」に切り替えることができます。
+                        全アクションが可能。確定後は送送金状況を「支払済/未支払」に切り替えることができます。
                     </div>
                     <ul class="space-y-1 text-[11px] font-bold text-slate-700">
                         <li class="flex items-start gap-1">
@@ -764,7 +785,7 @@
                 // 読取バッジテキストの同期
                 if (isPaid) {
                     staticBadge.innerText = '精算済';
-                    staticBadge.className = 'bg-gray-100 border border-gray-250 text-gray-550 font-bold py-1 px-2 rounded-lg text-[8px]';
+                    staticBadge.className = 'bg-gray-100 border border-gray-255 text-gray-550 font-bold py-1 px-2 rounded-lg text-[8px]';
                 } else {
                     staticBadge.innerText = '未精算';
                     staticBadge.className = 'bg-amber-50 border border-amber-200 text-amber-750 font-bold py-1 px-2 rounded-lg text-[8px]';
@@ -820,16 +841,19 @@
             const paypayCheck = document.getElementById('demo-toggle-paypay').checked;
             const bankCheck = document.getElementById('demo-toggle-bank').checked;
 
+            const projPaypay = document.getElementById('demo-project-paypay').checked;
+            const projBank = document.getElementById('demo-project-bank').checked;
+
             const paypayBtn = document.getElementById('demo-route-paypay-btn');
             const bankBtn = document.getElementById('demo-route-bank-btn');
 
-            if (paypayCheck) {
+            if (paypayCheck && projPaypay) {
                 paypayBtn.classList.remove('hidden');
             } else {
                 paypayBtn.classList.add('hidden');
             }
 
-            if (bankCheck) {
+            if (bankCheck && projBank) {
                 bankBtn.classList.remove('hidden');
             } else {
                 bankBtn.classList.add('hidden');

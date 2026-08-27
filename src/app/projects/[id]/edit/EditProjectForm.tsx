@@ -11,6 +11,8 @@ interface EditProjectFormProps {
     id: string;
     name: string;
     description: string | null;
+    allowBankTransfer: boolean;
+    allowPaypay: boolean;
   };
 }
 
@@ -21,6 +23,8 @@ export default function EditProjectForm({ project }: EditProjectFormProps) {
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description || '');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [allowBankTransfer, setAllowBankTransfer] = useState(project.allowBankTransfer !== false);
+  const [allowPaypay, setAllowPaypay] = useState(project.allowPaypay !== false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +36,8 @@ export default function EditProjectForm({ project }: EditProjectFormProps) {
     const formData = new FormData();
     formData.append('name', name.trim());
     formData.append('description', description.trim());
+    formData.append('allowBankTransfer', allowBankTransfer ? 'true' : 'false');
+    formData.append('allowPaypay', allowPaypay ? 'true' : 'false');
 
     setErrorMsg(null);
     startTransition(async () => {
@@ -93,6 +99,34 @@ export default function EditProjectForm({ project }: EditProjectFormProps) {
             onChange={(e) => setDescription(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none"
           />
+        </div>
+
+        <div className="space-y-2 border-t border-slate-100 pt-3">
+          <label className="block text-sm font-semibold text-gray-700">
+            精算時に許可する決済方法
+          </label>
+          <div className="flex flex-wrap gap-4 text-xs">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={allowBankTransfer}
+                onChange={(e) => setAllowBankTransfer(e.target.checked)}
+                disabled={isPending}
+                className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-60 cursor-pointer"
+              />
+              <span className="text-gray-800 font-bold">銀行口座振込を許可する</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={allowPaypay}
+                onChange={(e) => setAllowPaypay(e.target.checked)}
+                disabled={isPending}
+                className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-60 cursor-pointer"
+              />
+              <span className="text-gray-800 font-bold">PayPay支払いを許可する</span>
+            </label>
+          </div>
         </div>
 
         <button

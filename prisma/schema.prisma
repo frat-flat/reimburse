@@ -73,6 +73,8 @@ model Project {
   currency     String   @default("JPY")
   roundingUnit Int      @default(1)
   status       String   @default("active") // draft / active / settlement_confirmed / completed
+  allowBankTransfer Boolean @default(true)
+  allowPaypay       Boolean @default(true)
   createdBy    String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt

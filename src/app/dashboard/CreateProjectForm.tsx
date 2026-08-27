@@ -25,6 +25,8 @@ export default function CreateProjectForm({ masterMembers }: CreateProjectFormPr
     return initial;
   });
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [allowBankTransfer, setAllowBankTransfer] = useState(true);
+  const [allowPaypay, setAllowPaypay] = useState(true);
 
   const handleCheckboxChange = (mName: string) => {
     setSelectedNames((prev) => ({
@@ -40,6 +42,8 @@ export default function CreateProjectForm({ masterMembers }: CreateProjectFormPr
     const formData = new FormData();
     formData.append('name', name.trim());
     formData.append('description', description.trim());
+    formData.append('allowBankTransfer', allowBankTransfer ? 'true' : 'false');
+    formData.append('allowPaypay', allowPaypay ? 'true' : 'false');
     
     // チェックされたメンバー名のみをアペンド
     Object.keys(selectedNames).forEach((mName) => {
@@ -122,6 +126,34 @@ export default function CreateProjectForm({ masterMembers }: CreateProjectFormPr
             </div>
           </div>
         )}
+
+        <div className="space-y-2 border-t border-slate-100 pt-3">
+          <label className="block text-sm font-semibold text-gray-700">
+            精算時に許可する決済方法
+          </label>
+          <div className="flex flex-wrap gap-4 text-xs">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={allowBankTransfer}
+                onChange={(e) => setAllowBankTransfer(e.target.checked)}
+                disabled={isPending}
+                className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-60 cursor-pointer"
+              />
+              <span className="text-gray-800 font-bold">銀行口座振込を許可する</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={allowPaypay}
+                onChange={(e) => setAllowPaypay(e.target.checked)}
+                disabled={isPending}
+                className="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-60 cursor-pointer"
+              />
+              <span className="text-gray-800 font-bold">PayPay支払いを許可する</span>
+            </label>
+          </div>
+        </div>
 
         <button
           type="submit"

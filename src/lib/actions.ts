@@ -80,6 +80,8 @@ export async function actionCreateProject(formData: FormData) {
   const name = formData.get('name') as string;
   const description = formData.get('description') as string;
   const memberNames = formData.getAll('memberNames') as string[];
+  const allowBankTransfer = formData.get('allowBankTransfer') === 'true' || formData.get('allowBankTransfer') === 'on';
+  const allowPaypay = formData.get('allowPaypay') === 'true' || formData.get('allowPaypay') === 'on';
 
   if (!name) {
     return { error: 'プロジェクト名は必須です。' };
@@ -94,6 +96,8 @@ export async function actionCreateProject(formData: FormData) {
           name,
           description,
           status: 'active',
+          allowBankTransfer,
+          allowPaypay,
           createdBy: currentUser.id,
         },
       });
@@ -719,6 +723,8 @@ export async function actionUpdateProject(projectId: string, formData: FormData)
 
   const name = formData.get('name') as string;
   const description = formData.get('description') as string;
+  const allowBankTransfer = formData.get('allowBankTransfer') === 'true' || formData.get('allowBankTransfer') === 'on';
+  const allowPaypay = formData.get('allowPaypay') === 'true' || formData.get('allowPaypay') === 'on';
 
   if (!name) {
     return { error: 'プロジェクト名は必須です。' };
@@ -731,7 +737,12 @@ export async function actionUpdateProject(projectId: string, formData: FormData)
 
     await prisma.project.update({
       where: { id: projectId },
-      data: { name, description },
+      data: {
+        name,
+        description,
+        allowBankTransfer,
+        allowPaypay,
+      },
     });
   } catch (e) {
     console.error(e);

@@ -90,6 +90,7 @@ export default async function ProfilePage({
           showBankAccount: user.showBankAccount,
           showPaypay: user.showPaypay,
           stampImage: user.stampImage,
+          stampSize: user.stampSize,
         }}
         updateAction={async (formData: FormData) => {
           'use server';

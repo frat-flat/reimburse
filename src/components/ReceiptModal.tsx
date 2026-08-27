@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { X, Printer, Receipt } from 'lucide-react';
+import ImageCropper from './ImageCropper';
 
 interface ReceiptModalProps {
   payerName: string;
@@ -16,6 +17,7 @@ interface ReceiptModalProps {
     tel?: string | null;
     regNo?: string | null;
     stampImage?: string | null;
+    stampSize?: number | null;
   };
 }
 
@@ -29,53 +31,16 @@ export default function ReceiptModal({
 }: ReceiptModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [stampImage, setStampImage] = useState(issuerInfo.stampImage || '');
+  const [stampSize, setStampSize] = useState(issuerInfo.stampSize || 60);
+  const [cropperSrc, setCropperSrc] = useState<string | null>(null);
 
-  const handleLocalStampUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLocalStampSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        const maxDim = 300;
-        let w = img.width;
-        let h = img.height;
-        if (w > maxDim || h > maxDim) {
-          if (w > h) {
-            h = Math.round((h * maxDim) / w);
-            w = maxDim;
-          } else {
-            w = Math.round((w * maxDim) / h);
-            h = maxDim;
-          }
-        }
-
-        canvas.width = w;
-        canvas.height = h;
-        ctx.drawImage(img, 0, 0, w, h);
-
-        const imgData = ctx.getImageData(0, 0, w, h);
-        const data = imgData.data;
-
-        // 白い背景部分を透過
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          if (r > 165 && g > 165 && b > 165) {
-            data[i + 3] = 0;
-          }
-        }
-
-        ctx.putImageData(imgData, 0, 0);
-        setStampImage(canvas.toDataURL('image/png'));
-      };
-      img.src = event.target?.result as string;
+      setCropperSrc(event.target?.result as string);
     };
     reader.readAsDataURL(file);
   };
@@ -125,7 +90,7 @@ export default function ReceiptModal({
             </div>
 
             {/* 印影追加コントロール (印刷時は非表示) */}
-            <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl mb-4 text-xs space-y-2 print:hidden">
+            <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl mb-4 text-xs space-y-2 print:hidden animate-fade">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-slate-750">領収書に印影 (ハンコ) を配置する:</span>
                 {stampImage && (
@@ -137,26 +102,44 @@ export default function ReceiptModal({
                   </button>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2">
-                <label className="flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-750 font-bold py-1.5 px-3 rounded-lg cursor-pointer transition">
-                  <span>📷 カメラを起動して撮影</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handleLocalStampUpload}
-                    className="hidden"
-                  />
-                </label>
-                <label className="flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-755 font-bold py-1.5 px-3 rounded-lg cursor-pointer transition">
-                  <span>📁 ファイルから選択</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleLocalStampUpload}
-                    className="hidden"
-                  />
-                </label>
+              <div className="flex flex-wrap gap-4 items-center">
+                <div className="flex gap-2">
+                  <label className="flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-750 font-bold py-1.5 px-3 rounded-lg cursor-pointer transition">
+                    <span>📷 カメラを起動して撮影</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleLocalStampSelect}
+                      className="hidden"
+                    />
+                  </label>
+                  <label className="flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-755 font-bold py-1.5 px-3 rounded-lg cursor-pointer transition">
+                    <span>📁 ファイルから選択</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLocalStampSelect}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {/* サイズ調整スライダー */}
+                {stampImage && (
+                  <div className="flex items-center gap-2 text-xs flex-1 min-w-[150px]">
+                    <span className="font-bold text-slate-550 whitespace-nowrap text-[10px]">印影サイズ: {stampSize}px</span>
+                    <input
+                      type="range"
+                      min="40"
+                      max="120"
+                      step="5"
+                      value={stampSize}
+                      onChange={(e) => setStampSize(parseInt(e.target.value, 10))}
+                      className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-650"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -214,7 +197,13 @@ export default function ReceiptModal({
                 {/* あなた（発行元）の情報 */}
                 <div className="text-right space-y-1 border-t border-slate-200/50 pt-3 md:border-t-0 md:pt-0 relative pr-4">
                   {stampImage && (
-                    <div className="absolute right-0 bottom-1 w-16 h-16 pointer-events-none select-none opacity-85 print:opacity-100 z-10">
+                    <div 
+                      className="absolute right-0 bottom-1 pointer-events-none select-none opacity-85 print:opacity-100 z-10"
+                      style={{
+                        width: `${stampSize}px`,
+                        height: `${stampSize}px`,
+                      }}
+                    >
                       <img src={stampImage} alt="印影" className="w-full h-full object-contain" />
                     </div>
                   )}
@@ -243,6 +232,17 @@ export default function ReceiptModal({
                 閉じる
               </button>
             </div>
+
+            {cropperSrc && (
+              <ImageCropper
+                imageSrc={cropperSrc}
+                onCropComplete={(croppedBase64) => {
+                  setStampImage(croppedBase64);
+                  setCropperSrc(null);
+                }}
+                onCancel={() => setCropperSrc(null)}
+              />
+            )}
           </div>
         </div>
       )}

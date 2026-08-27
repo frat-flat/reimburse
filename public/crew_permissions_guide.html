@@ -51,7 +51,7 @@
                 </p>
                 
                 <div class="flex flex-col gap-2.5">
-                    <!-- 主催者ボタン -->
+                    <!-- 主主催者ボタン -->
                     <button onclick="switchRole('owner')" id="btn-owner" class="flex items-center justify-between p-3 border-2 transition-all font-bold text-xs text-left bg-indigo-50 border-indigo-600 text-indigo-900 shadow-sm rounded-xl">
                         <div class="flex items-center gap-2">
                             <i data-lucide="crown" class="h-4.5 w-4.5 text-amber-500 flex-shrink-0"></i>
@@ -187,19 +187,19 @@
                         <!-- 基本統計プレビュー -->
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                             <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl">
-                                <span class="text-[9px] text-slate-400 block font-bold">総支出</span>
+                                <span class="text-[9px] text-slate-450 block font-bold">総支出</span>
                                 <strong class="text-sm font-extrabold text-slate-800" id="stat-total-expense">45,000円</strong>
                             </div>
                             <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl">
-                                <span class="text-[9px] text-slate-400 block font-bold">精算状態</span>
+                                <span class="text-[9px] text-slate-450 block font-bold">精算状態</span>
                                 <strong class="text-sm font-extrabold text-amber-705" id="settlement-status">未確定 (アクティブ)</strong>
                             </div>
                             <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl">
-                                <span class="text-[9px] text-slate-400 block font-bold">あなたの役職</span>
+                                <span class="text-[9px] text-slate-450 block font-bold">あなたの役職</span>
                                 <strong class="text-sm font-extrabold text-indigo-750" id="badge-your-role">主催者</strong>
                             </div>
                             <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl">
-                                <span class="text-[9px] text-slate-400 block font-bold">対応精算メンバー</span>
+                                <span class="text-[9px] text-slate-450 block font-bold">対応精算メンバー</span>
                                 <strong class="text-sm font-extrabold text-slate-800">たろう</strong>
                             </div>
                         </div>
@@ -428,25 +428,42 @@
             </div>
 
             <!-- 模擬印影コントロール (シミュレーターデモ用) -->
-            <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl mb-4 text-xs space-y-2.5">
+            <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl mb-4 text-xs space-y-2.5 print:hidden">
                 <div class="flex items-center justify-between">
                     <span class="font-bold text-slate-750">【デモ用】領収書に印影 (ハンコ) を配置する:</span>
                     <button onclick="clearDemoStamp()" id="demo-stamp-clear-btn" class="text-[10px] text-red-655 font-bold hover:text-red-750 hidden">
                         配置を解除
                     </button>
                 </div>
-                <div class="flex flex-wrap gap-2">
-                    <label class="flex items-center justify-center gap-1 bg-white hover:bg-slate-50 border border-slate-350 text-slate-750 font-bold py-1.5 px-3 rounded-lg cursor-pointer transition">
-                        <span>📷 カメラ起動（模擬）</span>
-                        <input type="file" accept="image/*" capture="environment" onchange="handleDemoStampUpload(event)" class="hidden">
-                    </label>
-                    <label class="flex items-center justify-center gap-1 bg-white hover:bg-slate-50 border border-slate-350 text-slate-755 font-bold py-1.5 px-3 rounded-lg cursor-pointer transition">
-                        <span>📁 ファイルから選択（模擬）</span>
-                        <input type="file" accept="image/*" onchange="handleDemoStampUpload(event)" class="hidden">
-                    </label>
-                    <button onclick="loadDefaultDemoStamp()" class="bg-indigo-55 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold py-1.5 px-3 rounded-lg transition">
-                        Sample印影を配置
-                    </button>
+                <div class="flex flex-wrap gap-4 items-center">
+                    <div class="flex gap-2">
+                        <label class="flex items-center justify-center gap-1 bg-white hover:bg-slate-50 border border-slate-350 text-slate-755 font-bold py-1.5 px-3 rounded-lg cursor-pointer transition">
+                            <span>📷 カメラ起動（模擬）</span>
+                            <input type="file" accept="image/*" capture="environment" onchange="handleDemoStampSelect(event)" class="hidden">
+                        </label>
+                        <label class="flex items-center justify-center gap-1 bg-white hover:bg-slate-50 border border-slate-355 text-slate-755 font-bold py-1.5 px-3 rounded-lg cursor-pointer transition">
+                            <span>📁 ファイルから選択（模擬）</span>
+                            <input type="file" accept="image/*" onchange="handleDemoStampSelect(event)" class="hidden">
+                        </label>
+                        <button onclick="loadDefaultDemoStamp()" class="bg-indigo-55 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold py-1.5 px-3 rounded-lg transition">
+                            Sample印影を配置
+                        </button>
+                    </div>
+
+                    <!-- デモ用サイズスライダー -->
+                    <div id="demo-size-slider-block" class="flex items-center gap-2 flex-1 min-w-[150px] hidden">
+                        <span class="font-bold text-slate-550 whitespace-nowrap text-[10px]">印影サイズ: <span id="demo-size-text">60</span>px</span>
+                        <input
+                            type="range"
+                            id="demo-stamp-size-input"
+                            min="40"
+                            max="120"
+                            step="5"
+                            value="60"
+                            oninput="updateDemoStampSize(this.value)"
+                            class="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-650"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -491,7 +508,7 @@
 
                     <div class="text-right space-y-0.5 relative pr-4">
                         <!-- 透過印影画像 -->
-                        <div id="demo-stamp-img-container" class="absolute right-0 bottom-1 w-16 h-16 pointer-events-none select-none opacity-85 z-10 hidden">
+                        <div id="demo-stamp-img-container" class="absolute right-0 bottom-1 pointer-events-none select-none opacity-85 z-10 hidden flex items-center justify-center" style="width: 60px; height: 60px;">
                             <img id="demo-stamp-img" src="" alt="印影" class="w-full h-full object-contain" />
                         </div>
                         <p class="text-[8px] text-slate-400 font-bold">発行者</p>
@@ -555,6 +572,54 @@
             <div class="mt-4.5">
                 <button onclick="closeDemoBankModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs transition shadow-sm">
                     閉じる
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- デモ用トリミングモーダル -->
+    <div id="demo-cropper-modal" class="fixed inset-0 z-55 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-gray-150 pb-2.5">
+                <span class="text-xs font-bold text-gray-800">印影のトリミング調整（デモ用）</span>
+                <button onclick="closeDemoCropper()" class="text-gray-400 hover:text-gray-650"><i data-lucide="x" class="h-4 w-4"></i></button>
+            </div>
+            <p class="text-[10px] text-gray-500 font-semibold">ドラッグして位置を合わせ、スライダーで倍率を調整し、円枠にハンコを収めてください。</p>
+            
+            <!-- 操作枠 -->
+            <div id="demo-cropper-viewport" class="relative w-[280px] h-[280px] bg-slate-900 rounded-xl overflow-hidden mx-auto cursor-move select-none touch-none">
+                <div id="demo-cropper-img-wrapper" class="absolute origin-center w-full h-full flex items-center justify-center pointer-events-none transition-transform duration-75">
+                    <img id="demo-cropper-img" src="" alt="クロップ対象" class="max-w-full max-h-full object-contain" />
+                </div>
+                <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                    <div class="absolute inset-0 bg-black/40"></div>
+                    <div class="relative w-[160px] h-[160px] rounded-full border-2 border-dashed border-indigo-400 bg-transparent shadow-[0_0_0_9999px_rgba(0,0,0,0.4)]"></div>
+                </div>
+            </div>
+
+            <!-- スライダー -->
+            <div class="space-y-1 text-xs">
+                <div class="flex justify-between text-[10px] text-gray-550 font-bold">
+                    <span>拡大・縮小</span>
+                    <span><span id="demo-cropper-zoom-text">100</span>%</span>
+                </div>
+                <input 
+                    type="range" 
+                    id="demo-cropper-zoom-input"
+                    min="0.5" 
+                    max="3.0" 
+                    step="0.05"
+                    value="1.0" 
+                    oninput="updateDemoCropperZoom(this.value)"
+                    class="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-650"
+                />
+            </div>
+
+            <div class="flex gap-2.5 pt-2">
+                <button onclick="closeDemoCropper()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs">キャンセル</button>
+                <button onclick="applyDemoCropper()" class="flex-1 bg-indigo-650 hover:bg-indigo-750 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1">
+                    <i data-lucide="check" class="h-4 w-4"></i>
+                    <span>切り抜いて適用</span>
                 </button>
             </div>
         </div>
@@ -887,56 +952,144 @@
             }
         }
 
-        // 模擬印影のファイル読み込み処理 (Canvas自動透過フィルタリング)
-        function handleDemoStampUpload(e) {
+        // デモ用クロッパー状態変数
+        let demoCropperZoom = 1.0;
+        let demoCropperOffset = { x: 0, y: 0 };
+        let isDemoDragging = false;
+        let demoDragStart = { x: 0, y: 0 };
+        let demoCropperImageSrc = '';
+
+        function handleDemoStampSelect(e) {
             const file = e.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
             reader.onload = function(event) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    if (!ctx) return;
-
-                    const maxDim = 300;
-                    let w = img.width;
-                    let h = img.height;
-                    if (w > maxDim || h > maxDim) {
-                        if (w > h) {
-                            h = Math.round((h * maxDim) / w);
-                            w = maxDim;
-                        } else {
-                            w = Math.round((w * maxDim) / h);
-                            h = maxDim;
-                        }
-                    }
-
-                    canvas.width = w;
-                    canvas.height = h;
-                    ctx.drawImage(img, 0, 0, w, h);
-
-                    const imgData = ctx.getImageData(0, 0, w, h);
-                    const data = imgData.data;
-
-                    // 白〜明るい背景部分 (RGB > 165) を透過化
-                    for (let i = 0; i < data.length; i += 4) {
-                        const r = data[i];
-                        const g = data[i + 1];
-                        const b = data[i + 2];
-                        if (r > 165 && g > 165 && b > 165) {
-                            data[i + 3] = 0; // Alpha透明化
-                        }
-                    }
-
-                    ctx.putImageData(imgData, 0, 0);
-                    const transparentSrc = canvas.toDataURL('image/png');
-                    applyDemoStamp(transparentSrc);
-                };
-                img.src = event.target.result;
+                demoCropperImageSrc = event.target.result;
+                openDemoCropper(demoCropperImageSrc);
             };
             reader.readAsDataURL(file);
+        }
+
+        function openDemoCropper(src) {
+            demoCropperZoom = 1.0;
+            demoCropperOffset = { x: 0, y: 0 };
+            document.getElementById('demo-cropper-img').src = src;
+            document.getElementById('demo-cropper-zoom-input').value = 1.0;
+            document.getElementById('demo-cropper-zoom-text').innerText = 100;
+            updateDemoCropperTransform();
+
+            document.getElementById('demo-cropper-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeDemoCropper() {
+            document.getElementById('demo-cropper-modal').classList.add('hidden');
+        }
+
+        function updateDemoCropperZoom(val) {
+            demoCropperZoom = parseFloat(val);
+            document.getElementById('demo-cropper-zoom-text').innerText = Math.round(demoCropperZoom * 100);
+            updateDemoCropperTransform();
+        }
+
+        function updateDemoCropperTransform() {
+            const wrapper = document.getElementById('demo-cropper-img-wrapper');
+            const img = document.getElementById('demo-cropper-img');
+            wrapper.style.transform = `translate(${demoCropperOffset.x}px, ${demoCropperOffset.y}px)`;
+            img.style.transform = `scale(${demoCropperZoom})`;
+        }
+
+        // ドラッグイベントのバインド
+        const viewport = document.getElementById('demo-cropper-viewport');
+        
+        const startDrag = (clientX, clientY) => {
+            isDemoDragging = true;
+            demoDragStart = { x: clientX - demoCropperOffset.x, y: clientY - demoCropperOffset.y };
+        };
+        const moveDrag = (clientX, clientY) => {
+            if (!isDemoDragging) return;
+            demoCropperOffset = { x: clientX - demoDragStart.x, y: clientY - demoDragStart.y };
+            updateDemoCropperTransform();
+        };
+        const endDrag = () => { isDemoDragging = false; };
+
+        viewport.addEventListener('mousedown', (e) => startDrag(e.clientX, e.clientY));
+        viewport.addEventListener('mousemove', (e) => moveDrag(e.clientX, e.clientY));
+        viewport.addEventListener('mouseup', endDrag);
+        viewport.addEventListener('mouseleave', endDrag);
+
+        viewport.addEventListener('touchstart', (e) => {
+            const t = e.touches[0];
+            startDrag(t.clientX, t.clientY);
+        });
+        viewport.addEventListener('touchmove', (e) => {
+            const t = e.touches[0];
+            moveDrag(t.clientX, t.clientY);
+        });
+        viewport.addEventListener('touchend', endDrag);
+
+        function applyDemoCropper() {
+            const img = document.getElementById('demo-cropper-img');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+
+            const targetSize = 400;
+            canvas.width = targetSize;
+            canvas.height = targetSize;
+
+            // 高品質スケーリング
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            const containerWidth = 280;
+            const containerHeight = 280;
+            const cropSize = 160;
+
+            const centerX = containerWidth / 2;
+            const centerY = containerHeight / 2;
+            const renderScale = targetSize / cropSize;
+
+            const imgWidth = img.naturalWidth;
+            const imgHeight = img.naturalHeight;
+
+            let baseWidth = containerWidth;
+            let baseHeight = containerHeight;
+            const imgRatio = imgWidth / imgHeight;
+            if (imgRatio > 1) {
+                baseHeight = containerWidth / imgRatio;
+            } else {
+                baseWidth = containerHeight * imgRatio;
+            }
+
+            const currentW = baseWidth * demoCropperZoom;
+            const currentH = baseHeight * demoCropperZoom;
+
+            const drawX = (centerX - currentW / 2 + demoCropperOffset.x - (centerX - cropSize / 2)) * renderScale;
+            const drawY = (centerY - currentH / 2 + demoCropperOffset.y - (centerY - cropSize / 2)) * renderScale;
+            const drawW = currentW * renderScale;
+            const drawH = currentH * renderScale;
+
+            ctx.drawImage(img, drawX, drawY, drawW, drawH);
+
+            const imgData = ctx.getImageData(0, 0, targetSize, targetSize);
+            const data = imgData.data;
+
+            // 白〜明るい背景を透過処理
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                if (r > 165 && g > 165 && b > 165) {
+                    data[i + 3] = 0;
+                }
+            }
+
+            ctx.putImageData(imgData, 0, 0);
+            const croppedUrl = canvas.toDataURL('image/png');
+            applyDemoStamp(croppedUrl);
+            closeDemoCropper();
         }
 
         function loadDefaultDemoStamp() {
@@ -973,26 +1126,38 @@
             const container = document.getElementById('demo-stamp-img-container');
             const img = document.getElementById('demo-stamp-img');
             const clearBtn = document.getElementById('demo-stamp-clear-btn');
+            const sizeSliderBlock = document.getElementById('demo-size-slider-block');
 
             img.src = src;
             container.classList.remove('hidden');
             clearBtn.classList.remove('hidden');
+            sizeSliderBlock.classList.remove('hidden');
         }
 
         function clearDemoStamp() {
             const container = document.getElementById('demo-stamp-img-container');
             const img = document.getElementById('demo-stamp-img');
             const clearBtn = document.getElementById('demo-stamp-clear-btn');
+            const sizeSliderBlock = document.getElementById('demo-size-slider-block');
 
             img.src = '';
             container.classList.add('hidden');
             clearBtn.classList.add('hidden');
+            sizeSliderBlock.classList.add('hidden');
+        }
+
+        function updateDemoStampSize(val) {
+            document.getElementById('demo-size-text').innerText = val;
+            const stampContainer = document.getElementById('demo-stamp-img-container');
+            stampContainer.style.width = `${val}px`;
+            stampContainer.style.height = `${val}px`;
         }
 
         function printReceiptMock() {
             alert('印刷ダイアログが開きます（window.printが実行されます）。');
         }
 
+        // ページビュー切り替え
         function showReportView() {
             document.getElementById('view-project-detail').classList.add('hidden');
             document.getElementById('view-report').classList.remove('hidden');

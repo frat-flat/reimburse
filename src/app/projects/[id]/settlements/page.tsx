@@ -287,6 +287,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                                 tel: recUser?.receiptIssuerTel || '',
                                 regNo: recUser?.receiptIssuerRegNo || '',
                                 stampImage: recUser?.stampImage || '',
+                                stampSize: recUser?.stampSize || 60,
                               }}
                             />
                           )}

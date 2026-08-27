@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Landmark, Smartphone, AlertCircle, HelpCircle } from 'lucide-react';
+import ImageCropper from './ImageCropper';
 
 interface ProfileFormProps {
   initialData: {
@@ -22,6 +23,7 @@ interface ProfileFormProps {
     showBankAccount: boolean | null;
     showPaypay: boolean | null;
     stampImage: string | null;
+    stampSize: number | null;
   };
   updateAction: (formData: FormData) => Promise<{ success?: boolean; error?: string }>;
 }
@@ -44,6 +46,8 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
   const [showBankAccount, setShowBankAccount] = useState(initialData.showBankAccount !== false);
   const [showPaypay, setShowPaypay] = useState(initialData.showPaypay !== false);
   const [stampImage, setStampImage] = useState(initialData.stampImage || '');
+  const [stampSize, setStampSize] = useState(initialData.stampSize || 60);
+  const [cropperSrc, setCropperSrc] = useState<string | null>(null);
 
   // API解決用の状態
   const [loadingBank, setLoadingBank] = useState(false);
@@ -136,56 +140,14 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
     setBranchName('');
   };
 
-  // 印影アップロード & 自動透明化処理
-  const handleStampUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 印影画像の選択（トリミング調整モーダル起動用）
+  const handleStampSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        // 最大サイズを制限してパフォーマンス向上
-        const maxDim = 300;
-        let w = img.width;
-        let h = img.height;
-        if (w > maxDim || h > maxDim) {
-          if (w > h) {
-            h = Math.round((h * maxDim) / w);
-            w = maxDim;
-          } else {
-            w = Math.round((w * maxDim) / h);
-            h = maxDim;
-          }
-        }
-
-        canvas.width = w;
-        canvas.height = h;
-        ctx.drawImage(img, 0, 0, w, h);
-
-        const imgData = ctx.getImageData(0, 0, w, h);
-        const data = imgData.data;
-
-        // 白い背景部分 (RGBすべてが165超) を完全に透明化する
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-          
-          if (r > 165 && g > 165 && b > 165) {
-            data[i + 3] = 0; // 透明度 (Alpha) を 0 に
-          }
-        }
-
-        ctx.putImageData(imgData, 0, 0);
-        const processedDataUrl = canvas.toDataURL('image/png');
-        setStampImage(processedDataUrl);
-      };
-      img.src = event.target?.result as string;
+      setCropperSrc(event.target?.result as string);
     };
     reader.readAsDataURL(file);
   };
@@ -204,6 +166,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
 
     const formData = new FormData(e.currentTarget);
     formData.set('stampImage', stampImage);
+    formData.set('stampSize', stampSize.toString());
     try {
       const res = await updateAction(formData);
       if (res.error) {
@@ -349,7 +312,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
                     type="file"
                     accept="image/*"
                     capture="environment"
-                    onChange={handleStampUpload}
+                    onChange={handleStampSelect}
                     className="hidden"
                   />
                 </label>
@@ -360,30 +323,56 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={handleStampUpload}
+                    onChange={handleStampSelect}
                     className="hidden"
                   />
                 </label>
               </div>
             </div>
 
-            <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-3 bg-slate-50/50">
-              <span className="text-[9px] text-slate-450 font-bold mb-2">印影プレビュー (透過済)</span>
+            <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-3 bg-slate-50/50 space-y-3">
+              <span className="text-[9px] text-slate-450 font-bold">印影プレビュー (透過済)</span>
               {stampImage ? (
-                <div className="relative flex flex-col items-center gap-2">
-                  <div className="border border-slate-200 bg-white p-2 rounded-lg shadow-sm w-20 h-20 flex items-center justify-center relative overflow-hidden bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:8px_8px]">
-                    <img src={stampImage} alt="印影プレビュー" className="max-w-full max-h-full object-contain" />
+                <div className="relative flex flex-col items-center gap-3 w-full">
+                  <div className="border border-slate-200 bg-white rounded-lg shadow-sm w-32 h-32 flex items-center justify-center relative overflow-hidden bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:8px_8px]">
+                    <img 
+                      src={stampImage} 
+                      alt="印影プレビュー" 
+                      className="object-contain transition-all" 
+                      style={{ 
+                        width: `${stampSize}px`, 
+                        height: `${stampSize}px` 
+                      }} 
+                    />
                   </div>
+
+                  {/* 表示サイズ調整用スライダー */}
+                  <div className="w-full max-w-[160px] space-y-1">
+                    <div className="flex justify-between text-[8px] text-slate-500 font-bold">
+                      <span>領収書上の押印サイズ</span>
+                      <span>{stampSize}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="40"
+                      max="120"
+                      step="5"
+                      value={stampSize}
+                      onChange={(e) => setStampSize(parseInt(e.target.value, 10))}
+                      className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-650"
+                    />
+                  </div>
+
                   <button
                     type="button"
                     onClick={() => setStampImage('')}
-                    className="text-[10px] text-red-600 hover:text-red-750 font-bold transition"
+                    className="text-[10px] text-red-655 hover:text-red-750 font-bold transition"
                   >
                     削除する
                   </button>
                 </div>
               ) : (
-                <p className="text-[10px] text-slate-400 font-bold">印影未設定</p>
+                <p className="text-[10px] text-slate-400 font-bold py-6">印影未設定</p>
               )}
             </div>
           </div>
@@ -619,6 +608,17 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
             {isPending ? '保存処理中...' : 'プロフィール情報を保存する'}
           </button>
         </div>
+
+        {cropperSrc && (
+          <ImageCropper
+            imageSrc={cropperSrc}
+            onCropComplete={(croppedBase64) => {
+              setStampImage(croppedBase64);
+              setCropperSrc(null);
+            }}
+            onCancel={() => setCropperSrc(null)}
+          />
+        )}
       </form>
     </div>
   );

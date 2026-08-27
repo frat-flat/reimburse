@@ -244,7 +244,7 @@ export default function ProjectShareSection({
                   <th className="py-2.5 px-2 text-center font-extrabold text-slate-600 w-20">個人閲覧</th>
                   <th className="py-2.5 px-2 text-center font-extrabold text-slate-600 w-20">全体閲覧</th>
                   <th className="py-2.5 px-2 text-center font-extrabold text-slate-600 w-20">編集可能</th>
-                  <th className="py-2.5 px-3 text-right font-extrabold text-slate-600 w-12">解除</th>
+                  <th className="py-2.5 px-3 text-right font-extrabold text-slate-600 w-20">共有解除</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-155">

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クルー（crew）権限別アクションガイド＆シミュレーター</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .animate-fade {
+            animation: fadeIn 0.25s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen pb-12">
+
+    <!-- ヘッダー -->
+    <header class="bg-indigo-900 text-white shadow-md">
+        <div class="max-w-5xl mx-auto px-4 py-6">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-indigo-850 rounded-lg text-indigo-300">
+                    <i data-lucide="shield-check" class="h-8 w-8"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-extrabold tracking-tight">クルー（crew）権限別アクションガイド</h1>
+                    <p class="text-xs text-indigo-200 mt-1">イベント共有における「主催者」「編集」「閲覧のみ」権限の違いをシミュレーションします</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- 左カラム: インタラクティブ・コントローラー & 権限比較 -->
+        <div class="lg:col-span-1 space-y-6">
+            
+            <!-- ロール選択パネル -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                <h2 class="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
+                    <i data-lucide="user-check" class="text-indigo-650 h-5 w-5"></i>
+                    <span>ロール切り替えシミュレーター</span>
+                </h2>
+                <p class="text-xs text-slate-500 mb-4 leading-relaxed font-semibold">
+                    ボタンを押して権限を切り替えると、右側のイベント画面のモックアップが連動して変化します。
+                </p>
+                
+                <div class="flex flex-col gap-2.5">
+                    <!-- 主催者ボタン -->
+                    <button onclick="switchRole('owner')" id="btn-owner" class="flex items-center justify-between p-3.5 rounded-xl border-2 transition-all font-bold text-sm text-left bg-indigo-50 border-indigo-600 text-indigo-900 shadow-sm">
+                        <div class="flex items-center gap-2.5">
+                            <i data-lucide="crown" class="h-4.5 w-4.5 text-amber-500"></i>
+                            <div>
+                                <p class="font-extrabold text-sm">主催者 (Owner)</p>
+                                <p class="text-[10px] text-indigo-700 font-semibold mt-0.5">全権限・フルアクセス</p>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                    </button>
+
+                    <!-- 編集可能ボタン -->
+                    <button onclick="switchRole('editor')" id="btn-editor" class="flex items-center justify-between p-3.5 rounded-xl border-2 transition-all font-bold text-sm text-left bg-white border-slate-200 text-slate-700 hover:border-slate-300">
+                        <div class="flex items-center gap-2.5">
+                            <i data-lucide="edit-3" class="h-4.5 w-4.5 text-indigo-550"></i>
+                            <div>
+                                <p class="font-extrabold text-sm">編集可能 (Editor)</p>
+                                <p class="text-[10px] text-slate-500 font-semibold mt-0.5">支出の追加・自己支出の編集可</p>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="h-4 w-4 invisible"></i>
+                    </button>
+
+                    <!-- 閲覧のみボタン -->
+                    <button onclick="switchRole('viewer')" id="btn-viewer" class="flex items-center justify-between p-3.5 rounded-xl border-2 transition-all font-bold text-sm text-left bg-white border-slate-200 text-slate-700 hover:border-slate-300">
+                        <div class="flex items-center gap-2.5">
+                            <i data-lucide="eye" class="h-4.5 w-4.5 text-slate-500"></i>
+                            <div>
+                                <p class="font-extrabold text-sm">閲覧のみ (Viewer)</p>
+                                <p class="text-[10px] text-slate-500 font-semibold mt-0.5">書き込み制限・読み取りのみ</p>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="h-4 w-4 invisible"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- アクション制限サマリー -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                <h2 class="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3 mb-3">
+                    <i data-lucide="info" class="text-indigo-650 h-5 w-5"></i>
+                    <span>選択中ロールの権限詳細</span>
+                </h2>
+                
+                <div id="role-description" class="space-y-3 text-xs leading-relaxed animate-fade">
+                    <!-- 動的に書き換わります -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 右カラム: アプリケーションUIシミュレーター -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-slate-100 rounded-3xl p-4 md:p-6 border border-slate-250 shadow-inner">
+                <p class="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider mb-2 text-center">📱 アプリケーションUIプレビュー</p>
+                
+                <!-- 模擬アプリヘッダー -->
+                <div class="bg-white border border-slate-200 rounded-2xl p-4 md:p-5 shadow-sm space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                        <div>
+                            <span class="text-[9px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded border border-indigo-150 font-extrabold uppercase">イベント</span>
+                            <h2 class="text-lg md:text-xl font-black text-slate-900 mt-1">2026年沖縄旅行</h2>
+                        </div>
+                        
+                        <!-- イベント管理ボタン群 (編集・削除) -->
+                        <div class="flex items-center gap-1.5" id="event-admin-actions">
+                            <span class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg font-bold flex items-center gap-1">
+                                <i data-lucide="file-text" class="h-3.5 w-3.5"></i> レポート
+                            </span>
+                            <span class="text-[10px] text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-1 rounded-lg font-bold flex items-center gap-1 cursor-pointer hover:bg-indigo-100 transition" id="action-event-edit">
+                                <i data-lucide="edit-2" class="h-3.5 w-3.5"></i> 編集
+                            </span>
+                            <span class="text-[10px] text-red-650 bg-red-50 border border-red-200 p-1.5 rounded-lg cursor-pointer hover:bg-red-100 transition" id="action-event-delete">
+                                <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- 基本統計プレビュー -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl text-center">
+                            <span class="text-[9px] text-slate-400 block font-bold">総支出</span>
+                            <strong class="text-sm font-extrabold text-slate-800">45,000円</strong>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl text-center">
+                            <span class="text-[9px] text-slate-400 block font-bold">精算状態</span>
+                            <strong class="text-sm font-extrabold text-amber-700" id="settlement-status">未確定 (アクティブ)</strong>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl text-center">
+                            <span class="text-[9px] text-slate-400 block font-bold">あなたの役職</span>
+                            <strong class="text-sm font-extrabold text-indigo-750" id="badge-your-role">主催者</strong>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl text-center">
+                            <span class="text-[9px] text-slate-400 block font-bold">対応精算メンバー</span>
+                            <strong class="text-sm font-extrabold text-slate-800">たろう</strong>
+                        </div>
+                    </div>
+
+                    <!-- 精算決定ボタン -->
+                    <div class="pt-2" id="settlement-confirm-block">
+                        <button class="w-full bg-indigo-650 hover:bg-indigo-750 text-white text-xs font-bold py-2 rounded-xl transition flex items-center justify-center gap-1.5 shadow-sm">
+                            <span>精算を確定する (ロック)</span>
+                            <i data-lucide="lock" class="h-3.5 w-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    
+                    <!-- 左部: 支出リスト (2カラム分) -->
+                    <div class="md:col-span-2 space-y-4">
+                        <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                                <div class="flex items-center gap-1.5">
+                                    <i data-lucide="shopping-bag" class="h-4.5 w-4.5 text-indigo-600"></i>
+                                    <h3 class="text-xs font-bold text-slate-800">登録されている支出 (2件)</h3>
+                                </div>
+                                
+                                <!-- 支出追加ボタン -->
+                                <button id="action-add-expense" class="bg-indigo-600 hover:bg-indigo-750 text-white font-bold px-2.5 py-1.5 rounded-lg text-[10px] transition inline-flex items-center gap-1 shadow-sm">
+                                    <i data-lucide="plus" class="h-3 w-3"></i>
+                                    <span>支出を追加</span>
+                                </button>
+                            </div>
+
+                            <!-- 支出リスト中身 -->
+                            <div class="space-y-3">
+                                <!-- 支出1 (他人の支出) -->
+                                <div class="bg-slate-50 border border-slate-150 p-3 rounded-xl flex items-center justify-between text-xs">
+                                    <div>
+                                        <div class="flex items-center gap-1">
+                                            <strong class="text-slate-800 font-bold">レンタカー代</strong>
+                                            <span class="text-[8px] bg-slate-200 text-slate-600 px-1 rounded">08/26</span>
+                                        </div>
+                                        <p class="text-[10px] text-slate-500 mt-0.5">支払: さとう (負担: 全員)</p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <strong class="font-extrabold text-slate-800">12,000円</strong>
+                                        <span class="text-[9px] text-slate-400 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded" id="expense-other-edit-badge">編集不可</span>
+                                    </div>
+                                </div>
+
+                                <!-- 支出2 (自分の支出) -->
+                                <div class="bg-slate-50 border border-slate-150 p-3 rounded-xl flex items-center justify-between text-xs">
+                                    <div>
+                                        <div class="flex items-center gap-1">
+                                            <strong class="text-slate-800 font-bold">ディナー（居酒屋）</strong>
+                                            <span class="text-[8px] bg-indigo-50 text-indigo-600 px-1 rounded font-bold border border-indigo-150">08/26</span>
+                                        </div>
+                                        <p class="text-[10px] text-slate-500 mt-0.5">支払: たろう (あなた) (負担: 3人)</p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <strong class="font-extrabold text-slate-800">18,500円</strong>
+                                        
+                                        <!-- 自支出の編集コントロール -->
+                                        <div class="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white" id="expense-self-edit-actions">
+                                            <button class="p-1 hover:bg-slate-100 border-r border-slate-200 text-slate-500 hover:text-indigo-650 transition">
+                                                <i data-lucide="edit-2" class="h-3 w-3"></i>
+                                            </button>
+                                            <button class="p-1 hover:bg-slate-100 text-red-500 hover:bg-red-55">
+                                                <i data-lucide="trash-2" class="h-3 w-3"></i>
+                                            </button>
+                                        </div>
+                                        <span class="text-[9px] text-slate-450 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded hidden" id="expense-self-edit-badge">編集不可</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 右部: クルー・共有設定 (1カラム分) -->
+                    <div class="md:col-span-1 space-y-4">
+                        
+                        <!-- クルー共有設定 (主催者のみ) -->
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3" id="block-share-section">
+                            <div class="flex items-center gap-1.5 border-b border-slate-100 pb-2">
+                                <i data-lucide="share-2" class="h-4.5 w-4.5 text-indigo-650"></i>
+                                <h3 class="text-xs font-bold text-slate-800">イベントの共有 (crew)</h3>
+                            </div>
+                            <form class="space-y-2 text-[10px]" onsubmit="return false;">
+                                <div>
+                                    <label class="block text-[8px] font-bold text-slate-500 mb-0.5">招待するMate</label>
+                                    <select class="w-full border border-slate-200 px-2 py-1 rounded bg-slate-50 focus:outline-none" disabled>
+                                        <option>-- 選択してください --</option>
+                                    </select>
+                                </div>
+                                <button class="w-full bg-indigo-600 text-white font-bold py-1.5 rounded transition text-[9px]" disabled>crewを追加</button>
+                            </form>
+                        </div>
+
+                        <!-- 参加中のメンバー一覧 -->
+                        <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
+                            <div class="flex items-center gap-1.5 border-b border-slate-100 pb-2">
+                                <i data-lucide="users" class="h-4.5 w-4.5 text-indigo-650"></i>
+                                <h3 class="text-xs font-bold text-slate-800">参加メンバー (crew)</h3>
+                            </div>
+                            <ul class="text-xs space-y-2">
+                                <li class="flex items-center justify-between">
+                                    <span class="font-bold">たろう (あなた)</span>
+                                    <span class="text-[8px] bg-slate-100 border border-slate-200 text-slate-500 px-1 rounded">主催者</span>
+                                </li>
+                                <li class="flex items-center justify-between">
+                                    <span>さとう</span>
+                                    <span class="text-[8px] bg-indigo-50 border border-indigo-150 text-indigo-650 px-1 rounded font-bold">共有中</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- JS ロジック -->
+    <script>
+        const roleData = {
+            owner: {
+                badge: '主催者 (作成者)',
+                description: `
+                    <div class="p-3 bg-indigo-50 border border-indigo-150 rounded-xl text-indigo-900 font-semibold mb-3">
+                        👑 <strong>イベントの管理者です。</strong><br>
+                        すべての画面要素を閲覧・操作できます。
+                    </div>
+                    <ul class="space-y-2 text-[11px] font-bold">
+                        <li class="flex items-start gap-1.5">
+                            <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                            <span>イベント名・目的メモの編集、イベント自体の削除が可能です。</span>
+                        </li>
+                        <li class="flex items-start gap-1.5">
+                            <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                            <span>他のMateをイベントに招待（共有設定）し、閲覧権限や編集権限を割り当てることができます。</span>
+                        </li>
+                        <li class="flex items-start gap-1.5">
+                            <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                            <span>支出の追加、全ての支出（他人が登録した分を含む）の編集や削除が行えます。</span>
+                        </li>
+                        <li class="flex items-start gap-1.5">
+                            <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                            <span>割り勘計算を終了するための「精算の確定」アクションを実行できます。</span>
+                        </li>
+                    </ul>
+                `
+            },
+            editor: {
+                badge: '編集可能クルー',
+                description: `
+                    <div class="p-3 bg-indigo-50 border border-indigo-150 rounded-xl text-indigo-900 font-semibold mb-3">
+                        📝 <strong>編集権限クルーです。</strong><br>
+                        イベントの主催者から精算の登録を任された参加者です。
+                    </div>
+                    <ul class="space-y-2 text-[11px] font-bold text-slate-700">
+                        <li class="flex items-start gap-1.5">
+                            <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                            <span>新しい支出項目を追加・登録できます。</span>
+                        </li>
+                        <li class="flex items-start gap-1.5">
+                            <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                            <span>自分が登録した支出の編集・削除が可能です。</span>
+                        </li>
+                        <li class="flex items-start gap-1.5">
+                            <i data-lucide="x-circle" class="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5"></i>
+                            <span class="text-slate-450 text-slate-400 line-through">他人が登録した支出の編集・削除はできません（編集ボタンが非表示になります）。</span>
+                        </li>
+                        <li class="flex items-start gap-1.5">
+                            <i data-lucide="x-circle" class="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5"></i>
+                            <span class="text-slate-450 text-slate-400 line-through">イベント名の変更、共有メンバー（crew）の追加・削除はできません。</span>
+                        </li>
+                    </ul>
+                `
+            },
+            viewer: {
+                badge: '閲覧のみクルー',
+                description: `
+                    <div class="p-3 bg-amber-50 border border-amber-250 rounded-xl text-amber-900 font-semibold mb-3">
+                        🔒 <strong>閲覧のみ権限です。</strong><br>
+                        精算結果や支出内容を確認するだけのクリーンアクセス。
+                    </div>
+                    <ul class="space-y-2 text-[11px] font-bold">
+                        <li class="flex items-start gap-1.5 text-slate-700">
+                            <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                            <span>全ての支出明細や精算プレビュー、領収書画像の閲覧・ダウンロードが可能です。</span>
+                        </li>
+                        <li class="flex items-start gap-1.5 text-slate-400 line-through">
+                            <i data-lucide="x-circle" class="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5"></i>
+                            <span>新しく支出を登録することができません（「支出を追加」ボタンが非表示になります）。</span>
+                        </li>
+                        <li class="flex items-start gap-1.5 text-slate-400 line-through">
+                            <i data-lucide="x-circle" class="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5"></i>
+                            <span>自分が関係する支出であっても、編集や削除は一切できません。</span>
+                        </li>
+                        <li class="flex items-start gap-1.5 text-slate-400 line-through">
+                            <i data-lucide="x-circle" class="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5"></i>
+                            <span>「精算を確定する」「メンバーを追加する」などの管理機能はすべて非表示になります。</span>
+                        </li>
+                    </ul>
+                `
+            }
+        };
+
+        function switchRole(role) {
+            // 1. ボタンのアクティブ状態を変更
+            ['owner', 'editor', 'viewer'].forEach((r) => {
+                const btn = document.getElementById(`btn-${r}`);
+                const icon = btn.querySelector('[data-lucide="chevron-right"]');
+                
+                if (r === role) {
+                    btn.className = "flex items-center justify-between p-3.5 rounded-xl border-2 transition-all font-bold text-sm text-left bg-indigo-50 border-indigo-600 text-indigo-900 shadow-sm";
+                    icon.classList.remove('invisible');
+                } else {
+                    btn.className = "flex items-center justify-between p-3.5 rounded-xl border-2 transition-all font-bold text-sm text-left bg-white border-slate-200 text-slate-700 hover:border-slate-300";
+                    icon.classList.add('invisible');
+                }
+            });
+
+            // 2. 左側の説明文を更新
+            const descContainer = document.getElementById('role-description');
+            descContainer.innerHTML = roleData[role].description;
+            
+            // 3. アプリケーションUIモックアップを更新
+            const badgeRole = document.getElementById('badge-your-role');
+            badgeRole.innerText = roleData[role].badge;
+
+            const eventEditBtn = document.getElementById('action-event-edit');
+            const eventDeleteBtn = document.getElementById('action-event-delete');
+            const shareBlock = document.getElementById('block-share-section');
+            const addExpenseBtn = document.getElementById('action-add-expense');
+            const selfEditActions = document.getElementById('expense-self-edit-actions');
+            const selfEditBadge = document.getElementById('expense-self-edit-badge');
+            const confirmBlock = document.getElementById('settlement-confirm-block');
+
+            // 状態リセットアニメーションのトリガー
+            descContainer.classList.remove('animate-fade');
+            void descContainer.offsetWidth; // リフロー発生
+            descContainer.classList.add('animate-fade');
+
+            if (role === 'owner') {
+                // 主催者
+                eventEditBtn.classList.remove('hidden');
+                eventDeleteBtn.classList.remove('hidden');
+                shareBlock.classList.remove('hidden');
+                addExpenseBtn.classList.remove('hidden');
+                selfEditActions.classList.remove('hidden');
+                selfEditBadge.classList.add('hidden');
+                confirmBlock.classList.remove('hidden');
+            } else if (role === 'editor') {
+                // 編集可能
+                eventEditBtn.classList.add('hidden');
+                eventDeleteBtn.classList.add('hidden');
+                shareBlock.classList.add('hidden');
+                addExpenseBtn.classList.remove('hidden');
+                selfEditActions.classList.remove('hidden');
+                selfEditBadge.classList.add('hidden');
+                confirmBlock.classList.add('hidden');
+            } else if (role === 'viewer') {
+                // 閲覧のみ
+                eventEditBtn.classList.add('hidden');
+                eventDeleteBtn.classList.add('hidden');
+                shareBlock.classList.add('hidden');
+                addExpenseBtn.classList.add('hidden');
+                selfEditActions.classList.add('hidden');
+                selfEditBadge.classList.remove('hidden');
+                confirmBlock.classList.add('hidden');
+            }
+
+            // Lucideアイコンの再レンダリング
+            lucide.createIcons();
+        }
+
+        // 初期ロード時にownerを選択
+        window.addEventListener('DOMContentLoaded', () => {
+            switchRole('owner');
+        });
+    </script>
+</body>
+</html>

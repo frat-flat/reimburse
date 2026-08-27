@@ -58,7 +58,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
 
   const userRole = isOwner
     ? 'owner'
-    : (userShare?.role as 'editor' | 'viewer_all' | 'viewer_personal' | 'viewer_receipt' | undefined) ||
+    : (userShare?.role as 'editor' | 'viewer_all' | 'viewer_personal' | undefined) ||
       'viewer_all';
 
   // 1. 各メンバーの純残高を集計
@@ -142,6 +142,13 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
     }));
   }
 
+  // 閲覧者の場合：自分に関係する（自分が支払う、または自分が受け取る）精算ルートのみに絞り込む
+  if (!isOwner && userRole !== 'editor' && linkedMember) {
+    settlementsList = settlementsList.filter(
+      (s) => s.fromUserId === linkedMember.id || s.toUserId === linkedMember.id
+    );
+  }
+
   // 支払済みトグルボタンのアクションラッパー
   const handleTogglePaid = async (formData: FormData) => {
     'use server';
@@ -193,7 +200,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
             <div className="flex justify-between items-center pb-3 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <Landmark className="h-5.5 w-5.5 text-indigo-600" />
-                <h2 className="text-lg font-bold text-gray-900">精算ルート</h2>
+                <h2 className="text-lg font-bold text-gray-900">{isConfirmed ? '精算結果' : '精算シミュレーター'}</h2>
               </div>
               <span className="text-xs text-gray-500 font-semibold">
                 送金取引: {settlementsList.length} 件
@@ -251,8 +258,8 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                       {/* 支払済みチェックボタントグル（確定時のみ） */}
                       {isConfirmed && s.id && (
                         <div className="flex items-center gap-2">
-                          {/* 領収書発行ボタン（自分がReceiver＝受け取る側の場合のみ表示） */}
-                          {linkedMember && s.toUserId === linkedMember.id && (
+                          {/* 領収書発行ボタン（自分がReceiver＝受け取る側、かつ支払ルートが「支払済(paid)」になっている場合のみ表示） */}
+                          {linkedMember && s.toUserId === linkedMember.id && s.status === 'paid' && (
                             <ReceiptModal
                               payerName={s.fromUserName}
                               receiverName={s.toUserName}

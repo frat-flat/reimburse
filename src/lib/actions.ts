@@ -1085,7 +1085,7 @@ export async function actionShareProject(
   if (!currentUser) return { error: 'ログインが必要です。' };
 
   let targetRole = role;
-  if (targetRole !== 'editor' && targetRole !== 'viewer_all' && targetRole !== 'viewer_personal' && targetRole !== 'viewer_receipt') {
+  if (targetRole !== 'editor' && targetRole !== 'viewer_all' && targetRole !== 'viewer_personal') {
     if (targetRole === 'viewer') {
       targetRole = 'viewer_all';
     } else {
@@ -1196,7 +1196,7 @@ export async function actionUpdateProjectShareRole(projectShareId: string, role:
   const currentUser = await getCurrentUser();
   if (!currentUser) return { error: 'ログインが必要です。' };
 
-  if (role !== 'editor' && role !== 'viewer_all' && role !== 'viewer_personal' && role !== 'viewer_receipt') {
+  if (role !== 'editor' && role !== 'viewer_all' && role !== 'viewer_personal') {
     return { error: '無効な権限が指定されました。' };
   }
 

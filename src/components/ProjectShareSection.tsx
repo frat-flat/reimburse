@@ -168,7 +168,7 @@ export default function ProjectShareSection({
               <label className="block text-[10px] font-bold text-gray-600 mb-1.5">
                 共有権限
               </label>
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-3 gap-1.5">
                 <label className={`flex flex-col items-center justify-center p-2 rounded-lg cursor-pointer border text-center select-none transition ${
                   role === 'viewer_personal'
                     ? 'border-indigo-600 bg-indigo-50 text-indigo-950 font-bold'
@@ -183,22 +183,6 @@ export default function ProjectShareSection({
                   />
                   <span className="text-[10px]">個人閲覧</span>
                   <span className="text-[7px] text-gray-400 mt-0.5">個人分のみ</span>
-                </label>
-
-                <label className={`flex flex-col items-center justify-center p-2 rounded-lg cursor-pointer border text-center select-none transition ${
-                  role === 'viewer_receipt'
-                    ? 'border-indigo-600 bg-indigo-50 text-indigo-950 font-bold'
-                    : 'border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-semibold'
-                }`}>
-                  <input
-                    type="radio"
-                    name="role"
-                    checked={role === 'viewer_receipt'}
-                    onChange={() => setRole('viewer_receipt')}
-                    className="sr-only"
-                  />
-                  <span className="text-[10px]">領収書発行</span>
-                  <span className="text-[7px] text-gray-400 mt-0.5">個人+領収書</span>
                 </label>
 
                 <label className={`flex flex-col items-center justify-center p-2 rounded-lg cursor-pointer border text-center select-none transition ${
@@ -258,7 +242,6 @@ export default function ProjectShareSection({
                 <tr className="bg-slate-50/75 border-b border-gray-200 text-gray-500 font-bold text-[10px]">
                   <th className="py-2.5 px-3.5 font-extrabold text-slate-600">クルー情報</th>
                   <th className="py-2.5 px-2 text-center font-extrabold text-slate-600 w-20">個人閲覧</th>
-                  <th className="py-2.5 px-2 text-center font-extrabold text-slate-600 w-20">領収書発行</th>
                   <th className="py-2.5 px-2 text-center font-extrabold text-slate-600 w-20">全体閲覧</th>
                   <th className="py-2.5 px-2 text-center font-extrabold text-slate-600 w-20">編集可能</th>
                   <th className="py-2.5 px-3 text-right font-extrabold text-slate-600 w-20">共有解除</th>
@@ -293,20 +276,6 @@ export default function ProjectShareSection({
                             name={`role-${share.id}`}
                             checked={share.role === 'viewer_personal'}
                             onChange={() => handleRoleChange(share.id, 'viewer_personal')}
-                            disabled={isPending}
-                            className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 cursor-pointer disabled:opacity-50"
-                          />
-                        </label>
-                      </td>
-
-                      {/* 領収書発行 */}
-                      <td className="py-3 px-2 text-center">
-                        <label className="inline-flex items-center justify-center p-1.5 cursor-pointer">
-                          <input
-                            type="radio"
-                            name={`role-${share.id}`}
-                            checked={share.role === 'viewer_receipt'}
-                            onChange={() => handleRoleChange(share.id, 'viewer_receipt')}
                             disabled={isPending}
                             className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 cursor-pointer disabled:opacity-50"
                           />

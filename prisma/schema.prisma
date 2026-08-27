@@ -39,6 +39,7 @@ model User {
   paypayUrl            String?
   showBankAccount      Boolean  @default(true)
   showPaypay           Boolean  @default(true)
+  stampImage           String?
 
   createdProjects Project[]      @relation("CreatedProjects")
   masterMembers   MasterMember[]

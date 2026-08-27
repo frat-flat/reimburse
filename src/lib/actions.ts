@@ -1390,6 +1390,7 @@ export async function actionUpdateProfile(formData: FormData) {
   const paypayUrl = formData.get('paypayUrl') as string;
   const showBankAccount = formData.get('showBankAccount') === 'true' || formData.get('showBankAccount') === 'on';
   const showPaypay = formData.get('showPaypay') === 'true' || formData.get('showPaypay') === 'on';
+  const stampImage = formData.get('stampImage') as string;
 
   // 口座名義カナのサーバー側バリデーション (カタカナ、長音、スペース類のみ許容)
   if (accountHolder && !/^[ァ-ヶーｱ-ﾝﾞﾟ\s　]+$/.test(accountHolder)) {
@@ -1415,6 +1416,7 @@ export async function actionUpdateProfile(formData: FormData) {
         paypayUrl: paypayUrl ? paypayUrl.trim() : null,
         showBankAccount,
         showPaypay,
+        stampImage: stampImage || null,
       },
     });
 

@@ -51,7 +51,7 @@
                 </p>
                 
                 <div class="flex flex-col gap-2.5">
-                    <!-- 主主催者ボタン -->
+                    <!-- 主催者ボタン -->
                     <button onclick="switchRole('owner')" id="btn-owner" class="flex items-center justify-between p-3 border-2 transition-all font-bold text-xs text-left bg-indigo-50 border-indigo-600 text-indigo-900 shadow-sm rounded-xl">
                         <div class="flex items-center gap-2">
                             <i data-lucide="crown" class="h-4.5 w-4.5 text-amber-500 flex-shrink-0"></i>
@@ -349,7 +349,7 @@
                                         </span>
 
                                         <!-- 領収書ボタン (支払済の時に受け取る側のみ有効化) -->
-                                        <button onclick="openReceiptModal()" id="mock-receipt-btn" class="bg-indigo-600 hover:bg-indigo-750 text-white font-bold py-1 px-2.5 rounded-lg text-[9px] shadow transition cursor-pointer flex items-center gap-1 hidden">
+                                        <button onclick="openReceiptModal()" id="mock-receipt-btn" class="bg-indigo-600 hover:bg-indigo-755 text-white font-bold py-1 px-2.5 rounded-lg text-[9px] shadow transition cursor-pointer flex items-center gap-1 hidden">
                                             <i data-lucide="receipt" class="h-3 w-3"></i>
                                             <span>領収書を発行</span>
                                         </button>
@@ -427,6 +427,29 @@
                 </div>
             </div>
 
+            <!-- 模擬印影コントロール (シミュレーターデモ用) -->
+            <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl mb-4 text-xs space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <span class="font-bold text-slate-750">【デモ用】領収書に印影 (ハンコ) を配置する:</span>
+                    <button onclick="clearDemoStamp()" id="demo-stamp-clear-btn" class="text-[10px] text-red-655 font-bold hover:text-red-750 hidden">
+                        配置を解除
+                    </button>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <label class="flex items-center justify-center gap-1 bg-white hover:bg-slate-50 border border-slate-350 text-slate-750 font-bold py-1.5 px-3 rounded-lg cursor-pointer transition">
+                        <span>📷 カメラ起動（模擬）</span>
+                        <input type="file" accept="image/*" capture="environment" onchange="handleDemoStampUpload(event)" class="hidden">
+                    </label>
+                    <label class="flex items-center justify-center gap-1 bg-white hover:bg-slate-50 border border-slate-350 text-slate-755 font-bold py-1.5 px-3 rounded-lg cursor-pointer transition">
+                        <span>📁 ファイルから選択（模擬）</span>
+                        <input type="file" accept="image/*" onchange="handleDemoStampUpload(event)" class="hidden">
+                    </label>
+                    <button onclick="loadDefaultDemoStamp()" class="bg-indigo-55 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-bold py-1.5 px-3 rounded-lg transition">
+                        Sample印影を配置
+                    </button>
+                </div>
+            </div>
+
             <!-- 領収書枠 -->
             <div class="border-4 double border-double border-slate-400 p-6 space-y-6 bg-white">
                 <div class="text-center">
@@ -466,7 +489,11 @@
                         </table>
                     </div>
 
-                    <div class="text-right space-y-0.5">
+                    <div class="text-right space-y-0.5 relative pr-4">
+                        <!-- 透過印影画像 -->
+                        <div id="demo-stamp-img-container" class="absolute right-0 bottom-1 w-16 h-16 pointer-events-none select-none opacity-85 z-10 hidden">
+                            <img id="demo-stamp-img" src="" alt="印影" class="w-full h-full object-contain" />
+                        </div>
                         <p class="text-[8px] text-slate-400 font-bold">発行者</p>
                         <p class="font-extrabold text-slate-900 text-xs">たろう</p>
                         <p class="text-[8px]">〒100-0001</p>
@@ -544,7 +571,7 @@
                 description: `
                     <div class="p-3 bg-indigo-50 border border-indigo-150 rounded-xl text-indigo-900 font-semibold mb-3">
                         👑 <strong>イベントの管理者です。</strong><br>
-                        全アクションが可能。確定後は送送金状況を「支払済/未支払」に切り替えることができます。
+                        全アクションが可能。確定後は送金状況を「支払済/未支払」に切り替えることができます。
                     </div>
                     <ul class="space-y-1 text-[11px] font-bold text-slate-700">
                         <li class="flex items-start gap-1">
@@ -785,7 +812,7 @@
                 // 読取バッジテキストの同期
                 if (isPaid) {
                     staticBadge.innerText = '精算済';
-                    staticBadge.className = 'bg-gray-100 border border-gray-255 text-gray-550 font-bold py-1 px-2 rounded-lg text-[8px]';
+                    staticBadge.className = 'bg-gray-100 border border-gray-250 text-gray-550 font-bold py-1 px-2 rounded-lg text-[8px]';
                 } else {
                     staticBadge.innerText = '未精算';
                     staticBadge.className = 'bg-amber-50 border border-amber-200 text-amber-750 font-bold py-1 px-2 rounded-lg text-[8px]';
@@ -858,6 +885,108 @@
             } else {
                 bankBtn.classList.add('hidden');
             }
+        }
+
+        // 模擬印影のファイル読み込み処理 (Canvas自動透過フィルタリング)
+        function handleDemoStampUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+
+                    const maxDim = 300;
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > maxDim || h > maxDim) {
+                        if (w > h) {
+                            h = Math.round((h * maxDim) / w);
+                            w = maxDim;
+                        } else {
+                            w = Math.round((w * maxDim) / h);
+                            h = maxDim;
+                        }
+                    }
+
+                    canvas.width = w;
+                    canvas.height = h;
+                    ctx.drawImage(img, 0, 0, w, h);
+
+                    const imgData = ctx.getImageData(0, 0, w, h);
+                    const data = imgData.data;
+
+                    // 白〜明るい背景部分 (RGB > 165) を透過化
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i];
+                        const g = data[i + 1];
+                        const b = data[i + 2];
+                        if (r > 165 && g > 165 && b > 165) {
+                            data[i + 3] = 0; // Alpha透明化
+                        }
+                    }
+
+                    ctx.putImageData(imgData, 0, 0);
+                    const transparentSrc = canvas.toDataURL('image/png');
+                    applyDemoStamp(transparentSrc);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function loadDefaultDemoStamp() {
+            // 朱肉（赤）色のデモ印鑑画像をCanvasで自動生成
+            const canvas = document.createElement('canvas');
+            canvas.width = 120;
+            canvas.height = 120;
+            const ctx = canvas.getContext('2d');
+            
+            // ハンコ風枠線
+            ctx.strokeStyle = '#dc2626';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(60, 60, 52, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(60, 60, 46, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // 印影文字
+            ctx.fillStyle = '#dc2626';
+            ctx.font = 'bold 22px serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('領収', 60, 44);
+            ctx.fillText('之印', 60, 76);
+
+            applyDemoStamp(canvas.toDataURL('image/png'));
+        }
+
+        function applyDemoStamp(src) {
+            const container = document.getElementById('demo-stamp-img-container');
+            const img = document.getElementById('demo-stamp-img');
+            const clearBtn = document.getElementById('demo-stamp-clear-btn');
+
+            img.src = src;
+            container.classList.remove('hidden');
+            clearBtn.classList.remove('hidden');
+        }
+
+        function clearDemoStamp() {
+            const container = document.getElementById('demo-stamp-img-container');
+            const img = document.getElementById('demo-stamp-img');
+            const clearBtn = document.getElementById('demo-stamp-clear-btn');
+
+            img.src = '';
+            container.classList.add('hidden');
+            clearBtn.classList.add('hidden');
         }
 
         function printReceiptMock() {

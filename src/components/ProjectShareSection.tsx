@@ -236,67 +236,96 @@ export default function ProjectShareSection({
         {projectShares.length === 0 ? (
           <p className="text-[11px] text-gray-400 italic">まだ共有しているcrewはいません</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {projectShares.map((share) => {
-              const linkedMember = members.find((m) => m.userId === share.userId);
-              return (
-                <div
-                  key={share.id}
-                  className="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm space-y-2.5 relative flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-start justify-between">
-                      <div className="truncate pr-4">
+          <div className="overflow-x-auto border border-gray-200 rounded-xl bg-white shadow-sm">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50/75 border-b border-gray-200 text-gray-500 font-bold text-[10px]">
+                  <th className="py-2.5 px-3.5 font-extrabold text-slate-600">クルー情報</th>
+                  <th className="py-2.5 px-2 text-center font-extrabold text-slate-600 w-20">個人閲覧</th>
+                  <th className="py-2.5 px-2 text-center font-extrabold text-slate-600 w-20">全体閲覧</th>
+                  <th className="py-2.5 px-2 text-center font-extrabold text-slate-600 w-20">編集可能</th>
+                  <th className="py-2.5 px-3 text-right font-extrabold text-slate-600 w-12">解除</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-155">
+                {projectShares.map((share) => {
+                  const linkedMember = members.find((m) => m.userId === share.userId);
+                  return (
+                    <tr key={share.id} className="hover:bg-slate-50/50 transition-colors">
+                      {/* クルー情報 */}
+                      <td className="py-3 px-3.5 min-w-[140px]">
                         <div className="flex items-center gap-1.5">
-                          <User className="h-3.5 w-3.5 text-slate-500" />
-                          <span className="font-extrabold text-slate-800 text-xs truncate">{share.user.name}</span>
+                          <User className="h-3.5 w-3.5 text-slate-500 flex-shrink-0" />
+                          <span className="font-extrabold text-slate-800 text-xs">{share.user.name}</span>
                         </div>
-                        <p className="text-[9px] text-slate-400 truncate pl-5 mt-0.5">{share.user.email}</p>
-                      </div>
-                      <button
-                        onClick={() => handleRemove(share.id)}
-                        disabled={isPending}
-                        className="text-red-500 hover:bg-red-50 p-1 rounded-md transition flex-shrink-0 cursor-pointer"
-                        title="共有解除"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                    {linkedMember && (
-                      <div className="pl-5 mt-1.5">
-                        <span className="text-[8px] bg-indigo-50 border border-indigo-150 text-indigo-750 px-1.5 py-0.5 rounded font-extrabold">
-                          名簿メンバー: {linkedMember.name}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                        <p className="text-[9px] text-slate-400 pl-5 mt-0.5">{share.user.email}</p>
+                        {linkedMember && (
+                          <div className="pl-5 mt-1.5">
+                            <span className="text-[8px] bg-indigo-50 border border-indigo-150 text-indigo-750 px-1.5 py-0.5 rounded font-extrabold inline-block">
+                              名簿: {linkedMember.name}
+                            </span>
+                          </div>
+                        )}
+                      </td>
+                      
+                      {/* 個人閲覧 */}
+                      <td className="py-3 px-2 text-center">
+                        <label className="inline-flex items-center justify-center p-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`role-${share.id}`}
+                            checked={share.role === 'viewer_personal'}
+                            onChange={() => handleRoleChange(share.id, 'viewer_personal')}
+                            disabled={isPending}
+                            className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 cursor-pointer disabled:opacity-50"
+                          />
+                        </label>
+                      </td>
 
-                  <div className="border-t border-slate-200/60 pt-2 space-y-1">
-                    <span className="block text-[8px] font-bold text-slate-450 uppercase tracking-wider">権限の割り当て</span>
-                    <div className="grid grid-cols-3 gap-1">
-                      {[
-                        { val: 'viewer_personal', label: '個人閲覧' },
-                        { val: 'viewer_all', label: '全体閲覧' },
-                        { val: 'editor', label: '編集可能' },
-                      ].map((opt) => (
+                      {/* 全体閲覧 */}
+                      <td className="py-3 px-2 text-center">
+                        <label className="inline-flex items-center justify-center p-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`role-${share.id}`}
+                            checked={share.role === 'viewer_all'}
+                            onChange={() => handleRoleChange(share.id, 'viewer_all')}
+                            disabled={isPending}
+                            className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 cursor-pointer disabled:opacity-50"
+                          />
+                        </label>
+                      </td>
+
+                      {/* 編集可能 */}
+                      <td className="py-3 px-2 text-center">
+                        <label className="inline-flex items-center justify-center p-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`role-${share.id}`}
+                            checked={share.role === 'editor'}
+                            onChange={() => handleRoleChange(share.id, 'editor')}
+                            disabled={isPending}
+                            className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 cursor-pointer disabled:opacity-50"
+                          />
+                        </label>
+                      </td>
+
+                      {/* 解除 */}
+                      <td className="py-3 px-3 text-right">
                         <button
-                          key={opt.val}
+                          onClick={() => handleRemove(share.id)}
                           disabled={isPending}
-                          onClick={() => handleRoleChange(share.id, opt.val)}
-                          className={`py-1 text-[9px] rounded font-bold transition-all border cursor-pointer ${
-                            share.role === opt.val
-                              ? 'bg-indigo-650 border-indigo-700 text-white shadow-sm'
-                              : 'bg-white border-slate-250 text-slate-600 hover:bg-slate-100 hover:border-slate-350'
-                          }`}
+                          className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition inline-flex items-center justify-center cursor-pointer"
+                          title="共有解除"
                         >
-                          {opt.label}
+                          <X className="h-3.5 w-3.5" />
                         </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

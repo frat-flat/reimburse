@@ -220,7 +220,7 @@
                                                     <i data-lucide="trash-2" class="h-3 w-3"></i>
                                                 </button>
                                             </div>
-                                            <span class="text-[9px] text-slate-450 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded hidden" id="expense-self-edit-badge">編集不可</span>
+                                            <span class="text-[9px] text-slate-455 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded hidden" id="expense-self-edit-badge">編集不可</span>
                                         </div>
                                     </div>
                                 </div>
@@ -233,10 +233,31 @@
                             <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3" id="block-share-section">
                                 <div class="flex items-center gap-1.5 border-b border-slate-100 pb-2">
                                     <i data-lucide="share-2" class="h-4.5 w-4.5 text-indigo-650"></i>
-                                    <h3 class="text-xs font-bold text-slate-800">イベントの共有 (crew)</h3>
+                                    <h3 class="text-xs font-bold text-slate-800 font-extrabold">イベントの共有 (crew設定)</h3>
                                 </div>
-                                <div class="space-y-2 text-[9px] text-slate-400 font-bold bg-slate-50 p-2 border border-slate-200 rounded">
-                                    共有管理ボードは、主催者(Owner)のみ閲覧・管理できます。
+                                <!-- ミニテーブル形式の権限ボードモック -->
+                                <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                                    <table class="w-full text-left text-[9px] border-collapse">
+                                        <thead>
+                                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold">
+                                                <th class="py-1.5 px-2">クルー</th>
+                                                <th class="py-1.5 px-0.5 text-center w-8">個人</th>
+                                                <th class="py-1.5 px-0.5 text-center w-8">全体</th>
+                                                <th class="py-1.5 px-0.5 text-center w-8">編集</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="hover:bg-slate-50">
+                                                <td class="py-2 px-2">
+                                                    <span class="font-extrabold block text-slate-800">さとう</span>
+                                                    <span class="text-[7px] text-slate-400">名簿: さとう</span>
+                                                </td>
+                                                <td class="text-center py-2"><input type="radio" name="mock-share-role" checked disabled class="h-3 w-3 cursor-not-allowed"></td>
+                                                <td class="text-center py-2"><input type="radio" name="mock-share-role" disabled class="h-3 w-3 cursor-not-allowed"></td>
+                                                <td class="text-center py-2"><input type="radio" name="mock-share-role" disabled class="h-3 w-3 cursor-not-allowed"></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
 

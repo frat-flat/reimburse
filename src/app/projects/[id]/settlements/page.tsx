@@ -9,8 +9,9 @@ import {
   actionConfirmSettlements,
   actionUnlockSettlements,
   actionToggleSettlementPaid,
+  actionToggleMemberDisclosure,
 } from '@/lib/actions';
-import { ArrowLeft, Landmark, AlertTriangle, ArrowRight, Sparkles, RefreshCw, Smartphone } from 'lucide-react';
+import { ArrowLeft, Landmark, AlertTriangle, ArrowRight, Sparkles, RefreshCw, Smartphone, Eye } from 'lucide-react';
 
 interface SettlementsPageProps {
   params: Promise<{ id: string }>;
@@ -179,6 +180,16 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
     await actionUnlockSettlements(projectId);
   };
 
+  // 開示設定トグルのアクションラッパー
+  const handleToggleDisclosure = async (formData: FormData) => {
+    'use server';
+    const memberId = formData.get('memberId') as string;
+    const field = formData.get('field') as 'bank' | 'paypay';
+    const enabled = formData.get('enabled') === 'true';
+    if (!memberId || !field) return;
+    await actionToggleMemberDisclosure(memberId, field, enabled);
+  };
+
   return (
     <div className="space-y-6">
       {/* 上部ヘッダー */}
@@ -296,7 +307,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                           {(isOwner || (linkedMember && s.fromUserId === linkedMember.id)) && (
                             <div className="flex items-center gap-1.5 mr-1">
                               {/* PayPayで送金 */}
-                              {project.allowPaypay !== false && recUser?.paypayUrl && recUser?.showPaypay !== false && (
+                              {project.allowPaypay !== false && recUser?.paypayUrl && recMember?.showPaypay !== false && (
                                 <a
                                   href={recUser.paypayUrl.startsWith('http') ? recUser.paypayUrl : `https://paypay.me/${recUser.paypayUrl}`}
                                   target="_blank"
@@ -309,7 +320,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                               )}
 
                               {/* 銀行振込先口座情報 */}
-                              {project.allowBankTransfer !== false && recUser?.bankName && recUser?.accountNumber && recUser?.accountHolder && recUser?.showBankAccount !== false && (
+                              {project.allowBankTransfer !== false && recUser?.bankName && recUser?.accountNumber && recUser?.accountHolder && recMember?.showBankAccount !== false && (
                                 <BankInfoModal
                                   bankName={recUser.bankName}
                                   bankCode={recUser.bankCode}
@@ -364,6 +375,61 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
 
         {/* 右側：確定/解除のアクション & プロジェクト統計 */}
         <div className="space-y-6">
+          {/* このイベントでの決済情報の開示トグル（共有メンバー自身の場合のみ） */}
+          {linkedMember && (
+            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-3">
+              <h3 className="text-sm font-bold text-gray-900 pb-2 border-b border-gray-100 flex items-center gap-1.5">
+                <Eye className="h-4.5 w-4.5 text-indigo-650" />
+                <span>イベント決済情報の開示設定</span>
+              </h3>
+              <p className="text-[10px] text-gray-500 leading-normal">
+                他のクルーがあなたへ送金する際、口座情報やPayPay送金リンクを表示するかどうかを、このイベント個別に制御できます。
+              </p>
+              
+              <div className="space-y-2.5 pt-1 text-xs">
+                {/* 銀行口座開示トグル */}
+                <form action={handleToggleDisclosure} className="flex items-center justify-between">
+                  <input type="hidden" name="memberId" value={linkedMember.id} />
+                  <input type="hidden" name="field" value="bank" />
+                  <input type="hidden" name="enabled" value={linkedMember.showBankAccount ? 'false' : 'true'} />
+                  <span className="font-semibold text-gray-700 text-[11px]">銀行口座情報を開示する</span>
+                  <button
+                    type="submit"
+                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      linkedMember.showBankAccount ? 'bg-indigo-600' : 'bg-gray-200'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        linkedMember.showBankAccount ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </form>
+
+                {/* PayPay開示トグル */}
+                <form action={handleToggleDisclosure} className="flex items-center justify-between">
+                  <input type="hidden" name="memberId" value={linkedMember.id} />
+                  <input type="hidden" name="field" value="paypay" />
+                  <input type="hidden" name="enabled" value={linkedMember.showPaypay ? 'false' : 'true'} />
+                  <span className="font-semibold text-gray-700 text-[11px]">PayPay送金先を開示する</span>
+                  <button
+                    type="submit"
+                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      linkedMember.showPaypay ? 'bg-indigo-600' : 'bg-gray-200'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        linkedMember.showPaypay ? 'translate-x-4' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
+
           {/* 精算コントロールカード */}
           <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
             <h3 className="text-base font-bold text-gray-900 pb-2 border-b border-gray-100">

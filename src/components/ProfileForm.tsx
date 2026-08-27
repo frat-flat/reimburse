@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Landmark, Smartphone, AlertCircle, HelpCircle } from 'lucide-react';
 import ImageCropper from './ImageCropper';
@@ -49,10 +49,24 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
   const [stampSize, setStampSize] = useState(initialData.stampSize || 60);
   const [cropperSrc, setCropperSrc] = useState<string | null>(null);
 
-  // API解決用の状態
+  // API解決用およびサジェスト検索用の状態
+  interface ZenginItem {
+    code: string;
+    name: string;
+    name_kana: string;
+  }
+  const [banksList, setBanksList] = useState<Record<string, ZenginItem>>({});
+  const [branchesList, setBranchesList] = useState<Record<string, ZenginItem>>({});
+  const [bankSuggestions, setBankSuggestions] = useState<ZenginItem[]>([]);
+  const [branchSuggestions, setBranchSuggestions] = useState<ZenginItem[]>([]);
+  const [showBankSuggestions, setShowBankSuggestions] = useState(false);
+  const [showBranchSuggestions, setShowBranchSuggestions] = useState(false);
   const [loadingBank, setLoadingBank] = useState(false);
   const [loadingBranch, setLoadingBranch] = useState(false);
   const [holderError, setHolderError] = useState<string | null>(null);
+
+  const bankRef = useRef<HTMLDivElement>(null);
+  const branchRef = useRef<HTMLDivElement>(null);
 
   // 主要銀行のクイック入力用定義
   const MAJOR_BANKS = [
@@ -66,7 +80,6 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
   // 口座名義（カナ）のクライアント側リアルタイムバリデーション
   useEffect(() => {
     if (accountHolder) {
-      // 全角カタカナ、半角カタカナ、長音、およびスペースのみ許容
       const isValid = /^[ァ-ヶーｱ-ﾝﾞﾟ\s　]+$/.test(accountHolder);
       if (!isValid) {
         setHolderError('口座名義はカナ表記（カタカナ・スペース）で入力してください（漢字・アルファベットは不可）。');
@@ -78,66 +91,140 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
     }
   }, [accountHolder]);
 
-  // 銀行コード入力時の自動解決
+  // 初回ロード時に zengin banks.json を取得キャッシュ
+  useEffect(() => {
+    const fetchBanks = async () => {
+      setLoadingBank(true);
+      try {
+        const res = await fetch('/api/banks');
+        if (res.ok) {
+          const data = await res.json();
+          setBanksList(data);
+        }
+      } catch (e) {
+        console.error('Error fetching banks.json:', e);
+      } finally {
+        setLoadingBank(false);
+      }
+    };
+    fetchBanks();
+  }, []);
+
+  // 金融機関コードが4桁になったら支店リストを一括取得
   useEffect(() => {
     if (bankCode.length === 4) {
-      const fetchBank = async () => {
-        setLoadingBank(true);
-        try {
-          const res = await fetch('https://zengin-code.github.io/api/banks.json');
-          if (res.ok) {
-            const data = await res.json();
-            if (data[bankCode]) {
-              setBankName(data[bankCode].name);
-              setErrorMsg(null);
-            } else {
-              setBankName('');
-              setErrorMsg('該当する銀行コードが見つかりません。');
-            }
-          }
-        } catch (e) {
-          console.error('Error fetching bank:', e);
-        } finally {
-          setLoadingBank(false);
-        }
-      };
-      fetchBank();
-    }
-  }, [bankCode]);
-
-  // 支店コード入力時の自動解決
-  useEffect(() => {
-    if (bankCode.length === 4 && branchCode.length === 3) {
-      const fetchBranch = async () => {
+      const fetchBranches = async () => {
         setLoadingBranch(true);
         try {
-          const res = await fetch(`https://zengin-code.github.io/api/banks/${bankCode}/branches.json`);
+          const res = await fetch(`/api/branches/${bankCode}`);
           if (res.ok) {
             const data = await res.json();
-            if (data[branchCode]) {
-              setBranchName(data[branchCode].name);
-              setErrorMsg(null);
-            } else {
-              setBranchName('');
-              setErrorMsg('該当する支店コードが見つかりません。');
-            }
+            setBranchesList(data);
+          } else {
+            setBranchesList({});
           }
         } catch (e) {
-          console.error('Error fetching branch:', e);
+          console.error('Error fetching branches:', e);
+          setBranchesList({});
         } finally {
           setLoadingBranch(false);
         }
       };
-      fetchBranch();
+      fetchBranches();
+    } else {
+      setBranchesList({});
+      setBranchCode('');
+      setBranchName('');
     }
-  }, [branchCode, bankCode]);
+  }, [bankCode]);
 
-  // クイック銀行選択ハンドラ
+  // 金融機関コード/名入力の相互補完サジェストロジック
+  const handleBankInputChange = (value: string, isCode: boolean) => {
+    if (isCode) {
+      const cleanVal = value.replace(/\D/g, '').slice(0, 4);
+      setBankCode(cleanVal);
+      
+      if (cleanVal.length === 4 && banksList[cleanVal]) {
+        setBankName(banksList[cleanVal].name);
+        setShowBankSuggestions(false);
+      } else {
+        const matched = Object.values(banksList).filter((b) => b.code.startsWith(cleanVal));
+        setBankSuggestions(matched.slice(0, 10));
+        setShowBankSuggestions(true);
+      }
+    } else {
+      setBankName(value);
+      if (value.trim()) {
+        const query = value.toLowerCase();
+        const matched = Object.values(banksList).filter(
+          (b) =>
+            b.name.toLowerCase().includes(query) ||
+            b.name_kana.toLowerCase().includes(query) ||
+            b.code.includes(query)
+        );
+        setBankSuggestions(matched.slice(0, 10));
+        setShowBankSuggestions(true);
+      } else {
+        setBankSuggestions([]);
+        setShowBankSuggestions(false);
+      }
+    }
+  };
+
+  // 支店コード/名入力の相互補完サジェストロジック
+  const handleBranchInputChange = (value: string, isCode: boolean) => {
+    if (isCode) {
+      const cleanVal = value.replace(/\D/g, '').slice(0, 3);
+      setBranchCode(cleanVal);
+      
+      if (cleanVal.length === 3 && branchesList[cleanVal]) {
+        setBranchName(branchesList[cleanVal].name);
+        setShowBranchSuggestions(false);
+      } else {
+        const matched = Object.values(branchesList).filter((b) => b.code.startsWith(cleanVal));
+        setBranchSuggestions(matched.slice(0, 10));
+        setShowBranchSuggestions(true);
+      }
+    } else {
+      setBranchName(value);
+      if (value.trim()) {
+        const query = value.toLowerCase();
+        const matched = Object.values(branchesList).filter(
+          (b) =>
+            b.name.toLowerCase().includes(query) ||
+            b.name_kana.toLowerCase().includes(query) ||
+            b.code.includes(query)
+        );
+        setBranchSuggestions(matched.slice(0, 10));
+        setShowBranchSuggestions(true);
+      } else {
+        setBranchSuggestions([]);
+        setShowBranchSuggestions(false);
+      }
+    }
+  };
+
+  // サジェストドロップダウン用のエリア外クリックハンドラ
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (bankRef.current && !bankRef.current.contains(e.target as Node)) {
+        setShowBankSuggestions(false);
+      }
+      if (branchRef.current && !branchRef.current.contains(e.target as Node)) {
+        setShowBranchSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  // クイック主要銀行選択ハンドラ
   const handleSelectMajorBank = (code: string, name: string) => {
     setBankCode(code);
     setBankName(name);
     setBranchCode('');
     setBranchName('');
+    setShowBankSuggestions(false);
   };
 
   // 印影画像の選択（トリミング調整モーダル起動用）
@@ -407,19 +494,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
               ※ PayPayアプリ内の「送る・受け取る」＞「マイコード」＞「受け取りリンクをコピー」したURLを入力してください。
             </p>
 
-            <div className="flex items-center gap-2 mt-3 pt-2 border-t border-slate-100">
-              <input
-                type="checkbox"
-                id="showPaypay"
-                name="showPaypay"
-                checked={showPaypay}
-                onChange={(e) => setShowPaypay(e.target.checked)}
-                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
-              />
-              <label htmlFor="showPaypay" className="text-xs font-bold text-slate-700 select-none cursor-pointer">
-                他のクルーにPayPay送金リンクを開示する
-              </label>
-            </div>
+            <input type="hidden" name="showPaypay" value={showPaypay ? 'true' : 'false'} />
           </div>
         </div>
 
@@ -454,7 +529,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
           </div>
 
           <div className="space-y-3.5 text-xs">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 relative" ref={bankRef}>
               {/* 銀行コード */}
               <div className="md:col-span-1">
                 <label className="block text-slate-700 font-bold mb-1">
@@ -464,7 +539,8 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
                   type="text"
                   name="bankCode"
                   value={bankCode}
-                  onChange={(e) => setBankCode(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  onChange={(e) => handleBankInputChange(e.target.value, true)}
+                  onFocus={() => bankCode.length > 0 && setShowBankSuggestions(true)}
                   placeholder="例: 0005"
                   maxLength={4}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium font-mono"
@@ -474,20 +550,44 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
               {/* 銀行名 */}
               <div className="md:col-span-2">
                 <label className="block text-slate-700 font-bold mb-1">
-                  金融機関名 (API自動取得) {loadingBank && <span className="text-[9px] text-indigo-650 animate-pulse">(取得中...)</span>}
+                  金融機関名 (サジェスト候補あり) {loadingBank && <span className="text-[9px] text-indigo-650 animate-pulse">(取得中...)</span>}
                 </label>
                 <input
                   type="text"
                   name="bankName"
                   value={bankName}
-                  onChange={(e) => setBankName(e.target.value)}
-                  placeholder="コードから自動入力、または手入力"
-                  className="w-full border border-gray-300 bg-slate-50 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-bold"
+                  onChange={(e) => handleBankInputChange(e.target.value, false)}
+                  onFocus={() => setShowBankSuggestions(true)}
+                  placeholder="カタカナ・ひらがな・漢字で検索可能"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-bold"
                 />
               </div>
+
+              {/* サジェストドロップダウン */}
+              {showBankSuggestions && bankSuggestions.length > 0 && (
+                <div className="absolute top-[56px] left-0 w-full z-30 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg">
+                  {bankSuggestions.map((b) => (
+                    <button
+                      key={b.code}
+                      type="button"
+                      onClick={() => {
+                        setBankCode(b.code);
+                        setBankName(b.name);
+                        setBranchCode('');
+                        setBranchName('');
+                        setShowBankSuggestions(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 border-b border-slate-100 last:border-0 font-bold text-slate-700 flex justify-between items-center"
+                    >
+                      <span>{b.name} <span className="text-[9px] text-slate-400">({b.name_kana})</span></span>
+                      <span className="font-mono text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{b.code}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 relative" ref={branchRef}>
               {/* 支店コード */}
               <div className="md:col-span-1">
                 <label className="block text-slate-700 font-bold mb-1">
@@ -497,27 +597,52 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
                   type="text"
                   name="branchCode"
                   value={branchCode}
-                  onChange={(e) => setBranchCode(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                  placeholder="例: 001"
+                  onChange={(e) => handleBranchInputChange(e.target.value, true)}
+                  onFocus={() => branchCode.length > 0 && setShowBranchSuggestions(true)}
+                  disabled={bankCode.length !== 4}
+                  placeholder={bankCode.length === 4 ? "例: 001" : "金融機関を先に選択"}
                   maxLength={3}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium font-mono"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium font-mono disabled:bg-slate-50 disabled:text-slate-400"
                 />
               </div>
 
               {/* 支店名 */}
               <div className="md:col-span-2">
                 <label className="block text-slate-700 font-bold mb-1">
-                  支店名 (API自動取得) {loadingBranch && <span className="text-[9px] text-indigo-650 animate-pulse">(取得中...)</span>}
+                  支店名 (サジェスト候補あり) {loadingBranch && <span className="text-[9px] text-indigo-650 animate-pulse">(取得中...)</span>}
                 </label>
                 <input
                   type="text"
                   name="branchName"
                   value={branchName}
-                  onChange={(e) => setBranchName(e.target.value)}
-                  placeholder="コードから自動入力、または手入力"
-                  className="w-full border border-gray-300 bg-slate-50 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-bold"
+                  onChange={(e) => handleBranchInputChange(e.target.value, false)}
+                  onFocus={() => setShowBranchSuggestions(true)}
+                  disabled={bankCode.length !== 4}
+                  placeholder={bankCode.length === 4 ? "カタカナ・ひらがな・漢字で検索可能" : "金融機関を先に選択してください"}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-bold disabled:bg-slate-50 disabled:text-slate-400"
                 />
               </div>
+
+              {/* サジェストドロップダウン */}
+              {showBranchSuggestions && branchSuggestions.length > 0 && (
+                <div className="absolute top-[56px] left-0 w-full z-30 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg">
+                  {branchSuggestions.map((b) => (
+                    <button
+                      key={b.code}
+                      type="button"
+                      onClick={() => {
+                        setBranchCode(b.code);
+                        setBranchName(b.name);
+                        setShowBranchSuggestions(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 border-b border-slate-100 last:border-0 font-bold text-slate-700 flex justify-between items-center"
+                    >
+                      <span>{b.name} <span className="text-[9px] text-slate-400">({b.name_kana})</span></span>
+                      <span className="font-mono text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{b.code}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -583,19 +708,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
               )}
             </div>
 
-            <div className="flex items-center gap-2 mt-4 pt-2 border-t border-slate-100">
-              <input
-                type="checkbox"
-                id="showBankAccount"
-                name="showBankAccount"
-                checked={showBankAccount}
-                onChange={(e) => setShowBankAccount(e.target.checked)}
-                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
-              />
-              <label htmlFor="showBankAccount" className="text-xs font-bold text-slate-700 select-none cursor-pointer">
-                他のクルーに銀行口座情報を開示する
-              </label>
-            </div>
+            <input type="hidden" name="showBankAccount" value={showBankAccount ? 'true' : 'false'} />
           </div>
         </div>
 

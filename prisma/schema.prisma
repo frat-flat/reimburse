@@ -95,6 +95,8 @@ model Member {
   name      String
   userId    String?  // システム登録ユーザーと紐付ける場合
   createdAt DateTime @default(now())
+  showBankAccount Boolean @default(true)
+  showPaypay      Boolean @default(true)
 
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)

@@ -110,6 +110,8 @@ export async function actionCreateProject(formData: FormData) {
           projectId: project.id,
           name: currentUser.name,
           userId: currentUser.id,
+          showBankAccount: currentUser.showBankAccount !== false,
+          showPaypay: currentUser.showPaypay !== false,
         },
       });
 
@@ -1126,10 +1128,18 @@ export async function actionShareProject(
     });
 
     await prisma.$transaction(async (tx) => {
-      // 1. プロジェクトの精算メンバー(Member)に共有相手のUser IDを紐付ける
+      const friendUser = await tx.user.findUnique({
+        where: { id: friendUserId },
+      });
+
+      // 1. プロジェクトの精算メンバー(Member)に共有相手のUser IDとデフォルト開示設定を紐付ける
       await tx.member.update({
         where: { id: memberId },
-        data: { userId: friendUserId },
+        data: { 
+          userId: friendUserId,
+          showBankAccount: friendUser?.showBankAccount !== false,
+          showPaypay: friendUser?.showPaypay !== false,
+        },
       });
 
       // 2. 共有設定を作成または更新
@@ -1428,5 +1438,48 @@ export async function actionUpdateProfile(formData: FormData) {
   } catch (err: any) {
     console.error('Error updating user profile:', err);
     return { error: err.message || 'プロフィールの更新中にエラーが発生しました。' };
+  }
+}
+
+export async function actionToggleMemberDisclosure(
+  memberId: string,
+  field: 'bank' | 'paypay',
+  enabled: boolean
+) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    return { error: 'ログインが必要です。' };
+  }
+
+  try {
+    const member = await prisma.member.findUnique({
+      where: { id: memberId },
+      include: { project: true }
+    });
+
+    if (!member) {
+      return { error: 'メンバーが見つかりません。' };
+    }
+
+    // 自分のメンバーレコードであるか、または自分がプロジェクトのオーナーであるか
+    const isSelf = member.userId === currentUser.id;
+    const isOwner = member.project.createdBy === currentUser.id;
+
+    if (!isSelf && !isOwner) {
+      return { error: '開示設定を変更する権限がありません。' };
+    }
+
+    await prisma.member.update({
+      where: { id: memberId },
+      data: {
+        [field === 'bank' ? 'showBankAccount' : 'showPaypay']: enabled,
+      },
+    });
+
+    revalidatePath(`/projects/${member.projectId}/settlements`);
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error toggling member disclosure:', err);
+    return { error: err.message || '更新中にエラーが発生しました。' };
   }
 }

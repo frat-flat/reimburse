@@ -29,7 +29,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-extrabold tracking-tight">クルー（crew）権限別アクションガイド</h1>
-                    <p class="text-xs text-indigo-200 mt-1">共有クルーの4つの権限の違いおよびマイページ登録（口座・PayPay送金連携、開示制御）の違いをシミュレーションします</p>
+                    <p class="text-xs text-indigo-200 mt-1">共有クルーの4つの権限の違い、口座サジェスト検索の相互補完、およびイベントごとの開示設定をシミュレーションします</p>
                 </div>
             </div>
         </div>
@@ -37,7 +37,7 @@
 
     <main class="max-w-5xl mx-auto px-4 mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        <!-- 左カラム: インタラクティブ・コントローラー & 権限比較 -->
+        <!-- 左カラム: コントローラー & サジェストデモ -->
         <div class="lg:col-span-1 space-y-6">
             
             <!-- ロール選択パネル -->
@@ -101,6 +101,42 @@
                 </div>
             </div>
 
+            <!-- 口座サジェスト検索シミュレーター (デモ用) -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                <h2 class="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3 mb-3">
+                    <i data-lucide="landmark" class="text-indigo-650 h-5 w-5"></i>
+                    <span>【サジェストデモ】口座の相互補完</span>
+                </h2>
+                <p class="text-[10px] text-slate-500 mb-4 leading-relaxed font-semibold">
+                    金融機関名（「みずほ」「三菱」など）や、支店名（「渋谷」「東京」など）を入力した際の部分一致サジェスト検索と相互補完を試せます。
+                </p>
+                
+                <div class="space-y-3.5 text-xs">
+                    <!-- 銀行名入力 -->
+                    <div class="relative">
+                        <label class="block text-slate-700 font-bold mb-1">金融機関名</label>
+                        <input type="text" id="guide-bank-name" oninput="filterGuideBanks(this.value)" onfocus="showGuideBanks()" placeholder="例: みずほ" class="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs font-bold focus:ring-1 focus:ring-indigo-500">
+                        <div id="guide-bank-suggest" class="absolute top-[48px] left-0 w-full z-30 max-h-40 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg hidden"></div>
+                    </div>
+                    <!-- 銀行コード -->
+                    <div>
+                        <label class="block text-slate-700 font-bold mb-1">金融機関コード</label>
+                        <input type="text" id="guide-bank-code" oninput="filterGuideBanksByCode(this.value)" placeholder="例: 0001" class="w-full border border-gray-300 bg-slate-50 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold">
+                    </div>
+                    <!-- 支店名入力 -->
+                    <div class="relative">
+                        <label class="block text-slate-700 font-bold mb-1">支店名</label>
+                        <input type="text" id="guide-branch-name" disabled oninput="filterGuideBranches(this.value)" onfocus="showGuideBranches()" placeholder="金融機関を先に選択" class="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs font-bold focus:ring-1 focus:ring-indigo-500 disabled:bg-slate-50 disabled:text-slate-400">
+                        <div id="guide-branch-suggest" class="absolute top-[48px] left-0 w-full z-30 max-h-40 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg hidden"></div>
+                    </div>
+                    <!-- 支店コード -->
+                    <div>
+                        <label class="block text-slate-700 font-bold mb-1">支店コード</label>
+                        <input type="text" id="guide-branch-code" disabled placeholder="金融機関を先に選択" class="w-full border border-gray-300 bg-slate-50 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold disabled:bg-slate-50 disabled:text-slate-400">
+                    </div>
+                </div>
+            </div>
+
             <!-- イベントの決済許可設定 (デモ用) -->
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
                 <h2 class="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
@@ -122,19 +158,19 @@
                 </div>
             </div>
 
-            <!-- 相手（受取人）の開示設定 (デモ用) -->
+            <!-- 相手（受取人よしだ）のイベント開示設定 (デモ用) -->
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
                 <h2 class="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
                     <i data-lucide="eye-off" class="text-indigo-650 h-5 w-5"></i>
-                    <span>相手の支払い開示設定（デモ用）</span>
+                    <span>相手のイベント開示設定（デモ用）</span>
                 </h2>
                 <p class="text-xs text-slate-500 mb-4 leading-relaxed font-semibold">
-                    受取人「よしだ」がマイページで設定している「開示する・しない」のトグルをシミュレートできます。
+                    受取人「よしだ」が**このイベント（沖縄旅行）で個別に設定している**開示トグルをシミュレートできます。
                 </p>
                 <div class="space-y-3 text-xs">
                     <div class="flex items-center gap-2">
                         <input type="checkbox" id="demo-toggle-paypay" checked onchange="toggleDemoVisibility()" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer">
-                        <label for="demo-toggle-paypay" class="font-bold text-slate-700 select-none cursor-pointer">PayPay送金リンクを開示する</label>
+                        <label for="demo-toggle-paypay" class="font-bold text-slate-700 select-none cursor-pointer">PayPay送金先を開示する</label>
                     </div>
                     <div class="flex items-center gap-2">
                         <input type="checkbox" id="demo-toggle-bank" checked onchange="toggleDemoVisibility()" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer">
@@ -187,19 +223,19 @@
                         <!-- 基本統計プレビュー -->
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
                             <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl">
-                                <span class="text-[9px] text-slate-450 block font-bold">総支出</span>
+                                <span class="text-[9px] text-slate-455 block font-bold">総支出</span>
                                 <strong class="text-sm font-extrabold text-slate-800" id="stat-total-expense">45,000円</strong>
                             </div>
                             <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl">
-                                <span class="text-[9px] text-slate-450 block font-bold">精算状態</span>
+                                <span class="text-[9px] text-slate-455 block font-bold">精算状態</span>
                                 <strong class="text-sm font-extrabold text-amber-705" id="settlement-status">未確定 (アクティブ)</strong>
                             </div>
                             <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl">
-                                <span class="text-[9px] text-slate-450 block font-bold">あなたの役職</span>
+                                <span class="text-[9px] text-slate-455 block font-bold">あなたの役職</span>
                                 <strong class="text-sm font-extrabold text-indigo-750" id="badge-your-role">主催者</strong>
                             </div>
                             <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl">
-                                <span class="text-[9px] text-slate-450 block font-bold">対応精算メンバー</span>
+                                <span class="text-[9px] text-slate-455 block font-bold">対応精算メンバー</span>
                                 <strong class="text-sm font-extrabold text-slate-800">たろう</strong>
                             </div>
                         </div>
@@ -324,6 +360,26 @@
 
                         <!-- 模擬レポートコンテンツ -->
                         <div class="space-y-4 text-xs">
+                            
+                            <!-- デモ用：このイベントでの決済情報の開示トグル -->
+                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-2 space-y-2 animate-fade">
+                                <h4 class="font-bold text-slate-850 flex items-center gap-1">
+                                    <i data-lucide="eye" class="h-3.5 w-3.5 text-indigo-655"></i>
+                                    <span>【デモ用】あなたのこのイベントでの決済開示設定</span>
+                                </h4>
+                                <p class="text-[9px] text-slate-500">あなたが受取側のときに他のクルーへ表示する口座やPayPay情報を、イベント個別に制御します。</p>
+                                <div class="flex gap-4 text-[10px] font-bold">
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="checkbox" id="demo-self-bank-toggle" checked onchange="toggleSelfDisclosureDemo()" class="h-3.5 w-3.5 text-indigo-600 border-gray-300 rounded cursor-pointer">
+                                        <label for="demo-self-bank-toggle" class="font-bold text-slate-700 select-none cursor-pointer">銀行口座情報を開示する</label>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="checkbox" id="demo-self-paypay-toggle" checked onchange="toggleSelfDisclosureDemo()" class="h-3.5 w-3.5 text-indigo-600 border-gray-300 rounded cursor-pointer">
+                                        <label for="demo-self-paypay-toggle" class="font-bold text-slate-700 select-none cursor-pointer">PayPay送金先を開示する</label>
+                                    </div>
+                                </div>
+                            </div>
+
                             <h3 class="text-sm font-extrabold text-slate-800 border-l-4 border-indigo-600 pl-2">精算ルート (送金内訳)</h3>
                             
                             <div class="bg-indigo-50/55 p-4 border border-indigo-100 rounded-xl space-y-3">
@@ -339,7 +395,7 @@
                                     <div class="flex items-center gap-2.5">
                                         <strong class="text-indigo-950 text-sm font-extrabold">9,250円</strong>
                                         
-                                        <!-- 主催者のみが支払済にトグルできるボタン -->
+                                        <!-- 主主催者のみが支払済にトグルできるボタン -->
                                         <button onclick="toggleMockPaid()" id="mock-paid-toggle" class="bg-white hover:bg-slate-50 border border-slate-350 text-slate-700 font-extrabold py-1 px-2.5 rounded-lg text-[9px] shadow transition hidden">
                                             未支払
                                         </button>
@@ -421,7 +477,7 @@
                     <button onclick="printReceiptMock()" class="bg-indigo-600 hover:bg-indigo-755 text-white font-bold py-1 px-3 rounded-lg text-[10px] flex items-center gap-1 cursor-pointer">
                         <i data-lucide="printer" class="h-3 w-3"></i> 印刷・PDF保存
                     </button>
-                    <button onclick="closeReceiptModal()" class="text-slate-400 hover:text-slate-650">
+                    <button onclick="closeReceiptModal()" class="text-slate-400 hover:text-slate-655">
                         <i data-lucide="x" class="h-4 w-4"></i>
                     </button>
                 </div>
@@ -617,7 +673,7 @@
 
             <div class="flex gap-2.5 pt-2">
                 <button onclick="closeDemoCropper()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs">キャンセル</button>
-                <button onclick="applyDemoCropper()" class="flex-1 bg-indigo-650 hover:bg-indigo-750 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1">
+                <button onclick="applyDemoCropper()" class="flex-1 bg-indigo-650 hover:bg-indigo-755 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1">
                     <i data-lucide="check" class="h-4 w-4"></i>
                     <span>切り抜いて適用</span>
                 </button>
@@ -630,6 +686,153 @@
         let currentRole = 'owner';
         let isConfirmed = false; // シミュレーター内の精算確定フラグ
         let isPaid = false;      // シミュレーター内の「支払済」フラグ
+
+        // 口座サジェスト検索のデモデータ
+        const mockBanks = [
+            { code: '0001', name: 'みずほ銀行', name_kana: 'ミズホ' },
+            { code: '0005', name: '三菱UFJ銀行', name_kana: 'ミツビシユーエフジェイ' },
+            { code: '0009', name: '三井住友銀行', name_kana: 'ミツイスミトモ' },
+            { code: '9900', name: 'ゆうちょ銀行', name_kana: 'ユウチョ' },
+            { code: '0010', name: 'りそな銀行', name_kana: 'リソナ' }
+        ];
+
+        const mockBranches = {
+            '0001': [
+                { code: '001', name: '東京営業部', name_kana: 'トウキョウ' },
+                { code: '010', name: '本店営業部', name_kana: 'ホンテン' },
+                { code: '002', name: '丸の内支店', name_kana: 'マルノウチ' },
+                { code: '360', name: '渋谷支店', name_kana: 'シブヤ' }
+            ],
+            '0005': [
+                { code: '001', name: '本社営業部', name_kana: 'ホンシャ' },
+                { code: '002', name: '丸の内支店', name_kana: 'マルノウチ' },
+                { code: '131', name: '渋谷支店', name_kana: 'シブヤ' },
+                { code: '006', name: '本店第一営業部', name_kana: 'ホンテン' }
+            ],
+            '0009': [
+                { code: '001', name: '本店営業部', name_kana: 'ホンテン' },
+                { code: '002', name: '東京営業部', name_kana: 'トウキョウ' },
+                { code: '210', name: '渋谷支店', name_kana: 'シブヤ' }
+            ],
+            '9900': [
+                { code: '001', name: '本店', name_kana: 'ホンテン' }
+            ],
+            '0010': [
+                { code: '001', name: '本店営業部', name_kana: 'ホンテン' },
+                { code: '260', name: '渋谷支店', name_kana: 'シブヤ' }
+            ]
+        };
+
+        let selectedBankCode = '';
+
+        function showGuideBanks() {
+            filterGuideBanks(document.getElementById('guide-bank-name').value);
+        }
+
+        function filterGuideBanks(val) {
+            const suggestDiv = document.getElementById('guide-bank-suggest');
+            suggestDiv.innerHTML = '';
+            
+            const query = val.trim().toLowerCase();
+            const matched = mockBanks.filter(b => 
+                b.name.includes(query) || 
+                b.name_kana.includes(query) || 
+                b.code.includes(query)
+            );
+
+            if (matched.length > 0) {
+                matched.forEach(b => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'w-full text-left px-3 py-1.5 text-xs hover:bg-slate-50 border-b border-slate-100 font-bold text-slate-700 flex justify-between items-center';
+                    btn.innerHTML = `<span>${b.name}</span><span class="font-mono text-[9px] bg-slate-100 px-1 py-0.2 rounded">${b.code}</span>`;
+                    btn.onclick = () => selectGuideBank(b.code, b.name);
+                    suggestDiv.appendChild(btn);
+                });
+                suggestDiv.classList.remove('hidden');
+            } else {
+                suggestDiv.classList.add('hidden');
+            }
+        }
+
+        function filterGuideBanksByCode(code) {
+            const clean = code.replace(/\D/g, '').slice(0, 4);
+            document.getElementById('guide-bank-code').value = clean;
+            
+            const matched = mockBanks.find(b => b.code === clean);
+            if (matched) {
+                selectGuideBank(matched.code, matched.name);
+            } else {
+                filterGuideBanks(clean);
+            }
+        }
+
+        function selectGuideBank(code, name) {
+            document.getElementById('guide-bank-code').value = code;
+            document.getElementById('guide-bank-name').value = name;
+            document.getElementById('guide-bank-suggest').classList.add('hidden');
+            selectedBankCode = code;
+
+            // 支店入力を活性化
+            document.getElementById('guide-branch-name').disabled = false;
+            document.getElementById('guide-branch-name').placeholder = '例: 渋谷支店';
+            document.getElementById('guide-branch-code').disabled = false;
+            document.getElementById('guide-branch-code').placeholder = '例: 001';
+
+            // クリア
+            document.getElementById('guide-branch-name').value = '';
+            document.getElementById('guide-branch-code').value = '';
+        }
+
+        function showGuideBranches() {
+            filterGuideBranches(document.getElementById('guide-branch-name').value);
+        }
+
+        function filterGuideBranches(val) {
+            const suggestDiv = document.getElementById('guide-branch-suggest');
+            suggestDiv.innerHTML = '';
+            
+            if (!selectedBankCode || !mockBranches[selectedBankCode]) return;
+
+            const query = val.trim().toLowerCase();
+            const matched = mockBranches[selectedBankCode].filter(b => 
+                b.name.includes(query) || 
+                b.name_kana.includes(query) || 
+                b.code.includes(query)
+            );
+
+            if (matched.length > 0) {
+                matched.forEach(b => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'w-full text-left px-3 py-1.5 text-xs hover:bg-slate-50 border-b border-slate-100 font-bold text-slate-700 flex justify-between items-center';
+                    btn.innerHTML = `<span>${b.name}</span><span class="font-mono text-[9px] bg-slate-100 px-1 py-0.2 rounded">${b.code}</span>`;
+                    btn.onclick = () => selectGuideBranch(b.code, b.name);
+                    suggestDiv.appendChild(btn);
+                });
+                suggestDiv.classList.remove('hidden');
+            } else {
+                suggestDiv.classList.add('hidden');
+            }
+        }
+
+        function selectGuideBranch(code, name) {
+            document.getElementById('guide-branch-code').value = code;
+            document.getElementById('guide-branch-name').value = name;
+            document.getElementById('guide-branch-suggest').classList.add('hidden');
+        }
+
+        // アウトサイドクリックでガイドのサジェストを閉じる
+        document.addEventListener('mousedown', function(e) {
+            const bankBox = document.getElementById('guide-bank-suggest');
+            const branchBox = document.getElementById('guide-branch-suggest');
+            if (bankBox && !document.getElementById('guide-bank-name').contains(e.target)) {
+                bankBox.classList.add('hidden');
+            }
+            if (branchBox && !document.getElementById('guide-branch-name').contains(e.target)) {
+                branchBox.classList.add('hidden');
+            }
+        });
 
         const roleData = {
             owner: {
@@ -849,6 +1052,16 @@
             }
         }
 
+        // ログインユーザー自身（たろう）の開示トグルのデモ用連動処理
+        function toggleSelfDisclosureDemo() {
+            const selfBank = document.getElementById('demo-self-bank-toggle').checked;
+            const selfPaypay = document.getElementById('demo-self-paypay-toggle').checked;
+
+            // さとう側から見た「たろう（受取側）」への精算ルート1で、たろう口座・PayPayへの送金ボタン表示制御
+            // さとう側のデモ確認用：実際には自分が支払側「たろう ➔ よしだ」の時のボタン表示制御（イベント設定と相手設定に連動）と同じ仕組み
+            updateReportDataView();
+        }
+
         // レポート・精算シミュレーター画面のデータ＆画面タイトル・領収書ボタン制御
         function updateReportDataView() {
             const reportTitleText = document.getElementById('report-title-text');
@@ -891,12 +1104,12 @@
                 receiptBtn.classList.add('hidden');
             }
 
-            // 4. 閲覧系制限（精算ルートの自分関連絞り込み、および個人別内訳のマスク）
+            // 4. 相手（よしだ）の開示トグル、およびプロジェクト決済設定に連動した送金ボタン表示制御
+            toggleDemoVisibility();
+
+            // 5. 閲覧系制限（精算ルートの自分関連絞り込み、および個人別内訳のマスク）
             if (currentRole === 'viewer_all' || currentRole === 'viewer_personal') {
-                // 閲覧者は自分に関係のない精算ルート2は非表示にするが、
-                // routeRow2は「たろう (あなた) ➔ よしだ」なので自分関連ルートのため表示対象のまま！
                 routeRow2.classList.remove('hidden');
-                // メンバー別内訳も「さとう（自分以外）」を非表示にする
                 reportRowOther.classList.add('hidden');
             } else {
                 routeRow2.classList.remove('hidden');
@@ -1039,7 +1252,6 @@
             canvas.width = targetSize;
             canvas.height = targetSize;
 
-            // 高品質スケーリング
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
 
@@ -1076,7 +1288,7 @@
             const imgData = ctx.getImageData(0, 0, targetSize, targetSize);
             const data = imgData.data;
 
-            // 白〜明るい背景を透過処理
+            // 白背景を透過
             for (let i = 0; i < data.length; i += 4) {
                 const r = data[i];
                 const g = data[i + 1];
@@ -1093,13 +1305,11 @@
         }
 
         function loadDefaultDemoStamp() {
-            // 朱肉（赤）色のデモ印鑑画像をCanvasで自動生成
             const canvas = document.createElement('canvas');
             canvas.width = 120;
             canvas.height = 120;
             const ctx = canvas.getContext('2d');
             
-            // ハンコ風枠線
             ctx.strokeStyle = '#dc2626';
             ctx.lineWidth = 4;
             ctx.beginPath();
@@ -1111,7 +1321,6 @@
             ctx.arc(60, 60, 46, 0, Math.PI * 2);
             ctx.stroke();
 
-            // 印影文字
             ctx.fillStyle = '#dc2626';
             ctx.font = 'bold 22px serif';
             ctx.textAlign = 'center';

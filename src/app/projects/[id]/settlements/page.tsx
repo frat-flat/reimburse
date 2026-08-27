@@ -27,7 +27,11 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     include: {
-      members: true,
+      members: {
+        include: {
+          user: true,
+        },
+      },
       expenses: {
         include: {
           payments: true,
@@ -258,15 +262,27 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                       {/* 支払済みチェックボタントグル（確定時のみ） */}
                       {isConfirmed && s.id && (
                         <div className="flex items-center gap-2">
-                          {/* 領収書発行ボタン（自分がReceiver＝受け取る側、かつ支払ルートが「支払済(paid)」になっている場合のみ表示） */}
-                          {linkedMember && s.toUserId === linkedMember.id && s.status === 'paid' && (
+                          {/* 領収書発行ボタン：
+                              1. 主催者 (isOwner) の場合は、デモ確認・印刷テスト用にすべての支払済取引で領収書発行が可能
+                              2. 一般メンバーの場合は、自分がReceiver（受け取る側）かつ「支払済(paid)」になっている取引のみ発行可能 */}
+                          {isConfirmed && s.status === 'paid' && (isOwner || (linkedMember && s.toUserId === linkedMember.id)) && (
                             <ReceiptModal
                               payerName={s.fromUserName}
                               receiverName={s.toUserName}
                               amount={s.amount}
                               projectName={project.name}
                               dateString={dateString}
-                              issuerInfo={issuerInfo}
+                              issuerInfo={(() => {
+                                const recMember = project.members.find((m) => m.id === s.toUserId);
+                                const recUser = recMember?.user;
+                                return {
+                                  name: recUser?.receiptIssuerName || recUser?.name || s.toUserName,
+                                  zip: recUser?.receiptIssuerZip || '',
+                                  address: recUser?.receiptIssuerAddress || '',
+                                  tel: recUser?.receiptIssuerTel || '',
+                                  regNo: recUser?.receiptIssuerRegNo || '',
+                                };
+                              })()}
                             />
                           )}
 

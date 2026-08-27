@@ -105,6 +105,7 @@ export async function actionCreateProject(formData: FormData) {
         data: {
           projectId: project.id,
           name: currentUser.name,
+          userId: currentUser.id,
         },
       });
 

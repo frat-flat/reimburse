@@ -204,6 +204,66 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
     }
   };
 
+  // フォーカスアウト時の銀行情報自動補完
+  const handleBankBlur = () => {
+    if (bankCode.length === 4 && banksList[bankCode] && banksList[bankCode].name === bankName) {
+      return;
+    }
+    const query = bankName.trim().toLowerCase();
+    if (!query) return;
+
+    // 1. 完全一致
+    let matched = Object.values(banksList).find(
+      (b) => b.name.toLowerCase() === query || b.name_kana.toLowerCase() === query
+    );
+    // 2. 部分一致 (前方一致優先)
+    if (!matched) {
+      const candidates = Object.values(banksList).filter(
+        (b) => b.name.toLowerCase().includes(query) || b.name_kana.toLowerCase().includes(query)
+      );
+      if (candidates.length > 0) {
+        matched = candidates.find(
+          (c) => c.name.toLowerCase().startsWith(query) || c.name_kana.toLowerCase().startsWith(query)
+        ) || candidates[0];
+      }
+    }
+
+    if (matched) {
+      setBankCode(matched.code);
+      setBankName(matched.name); // 正式名称（〜銀行、〜信用金庫など）を補完
+    }
+  };
+
+  // フォーカスアウト時の支店情報自動補完
+  const handleBranchBlur = () => {
+    if (branchCode.length === 3 && branchesList[branchCode] && branchesList[branchCode].name === branchName) {
+      return;
+    }
+    const query = branchName.trim().toLowerCase();
+    if (!query) return;
+
+    // 1. 完全一致
+    let matched = Object.values(branchesList).find(
+      (b) => b.name.toLowerCase() === query || b.name_kana.toLowerCase() === query
+    );
+    // 2. 部分一致
+    if (!matched) {
+      const candidates = Object.values(branchesList).filter(
+        (b) => b.name.toLowerCase().includes(query) || b.name_kana.toLowerCase().includes(query)
+      );
+      if (candidates.length > 0) {
+        matched = candidates.find(
+          (c) => c.name.toLowerCase().startsWith(query) || c.name_kana.toLowerCase().startsWith(query)
+        ) || candidates[0];
+      }
+    }
+
+    if (matched) {
+      setBranchCode(matched.code);
+      setBranchName(matched.name); // 正式名称（〜支店、〜営業部など）を補完
+    }
+  };
+
   // サジェストドロップダウン用のエリア外クリックハンドラ
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -541,6 +601,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
                   value={bankCode}
                   onChange={(e) => handleBankInputChange(e.target.value, true)}
                   onFocus={() => bankCode.length > 0 && setShowBankSuggestions(true)}
+                  onBlur={handleBankBlur}
                   placeholder="例: 0005"
                   maxLength={4}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium font-mono"
@@ -558,6 +619,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
                   value={bankName}
                   onChange={(e) => handleBankInputChange(e.target.value, false)}
                   onFocus={() => setShowBankSuggestions(true)}
+                  onBlur={handleBankBlur}
                   placeholder="カタカナ・ひらがな・漢字で検索可能"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-bold"
                 />
@@ -599,6 +661,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
                   value={branchCode}
                   onChange={(e) => handleBranchInputChange(e.target.value, true)}
                   onFocus={() => branchCode.length > 0 && setShowBranchSuggestions(true)}
+                  onBlur={handleBranchBlur}
                   disabled={bankCode.length !== 4}
                   placeholder={bankCode.length === 4 ? "例: 001" : "金融機関を先に選択"}
                   maxLength={3}
@@ -617,6 +680,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
                   value={branchName}
                   onChange={(e) => handleBranchInputChange(e.target.value, false)}
                   onFocus={() => setShowBranchSuggestions(true)}
+                  onBlur={handleBranchBlur}
                   disabled={bankCode.length !== 4}
                   placeholder={bankCode.length === 4 ? "カタカナ・ひらがな・漢字で検索可能" : "金融機関を先に選択してください"}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-bold disabled:bg-slate-50 disabled:text-slate-400"

@@ -5,13 +5,13 @@ export async function GET(
   { params }: { params: Promise<{ bankCode: string }> }
 ) {
   try {
-    // Next.js 15+ での非同期 params の正しいアンラップ処理
     const { bankCode } = await params;
     if (!bankCode || bankCode.length !== 4) {
       return NextResponse.json({ error: 'Invalid bank code' }, { status: 400 });
     }
 
-    const res = await fetch(`https://zengin-code.github.io/api/banks/${bankCode}/branches.json`, {
+    // 正しい Zengin-code Branches JSON 取得URLの形式
+    const res = await fetch(`https://zengin-code.github.io/api/branches/${bankCode}.json`, {
       next: { revalidate: 86400 }, // 1日キャッシュ
     });
     if (!res.ok) {

@@ -78,7 +78,10 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
     redirect('/dashboard');
   }
 
-  const userRole = isOwner ? 'owner' : (projectShare?.role as 'viewer' | 'editor' || 'viewer');
+  let userRole = isOwner ? 'owner' : (projectShare?.role || 'viewer_all');
+  if (userRole === 'viewer') {
+    userRole = 'viewer_all';
+  }
 
   // 友達一覧を取得（発起人の場合のみフェッチ）
   let friends: { id: string; name: string; email: string }[] = [];
@@ -100,7 +103,22 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
     });
   }
 
-  const totalExpense = project.expenses.reduce((sum, e) => sum + e.amount, 0);
+  // 自分に紐づいているメンバーを取得
+  const linkedMember = project.members.find(
+    (m) => m.userId === currentUser.id || m.name === currentUser.name
+  );
+
+  // 個人閲覧(viewer_personal)の場合、自分に関わる支出のみにフィルタリング
+  let displayExpenses = project.expenses;
+  if (userRole === 'viewer_personal' && linkedMember) {
+    displayExpenses = project.expenses.filter((e) => {
+      const isPayer = e.payments.some((p) => p.memberId === linkedMember.id);
+      const isSharer = e.shares.some((s) => s.memberId === linkedMember.id);
+      return isPayer || isSharer;
+    });
+  }
+
+  const totalExpense = displayExpenses.reduce((sum, e) => sum + e.amount, 0);
 
   // ステータスの表示マッピング
   const getStatusBadge = (status: string) => {
@@ -281,7 +299,7 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
         {/* 右カラム：支出一覧 */}
         <div className="lg:col-span-2 space-y-4">
           <ExpenseList
-            initialExpenses={project.expenses}
+            initialExpenses={displayExpenses}
             projectId={projectId}
             projectStatus={project.status}
             isOwner={isOwner}

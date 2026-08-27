@@ -29,7 +29,7 @@
                 </div>
                 <div>
                     <h1 class="text-2xl font-extrabold tracking-tight">クルー（crew）権限別アクションガイド</h1>
-                    <p class="text-xs text-indigo-200 mt-1">イベント共有における「主催者」「編集」「閲覧のみ」権限の違いをシミュレーションします</p>
+                    <p class="text-xs text-indigo-200 mt-1">共有クルーの4つの権限（主催者、編集可能、全体閲覧、個人閲覧）の違いをシミュレーションします</p>
                 </div>
             </div>
         </div>
@@ -52,39 +52,51 @@
                 
                 <div class="flex flex-col gap-2.5">
                     <!-- 主催者ボタン -->
-                    <button onclick="switchRole('owner')" id="btn-owner" class="flex items-center justify-between p-3.5 rounded-xl border-2 transition-all font-bold text-sm text-left bg-indigo-50 border-indigo-600 text-indigo-900 shadow-sm">
-                        <div class="flex items-center gap-2.5">
-                            <i data-lucide="crown" class="h-4.5 w-4.5 text-amber-500"></i>
+                    <button onclick="switchRole('owner')" id="btn-owner" class="flex items-center justify-between p-3 border-2 transition-all font-bold text-xs text-left bg-indigo-50 border-indigo-600 text-indigo-900 shadow-sm rounded-xl">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="crown" class="h-4.5 w-4.5 text-amber-500 flex-shrink-0"></i>
                             <div>
-                                <p class="font-extrabold text-sm">主催者 (Owner)</p>
-                                <p class="text-[10px] text-indigo-700 font-semibold mt-0.5">全権限・フルアクセス</p>
+                                <p class="font-extrabold text-xs">主催者 (Owner)</p>
+                                <p class="text-[9px] text-indigo-750 font-semibold mt-0.5">全権限・フルアクセス</p>
                             </div>
                         </div>
-                        <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                        <i data-lucide="chevron-right" class="h-3.5 w-3.5 flex-shrink-0"></i>
                     </button>
 
                     <!-- 編集可能ボタン -->
-                    <button onclick="switchRole('editor')" id="btn-editor" class="flex items-center justify-between p-3.5 rounded-xl border-2 transition-all font-bold text-sm text-left bg-white border-slate-200 text-slate-700 hover:border-slate-300">
-                        <div class="flex items-center gap-2.5">
-                            <i data-lucide="edit-3" class="h-4.5 w-4.5 text-indigo-550"></i>
+                    <button onclick="switchRole('editor')" id="btn-editor" class="flex items-center justify-between p-3 border-2 transition-all font-bold text-xs text-left bg-white border-slate-200 text-slate-700 hover:border-slate-350 rounded-xl">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="edit-3" class="h-4.5 w-4.5 text-indigo-550 flex-shrink-0"></i>
                             <div>
-                                <p class="font-extrabold text-sm">編集可能 (Editor)</p>
-                                <p class="text-[10px] text-slate-500 font-semibold mt-0.5">支出追加・自己支出の編集可</p>
+                                <p class="font-extrabold text-xs">編集可能 (Editor)</p>
+                                <p class="text-[9px] text-slate-500 font-semibold mt-0.5">支出追加・自己支出の編集可</p>
                             </div>
                         </div>
-                        <i data-lucide="chevron-right" class="h-4 w-4 invisible"></i>
+                        <i data-lucide="chevron-right" class="h-3.5 w-3.5 invisible flex-shrink-0"></i>
                     </button>
 
-                    <!-- 閲覧のみボタン -->
-                    <button onclick="switchRole('viewer')" id="btn-viewer" class="flex items-center justify-between p-3.5 rounded-xl border-2 transition-all font-bold text-sm text-left bg-white border-slate-200 text-slate-700 hover:border-slate-300">
-                        <div class="flex items-center gap-2.5">
-                            <i data-lucide="eye" class="h-4.5 w-4.5 text-slate-500"></i>
+                    <!-- 全体閲覧ボタン -->
+                    <button onclick="switchRole('viewer_all')" id="btn-viewer_all" class="flex items-center justify-between p-3 border-2 transition-all font-bold text-xs text-left bg-white border-slate-200 text-slate-700 hover:border-slate-350 rounded-xl">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="eye" class="h-4.5 w-4.5 text-emerald-600 flex-shrink-0"></i>
                             <div>
-                                <p class="font-extrabold text-sm">閲覧のみ (Viewer)</p>
-                                <p class="text-[10px] text-slate-500 font-semibold mt-0.5">レポート閲覧・統計プレビュー可</p>
+                                <p class="font-extrabold text-xs">全体閲覧 (Viewer All)</p>
+                                <p class="text-[9px] text-slate-500 font-semibold mt-0.5">全体の支出・計算結果を閲覧</p>
                             </div>
                         </div>
-                        <i data-lucide="chevron-right" class="h-4 w-4 invisible"></i>
+                        <i data-lucide="chevron-right" class="h-3.5 w-3.5 invisible flex-shrink-0"></i>
+                    </button>
+
+                    <!-- 個人閲覧ボタン -->
+                    <button onclick="switchRole('viewer_personal')" id="btn-viewer_personal" class="flex items-center justify-between p-3 border-2 transition-all font-bold text-xs text-left bg-white border-slate-200 text-slate-700 hover:border-slate-350 rounded-xl">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="user" class="h-4.5 w-4.5 text-amber-600 flex-shrink-0"></i>
+                            <div>
+                                <p class="font-extrabold text-xs">個人閲覧 (Viewer Personal)</p>
+                                <p class="text-[9px] text-slate-500 font-semibold mt-0.5">自分に関わる支出・明細のみ閲覧</p>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="h-3.5 w-3.5 invisible flex-shrink-0"></i>
                     </button>
                 </div>
             </div>
@@ -118,7 +130,7 @@
                             
                             <!-- イベント管理ボタン群 (編集・削除・レポート) -->
                             <div class="flex items-center gap-1.5" id="event-admin-actions">
-                                <button onclick="showReportView()" class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg font-bold flex items-center gap-1 hover:bg-emerald-100 transition cursor-pointer">
+                                <button onclick="showReportView()" class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 hover:bg-emerald-100 transition cursor-pointer">
                                     <i data-lucide="file-text" class="h-3.5 w-3.5"></i> レポート
                                 </button>
                                 <span class="text-[10px] text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-1 rounded-lg font-bold flex items-center gap-1 cursor-pointer hover:bg-indigo-100 transition" id="action-event-edit">
@@ -131,20 +143,20 @@
                         </div>
 
                         <!-- 基本統計プレビュー -->
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl text-center">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                            <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl">
                                 <span class="text-[9px] text-slate-400 block font-bold">総支出</span>
-                                <strong class="text-sm font-extrabold text-slate-800">45,000円</strong>
+                                <strong class="text-sm font-extrabold text-slate-800" id="stat-total-expense">45,000円</strong>
                             </div>
-                            <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl text-center">
+                            <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl">
                                 <span class="text-[9px] text-slate-400 block font-bold">精算状態</span>
                                 <strong class="text-sm font-extrabold text-amber-705" id="settlement-status">未確定 (アクティブ)</strong>
                             </div>
-                            <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl text-center">
+                            <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl">
                                 <span class="text-[9px] text-slate-400 block font-bold">あなたの役職</span>
                                 <strong class="text-sm font-extrabold text-indigo-750" id="badge-your-role">主催者</strong>
                             </div>
-                            <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl text-center">
+                            <div class="bg-slate-50 border border-slate-150 p-2.5 rounded-xl">
                                 <span class="text-[9px] text-slate-400 block font-bold">対応精算メンバー</span>
                                 <strong class="text-sm font-extrabold text-slate-800">たろう</strong>
                             </div>
@@ -166,7 +178,7 @@
                                 <div class="flex items-center justify-between border-b border-slate-100 pb-2">
                                     <div class="flex items-center gap-1.5">
                                         <i data-lucide="shopping-bag" class="h-4.5 w-4.5 text-indigo-600"></i>
-                                        <h3 class="text-xs font-bold text-slate-800">登録されている支出 (2件)</h3>
+                                        <h3 class="text-xs font-bold text-slate-800" id="stat-expense-count-label">登録されている支出 (2件)</h3>
                                     </div>
                                     <button id="action-add-expense" class="bg-indigo-600 hover:bg-indigo-750 text-white font-bold px-2.5 py-1.5 rounded-lg text-[10px] transition inline-flex items-center gap-1 shadow-sm cursor-pointer">
                                         <i data-lucide="plus" class="h-3 w-3"></i>
@@ -175,8 +187,8 @@
                                 </div>
 
                                 <div class="space-y-3">
-                                    <!-- 支出1 -->
-                                    <div class="bg-slate-50 border border-slate-150 p-3 rounded-xl flex items-center justify-between text-xs">
+                                    <!-- 支出1 (他人の支出 / レンタカー) -->
+                                    <div id="mock-expense-other" class="bg-slate-50 border border-slate-150 p-3 rounded-xl flex items-center justify-between text-xs">
                                         <div>
                                             <div class="flex items-center gap-1">
                                                 <strong class="text-slate-800 font-bold">レンタカー代</strong>
@@ -185,18 +197,18 @@
                                             <p class="text-[10px] text-slate-500 mt-0.5">支払: さとう (負担: 全員)</p>
                                         </div>
                                         <div class="flex items-center gap-2">
-                                            <strong class="font-extrabold text-slate-800">12,000円</strong>
+                                            <strong class="font-extrabold text-slate-800">26,500円</strong>
                                             <span class="text-[9px] text-slate-400 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">編集不可</span>
                                         </div>
                                     </div>
-                                    <!-- 支出2 -->
-                                    <div class="bg-slate-50 border border-slate-150 p-3 rounded-xl flex items-center justify-between text-xs">
+                                    <!-- 支出2 (自分の支出 / ディナー) -->
+                                    <div id="mock-expense-self" class="bg-slate-50 border border-slate-150 p-3 rounded-xl flex items-center justify-between text-xs">
                                         <div>
                                             <div class="flex items-center gap-1">
                                                 <strong class="text-slate-800 font-bold">ディナー（居酒屋）</strong>
                                                 <span class="text-[8px] bg-indigo-50 text-indigo-600 px-1 rounded font-bold border border-indigo-150">08/26</span>
                                             </div>
-                                            <p class="text-[10px] text-slate-500 mt-0.5">支払: たろう (あなた)</p>
+                                            <p class="text-[10px] text-slate-500 mt-0.5">支払: たろう (あなた) (負担: 2人)</p>
                                         </div>
                                         <div class="flex items-center gap-2">
                                             <strong class="font-extrabold text-slate-800">18,500円</strong>
@@ -217,14 +229,15 @@
 
                         <!-- 右部: クルー設定 (1カラム) -->
                         <div class="md:col-span-1 space-y-4">
+                            <!-- ダミー共有設定 (本来は主催者のみ) -->
                             <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3" id="block-share-section">
                                 <div class="flex items-center gap-1.5 border-b border-slate-100 pb-2">
                                     <i data-lucide="share-2" class="h-4.5 w-4.5 text-indigo-650"></i>
                                     <h3 class="text-xs font-bold text-slate-800">イベントの共有 (crew)</h3>
                                 </div>
-                                <form class="space-y-2 text-[10px]" onsubmit="return false;">
-                                    <button class="w-full bg-indigo-600 text-white font-bold py-1.5 rounded text-[9px]" disabled>crewを追加</button>
-                                </form>
+                                <div class="space-y-2 text-[9px] text-slate-400 font-bold bg-slate-50 p-2 border border-slate-200 rounded">
+                                    共有管理ボードは、主催者(Owner)のみ閲覧・管理できます。
+                                </div>
                             </div>
 
                             <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
@@ -232,12 +245,12 @@
                                     <i data-lucide="users" class="h-4.5 w-4.5 text-indigo-650"></i>
                                     <h3 class="text-xs font-bold text-slate-800">参加メンバー (crew)</h3>
                                 </div>
-                                <ul class="text-xs space-y-2">
-                                    <li class="flex items-center justify-between">
+                                <ul class="text-xs space-y-2" id="mock-crew-list">
+                                    <li class="flex items-center justify-between" id="crew-item-self">
                                         <span class="font-bold">たろう (あなた)</span>
                                         <span class="text-[8px] bg-slate-100 text-slate-500 px-1 rounded">主催者</span>
                                     </li>
-                                    <li class="flex items-center justify-between">
+                                    <li class="flex items-center justify-between" id="crew-item-other">
                                         <span>さとう</span>
                                         <span class="text-[8px] bg-indigo-50 border border-indigo-150 text-indigo-650 px-1 rounded font-bold">共有中</span>
                                     </li>
@@ -247,7 +260,7 @@
                     </div>
                 </div>
 
-                <!-- 2. レポート画面ビュー (初期状態は隠す) -->
+                <!-- 2. レポート画面ビュー -->
                 <div id="view-report" class="space-y-4 hidden animate-fade">
                     <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
                         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-100 pb-4">
@@ -273,29 +286,29 @@
                                     <span>メンバー名</span>
                                     <span>精算差額</span>
                                 </div>
-                                <div class="flex justify-between py-1 font-semibold">
+                                <div class="flex justify-between py-1 font-semibold" id="report-row-self">
                                     <span>たろう (あなた)</span>
-                                    <span class="text-emerald-700 font-extrabold">+10,250円</span>
+                                    <span class="text-emerald-700 font-extrabold" id="report-diff-self">+9,250円</span>
                                 </div>
-                                <div class="flex justify-between py-1 font-semibold">
+                                <div class="flex justify-between py-1 font-semibold" id="report-row-other">
                                     <span>さとう</span>
-                                    <span class="text-red-650 font-extrabold">-10,250円</span>
+                                    <span class="text-red-650 font-extrabold">-9,250円</span>
                                 </div>
                             </div>
 
                             <h3 class="text-sm font-extrabold text-slate-800 border-l-4 border-indigo-600 pl-2">イベント統計</h3>
                             <div class="grid grid-cols-3 gap-2 text-center font-bold">
                                 <div class="p-2 bg-slate-50 border border-slate-150 rounded-lg">
-                                    <p class="text-[9px] text-slate-400">総支出</p>
-                                    <p class="text-slate-800">45,000円</p>
+                                    <p class="text-[9px] text-slate-400 font-bold">総支出</p>
+                                    <p class="text-slate-800" id="report-stat-total">45,000円</p>
                                 </div>
                                 <div class="p-2 bg-slate-50 border border-slate-150 rounded-lg">
-                                    <p class="text-[9px] text-slate-400">参加人数</p>
-                                    <p class="text-slate-800">2名</p>
+                                    <p class="text-[9px] text-slate-400 font-bold">参加人数</p>
+                                    <p class="text-slate-800" id="report-stat-members">2人</p>
                                 </div>
                                 <div class="p-2 bg-slate-50 border border-slate-150 rounded-lg">
-                                    <p class="text-[9px] text-slate-400">支出件数</p>
-                                    <p class="text-slate-800">2件</p>
+                                    <p class="text-[9px] text-slate-400 font-bold">支出件数</p>
+                                    <p class="text-slate-800" id="report-stat-expenses">2件</p>
                                 </div>
                             </div>
                         </div>
@@ -322,11 +335,11 @@
                     <ul class="space-y-2 text-[11px] font-bold">
                         <li class="flex items-start gap-1.5">
                             <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
-                            <span>イベント名・説明の編集、削除が可能です。</span>
+                            <span>イベント名・目的メモの編集、削除が可能です。</span>
                         </li>
                         <li class="flex items-start gap-1.5">
                             <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
-                            <span>他のMateをイベントに招待（crew共有設定）できます。</span>
+                            <span>他のMateをイベントに招待（共有設定）および<strong>権限の変更</strong>が可能です。</span>
                         </li>
                         <li class="flex items-start gap-1.5">
                             <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
@@ -359,36 +372,55 @@
                             <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
                             <span>内訳レポート画面を閲覧し、<strong>PDF印刷やCSVエクスポートを出力できます。</strong></span>
                         </li>
-                        <li class="flex items-start gap-1.5 text-slate-400 line-through">
-                            <i data-lucide="x-circle" class="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5"></i>
-                            <span>他人が登録した支出の編集や、共有設定、イベント名の変更はできません。</span>
-                        </li>
                     </ul>
                 `
             },
-            viewer: {
-                badge: '閲覧のみクルー',
+            viewer_all: {
+                badge: '全体閲覧クルー',
                 description: `
-                    <div class="p-3 bg-amber-50 border border-amber-250 rounded-xl text-amber-900 font-semibold mb-3">
-                        🔒 <strong>閲覧のみ権限です。</strong><br>
-                        レポートの閲覧を含め、読み取りはすべて可能です。
+                    <div class="p-3 bg-emerald-50 border border-emerald-250 rounded-xl text-emerald-900 font-semibold mb-3">
+                        🔓 <strong>全体閲覧権限です。</strong><br>
+                        全体の収支・精算プレビューやレポートをすべて確認できます。
                     </div>
                     <ul class="space-y-2 text-[11px] font-bold">
                         <li class="flex items-start gap-1.5 text-slate-700">
                             <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
-                            <span><strong>精算結果プレビューやイベント統計を問題なく閲覧できます。</strong></span>
+                            <span>イベント内のすべての支出明細や精算プレビューを閲覧できます。</span>
                         </li>
                         <li class="flex items-start gap-1.5 text-slate-700">
                             <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
-                            <span><strong>イベント内訳レポート画面にアクセスし、内容をすべて閲覧できます。</strong></span>
+                            <span><strong>レポート画面にアクセスし、全体の精算内訳などをすべて閲覧できます。</strong></span>
                         </li>
                         <li class="flex items-start gap-1.5 text-slate-450 line-through text-slate-400">
                             <i data-lucide="x-circle" class="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5"></i>
-                            <span><strong>レポート画面上での「印刷する(PDF)」や「CSVエクスポート」は制限されます。</strong></span>
+                            <span><strong>レポート上での「印刷する (PDF)」や「CSV出力」は制限されます。</strong></span>
                         </li>
                         <li class="flex items-start gap-1.5 text-slate-450 line-through text-slate-400">
                             <i data-lucide="x-circle" class="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5"></i>
-                            <span>新しい支出項目の追加や、支出の編集・削除は一切できません。</span>
+                            <span>支出の追加・編集・削除など、書き込み操作は一切できません。</span>
+                        </li>
+                    </ul>
+                `
+            },
+            viewer_personal: {
+                badge: '個人閲覧クルー',
+                description: `
+                    <div class="p-3 bg-amber-50 border border-amber-250 rounded-xl text-amber-900 font-semibold mb-3">
+                        🔒 <strong>個人閲覧権限です。</strong><br>
+                        自分（ログインユーザー）に関係する個人データのみに制限して表示されます。
+                    </div>
+                    <ul class="space-y-2 text-[11px] font-bold">
+                        <li class="flex items-start gap-1.5 text-slate-700">
+                            <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                            <span><strong>自分が支払った、または自分が負担に含まれる支出のみ</strong>を表示します（関係ない他人の支出は非表示になります）。</span>
+                        </li>
+                        <li class="flex items-start gap-1.5 text-slate-700">
+                            <i data-lucide="check-circle" class="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+                            <span><strong>レポート画面でも、自分の支払明細・消費負担内訳のみ</strong>をフィルタリングして閲覧できます。</span>
+                        </li>
+                        <li class="flex items-start gap-1.5 text-slate-450 line-through text-slate-400">
+                            <i data-lucide="x-circle" class="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5"></i>
+                            <span>他のメンバー同士の支払内訳や明細は一切閲覧できません。</span>
                         </li>
                     </ul>
                 `
@@ -399,15 +431,15 @@
             currentRole = role;
 
             // 1. ボタンのアクティブ状態を変更
-            ['owner', 'editor', 'viewer'].forEach((r) => {
+            ['owner', 'editor', 'viewer_all', 'viewer_personal'].forEach((r) => {
                 const btn = document.getElementById(`btn-${r}`);
                 const icon = btn.querySelector('[data-lucide="chevron-right"]');
                 
                 if (r === role) {
-                    btn.className = "flex items-center justify-between p-3.5 rounded-xl border-2 transition-all font-bold text-sm text-left bg-indigo-50 border-indigo-600 text-indigo-900 shadow-sm";
+                    btn.className = "flex items-center justify-between p-3 border-2 transition-all font-bold text-xs text-left bg-indigo-50 border-indigo-600 text-indigo-900 shadow-sm rounded-xl";
                     icon.classList.remove('invisible');
                 } else {
-                    btn.className = "flex items-center justify-between p-3.5 rounded-xl border-2 transition-all font-bold text-sm text-left bg-white border-slate-200 text-slate-700 hover:border-slate-300";
+                    btn.className = "flex items-center justify-between p-3 border-2 transition-all font-bold text-xs text-left bg-white border-slate-200 text-slate-700 hover:border-slate-350 rounded-xl";
                     icon.classList.add('invisible');
                 }
             });
@@ -418,8 +450,12 @@
             
             // 3. アプリケーションUIモックアップを更新
             const badgeRole = document.getElementById('badge-your-role');
-            badgeRole.innerText = roleData[role].badge;
+            const totalExpenseLabel = document.getElementById('stat-total-expense');
+            const expenseCountLabel = document.getElementById('stat-expense-count-label');
+            const crewItemOther = document.getElementById('crew-item-other');
+            const expenseItemOther = document.getElementById('mock-expense-other');
 
+            // 画面表示制御要素
             const eventEditBtn = document.getElementById('action-event-edit');
             const eventDeleteBtn = document.getElementById('action-event-delete');
             const shareBlock = document.getElementById('block-share-section');
@@ -428,13 +464,19 @@
             const selfEditBadge = document.getElementById('expense-self-edit-badge');
             const confirmBlock = document.getElementById('settlement-confirm-block');
 
+            // 役職バッジの設定
+            if (role === 'owner') badgeRole.innerText = '主催者';
+            else if (role === 'editor') badgeRole.innerText = '編集者';
+            else if (role === 'viewer_all') badgeRole.innerText = '全体閲覧';
+            else if (role === 'viewer_personal') badgeRole.innerText = '個人閲覧';
+
             // 状態リセットアニメーションのトリガー
             descContainer.classList.remove('animate-fade');
-            void descContainer.offsetWidth; // リフロー発生
+            void descContainer.offsetWidth; // リフロー
             descContainer.classList.add('animate-fade');
 
+            // 基本アクション表示制限
             if (role === 'owner') {
-                // 主催者
                 eventEditBtn.classList.remove('hidden');
                 eventDeleteBtn.classList.remove('hidden');
                 shareBlock.classList.remove('hidden');
@@ -443,7 +485,6 @@
                 selfEditBadge.classList.add('hidden');
                 confirmBlock.classList.remove('hidden');
             } else if (role === 'editor') {
-                // 編集可能
                 eventEditBtn.classList.add('hidden');
                 eventDeleteBtn.classList.add('hidden');
                 shareBlock.classList.add('hidden');
@@ -451,8 +492,8 @@
                 selfEditActions.classList.remove('hidden');
                 selfEditBadge.classList.add('hidden');
                 confirmBlock.classList.add('hidden');
-            } else if (role === 'viewer') {
-                // 閲覧のみ
+            } else {
+                // 閲覧のみ (viewer_all, viewer_personal)
                 eventEditBtn.classList.add('hidden');
                 eventDeleteBtn.classList.add('hidden');
                 shareBlock.classList.add('hidden');
@@ -462,8 +503,22 @@
                 confirmBlock.classList.add('hidden');
             }
 
-            // レポート側のアクションボタンの表示・非表示の更新
+            // 個人閲覧(viewer_personal)独自のフィルタリングロジック
+            if (role === 'viewer_personal') {
+                // 自分に関係のない支出を隠す
+                expenseItemOther.classList.add('hidden');
+                // 総支出額を自分に関わる額(ディナー: 18,500円)に制限
+                totalExpenseLabel.innerText = '18,500円';
+                expenseCountLabel.innerText = '登録されている支出 (1件)';
+            } else {
+                expenseItemOther.classList.remove('hidden');
+                totalExpenseLabel.innerText = '45,000円';
+                expenseCountLabel.innerText = '登録されている支出 (2件)';
+            }
+
+            // レポート表示データ・警告表示の更新
             updateReportActionButtons();
+            updateReportDataView();
 
             // Lucideアイコンの再レンダリング
             lucide.createIcons();
@@ -472,7 +527,7 @@
         // レポート画面内のボタン切り替え
         function updateReportActionButtons() {
             const reportControls = document.getElementById('report-action-controls');
-            if (currentRole !== 'viewer') {
+            if (currentRole === 'owner' || currentRole === 'editor') {
                 reportControls.innerHTML = `
                     <div class="flex items-center gap-1.5 animate-fade">
                         <button class="inline-flex items-center gap-1 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-1.5 px-2.5 rounded-lg text-[10px] transition shadow-sm cursor-pointer">
@@ -495,11 +550,36 @@
             }
         }
 
+        // レポート画面のデータ表示更新
+        function updateReportDataView() {
+            const reportRowOther = document.getElementById('report-row-other');
+            const reportStatTotal = document.getElementById('report-stat-total');
+            const reportStatMembers = document.getElementById('report-stat-members');
+            const reportStatExpenses = document.getElementById('report-stat-expenses');
+            const reportDiffSelf = document.getElementById('report-diff-self');
+
+            if (currentRole === 'viewer_personal') {
+                // 自分のみ表示
+                reportRowOther.classList.add('hidden');
+                reportStatTotal.innerText = '18,500円';
+                reportStatMembers.innerText = '1人';
+                reportStatExpenses.innerText = '1件';
+                reportDiffSelf.innerText = '+9,250円'; // ディナー18,500円で2人割り勘時の自分の受取額
+            } else {
+                reportRowOther.classList.remove('hidden');
+                reportStatTotal.innerText = '45,000円';
+                reportStatMembers.innerText = '2人';
+                reportStatExpenses.innerText = '2件';
+                reportDiffSelf.innerText = '+9,250円'; // 全体の計算結果
+            }
+        }
+
         // ビュー切り替え: レポート画面を表示
         function showReportView() {
             document.getElementById('view-project-detail').classList.add('hidden');
             document.getElementById('view-report').classList.remove('hidden');
             updateReportActionButtons();
+            updateReportDataView();
             lucide.createIcons();
         }
 

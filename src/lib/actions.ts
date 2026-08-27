@@ -1073,10 +1073,19 @@ export async function actionShareProject(
   projectId: string,
   memberId: string,
   friendUserId: string,
-  role: 'viewer' | 'editor'
+  role: string
 ) {
   const currentUser = await getCurrentUser();
   if (!currentUser) return { error: 'ログインが必要です。' };
+
+  let targetRole = role;
+  if (targetRole !== 'editor' && targetRole !== 'viewer_all' && targetRole !== 'viewer_personal') {
+    if (targetRole === 'viewer') {
+      targetRole = 'viewer_all';
+    } else {
+      return { error: '無効な権限が指定されました。' };
+    }
+  }
 
   try {
     const project = await prisma.project.findUnique({
@@ -1109,14 +1118,14 @@ export async function actionShareProject(
       if (existingShare) {
         await tx.projectShare.update({
           where: { id: existingShare.id },
-          data: { role },
+          data: { role: targetRole },
         });
       } else {
         await tx.projectShare.create({
           data: {
             projectId,
             userId: friendUserId,
-            role,
+            role: targetRole,
           },
         });
       }
@@ -1172,6 +1181,39 @@ export async function actionRemoveProjectShare(projectShareId: string) {
   } catch (e) {
     console.error(e);
     return { error: '共有解除処理中にエラーが発生しました。' };
+  }
+
+  return { success: true };
+}
+
+export async function actionUpdateProjectShareRole(projectShareId: string, role: string) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return { error: 'ログインが必要です。' };
+
+  if (role !== 'editor' && role !== 'viewer_all' && role !== 'viewer_personal') {
+    return { error: '無効な権限が指定されました。' };
+  }
+
+  try {
+    const share = await prisma.projectShare.findUnique({
+      where: { id: projectShareId },
+      include: { project: true },
+    });
+
+    if (!share) return { error: '共有設定が見つかりません。' };
+    if (share.project.createdBy !== currentUser.id) {
+      return { error: '発起人のみが権限を変更できます。' };
+    }
+
+    await prisma.projectShare.update({
+      where: { id: projectShareId },
+      data: { role },
+    });
+
+    revalidatePath(`/projects/${share.projectId}`);
+  } catch (e) {
+    console.error(e);
+    return { error: '権限更新処理中にエラーが発生しました。' };
   }
 
   return { success: true };

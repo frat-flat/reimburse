@@ -48,7 +48,7 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
   }
 
   // 閲覧権限ロール
-  const userRole = isOwner ? 'owner' : (userShare?.role as 'editor' | 'viewer' | undefined) || 'viewer';
+  const userRole = isOwner ? 'owner' : (userShare?.role as 'editor' | 'viewer_all' | 'viewer_personal' | undefined) || 'viewer_all';
 
   // 1. 各メンバーの支払・負担集計および個別明細の作成
   const memberSummaries = project.members.map((m) => {
@@ -108,8 +108,29 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
     };
   });
 
+  // 自分に紐づいているメンバーを取得
+  const linkedMember = project.members.find(
+    (m) => m.userId === currentUser.id || m.name === currentUser.name
+  );
+
+  // メンバー別集計のフィルタリング
+  let displayMemberSummaries = memberSummaries;
+  if (userRole === 'viewer_personal' && linkedMember) {
+    displayMemberSummaries = memberSummaries.filter((m) => m.name === linkedMember.name);
+  }
+
+  // 支出の個人フィルタリング
+  let displayExpenses = project.expenses;
+  if (userRole === 'viewer_personal' && linkedMember) {
+    displayExpenses = project.expenses.filter((e) => {
+      const isPayer = e.payments.some((p) => p.memberId === linkedMember.id);
+      const isSharer = e.shares.some((s) => s.memberId === linkedMember.id);
+      return isPayer || isSharer;
+    });
+  }
+
   // 2. 支出明細の整形
-  const expenseSummaries = project.expenses.map((e) => {
+  const expenseSummaries = displayExpenses.map((e) => {
     const formattedDate = e.expenseDate
       ? new Date(e.expenseDate).toLocaleDateString('ja-JP', {
           year: 'numeric',
@@ -128,14 +149,14 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
   });
 
   // 3. 基本サマリー指標
-  const totalExpense = project.expenses.reduce((sum, e) => sum + e.amount, 0);
-  const expenseCount = project.expenses.length;
-  const memberCount = project.members.length;
+  const totalExpense = displayExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const expenseCount = displayExpenses.length;
+  const memberCount = userRole === 'viewer_personal' ? 1 : project.members.length;
 
   // 利用日期間の算出
   let dateRange = '-';
-  if (project.expenses.length > 0) {
-    const sortedDates = project.expenses
+  if (displayExpenses.length > 0) {
+    const sortedDates = displayExpenses
       .map((e) => e.expenseDate)
       .filter(Boolean)
       .sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
@@ -151,7 +172,7 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
     <ReportDashboard
       projectName={project.name}
       projectId={projectId}
-      memberSummaries={memberSummaries}
+      memberSummaries={displayMemberSummaries}
       expenseSummaries={expenseSummaries}
       totalExpense={totalExpense}
       memberCount={memberCount}

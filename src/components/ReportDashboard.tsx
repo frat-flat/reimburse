@@ -31,7 +31,7 @@ interface ReportDashboardProps {
   expenseCount: number;
   dateRange: string;
   projectDescription?: string | null;
-  userRole?: 'owner' | 'editor' | 'viewer';
+  userRole?: 'owner' | 'editor' | 'viewer_all' | 'viewer_personal';
 }
 
 export default function ReportDashboard({

@@ -30,7 +30,7 @@ interface ReportActionsProps {
   showMemberTable?: boolean;
   showExpenseTable?: boolean;
   showMemberDetails?: boolean;
-  userRole?: 'owner' | 'editor' | 'viewer';
+  userRole?: 'owner' | 'editor' | 'viewer_all' | 'viewer_personal';
 }
 
 export default function ReportActions({
@@ -130,7 +130,7 @@ export default function ReportActions({
         <h1 className="text-2xl font-extrabold text-gray-900 mt-1">イベント内訳レポート</h1>
       </div>
 
-      {userRole !== 'viewer' ? (
+      {userRole === 'owner' || userRole === 'editor' ? (
         <div className="flex items-center gap-2">
           <button
             onClick={handlePrint}

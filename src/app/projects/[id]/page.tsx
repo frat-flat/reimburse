@@ -108,9 +108,9 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
     (m) => m.userId === currentUser.id || m.name === currentUser.name
   );
 
-  // 個人閲覧(viewer_personal)の場合、自分に関わる支出のみにフィルタリング
+  // 個人閲覧または領収書発行閲覧の場合、自分に関わる支出のみにフィルタリング
   let displayExpenses = project.expenses;
-  if (userRole === 'viewer_personal' && linkedMember) {
+  if ((userRole === 'viewer_personal' || userRole === 'viewer_receipt') && linkedMember) {
     displayExpenses = project.expenses.filter((e) => {
       const isPayer = e.payments.some((p) => p.memberId === linkedMember.id);
       const isSharer = e.shares.some((s) => s.memberId === linkedMember.id);

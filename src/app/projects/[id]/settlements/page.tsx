@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { calculateSettlements } from '@/lib/settlement';
+import ReceiptModal from '@/components/ReceiptModal';
 import {
   actionConfirmSettlements,
   actionUnlockSettlements,
@@ -39,6 +40,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
           receiverMember: true,
         },
       },
+      projectShares: true,
     },
   });
 
@@ -46,10 +48,18 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
     notFound();
   }
 
-  // 作成者（管理者）のチェック
-  if (project.createdBy !== currentUser.id) {
+  // 作成者（管理者）または共有メンバーのチェック
+  const isOwner = project.createdBy === currentUser.id;
+  const userShare = project.projectShares.find((ps) => ps.userId === currentUser.id);
+
+  if (!isOwner && !userShare) {
     redirect('/dashboard');
   }
+
+  const userRole = isOwner
+    ? 'owner'
+    : (userShare?.role as 'editor' | 'viewer_all' | 'viewer_personal' | 'viewer_receipt' | undefined) ||
+      'viewer_all';
 
   // 1. 各メンバーの純残高を集計
   const memberBalances = project.members.map((m) => {
@@ -90,6 +100,21 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
   }[] = [];
 
   const isConfirmed = project.status === 'settlement_confirmed' || project.status === 'completed';
+
+  // 紐づいているメンバーと領収書情報を解決
+  const linkedMember = project.members.find((m) => m.userId === currentUser.id || m.name === currentUser.name);
+  const dateString = new Date(project.updatedAt).toLocaleDateString('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const issuerInfo = {
+    name: currentUser.receiptIssuerName,
+    zip: currentUser.receiptIssuerZip,
+    address: currentUser.receiptIssuerAddress,
+    tel: currentUser.receiptIssuerTel,
+    regNo: currentUser.receiptIssuerRegNo,
+  };
 
   if (isConfirmed) {
     // 確定済みの場合はDBから取得したデータを使用
@@ -225,24 +250,48 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
 
                       {/* 支払済みチェックボタントグル（確定時のみ） */}
                       {isConfirmed && s.id && (
-                        <form action={handleTogglePaid}>
-                          <input type="hidden" name="settlementId" value={s.id} />
-                          <input
-                            type="hidden"
-                            name="isPaid"
-                            value={s.status === 'paid' ? 'false' : 'true'}
-                          />
-                          <button
-                            type="submit"
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${
+                        <div className="flex items-center gap-2">
+                          {/* 領収書発行ボタン（自分がReceiver＝受け取る側の場合のみ表示） */}
+                          {linkedMember && s.toUserId === linkedMember.id && (
+                            <ReceiptModal
+                              payerName={s.fromUserName}
+                              receiverName={s.toUserName}
+                              amount={s.amount}
+                              projectName={project.name}
+                              dateString={dateString}
+                              issuerInfo={issuerInfo}
+                            />
+                          )}
+
+                          {isOwner ? (
+                            <form action={handleTogglePaid}>
+                              <input type="hidden" name="settlementId" value={s.id} />
+                              <input
+                                type="hidden"
+                                name="isPaid"
+                                value={s.status === 'paid' ? 'false' : 'true'}
+                              />
+                              <button
+                                type="submit"
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer active:scale-95 ${
+                                  s.status === 'paid'
+                                    ? 'bg-indigo-650 hover:bg-indigo-755 border-indigo-600 text-white'
+                                    : 'bg-white hover:bg-gray-50 border-gray-300 text-gray-700 shadow-sm'
+                                }`}
+                              >
+                                {s.status === 'paid' ? '支払済' : '未支払'}
+                              </button>
+                            </form>
+                          ) : (
+                            <span className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${
                               s.status === 'paid'
-                                ? 'bg-indigo-600 hover:bg-indigo-700 border-indigo-600 text-white'
-                                : 'bg-white hover:bg-gray-50 border-gray-300 text-gray-700 shadow-sm'
-                            }`}
-                          >
-                            {s.status === 'paid' ? '支払済' : '未支払'}
-                          </button>
-                        </form>
+                                ? 'bg-gray-100 border-gray-250 text-gray-550'
+                                : 'bg-amber-50 border-amber-200 text-amber-750'
+                            }`}>
+                              {s.status === 'paid' ? '精算済' : '未精算'}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -260,34 +309,44 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
               精算アクション
             </h3>
 
-            {project.status === 'active' ? (
-              <div className="space-y-3">
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  ※ 現在はプレビュー計算です。「精算を確定する」を押すと計算結果が保存され、支出の追加・編集がロックされます。
-                </p>
-                <form action={handleConfirm}>
-                  <button
-                    type="submit"
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-1.5 shadow-sm"
-                  >
-                    この内容で精算を確定する
-                  </button>
-                </form>
-              </div>
+            {isOwner ? (
+              project.status === 'active' ? (
+                <div className="space-y-3">
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    ※ 現在はプレビュー計算です。「精算を確定する」を押すと計算結果が保存され、支出の追加・編集がロックされます。
+                  </p>
+                  <form action={handleConfirm}>
+                    <button
+                      type="submit"
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer active:scale-98"
+                    >
+                      この内容で精算を確定する
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    ※ 精算は確定されています。メンバーや支出の追加・修正を行う場合は、精算確定を一時的に解除してください。
+                  </p>
+                  <form action={handleUnlock}>
+                    <button
+                      type="submit"
+                      className="w-full bg-white hover:bg-red-50 text-red-600 border border-red-200 font-bold py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer active:scale-98"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      精算確定を解除
+                    </button>
+                  </form>
+                </div>
+              )
             ) : (
-              <div className="space-y-3">
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  ※ 精算は確定されています。メンバーや支出の追加・修正を行う場合は、精算確定を一時的に解除してください。
+              <div className="space-y-2">
+                <p className="text-xs text-slate-650 leading-relaxed font-bold bg-slate-50 p-3.5 border border-slate-200 rounded-lg">
+                  {project.status === 'active'
+                    ? '⚠️ 精算の確定は、イベントの主催者（オーナー）のみが行えます。確定されるまで今しばらくお待ちください。'
+                    : '✅ 精算は主催者によって確定（ロック）されています。追加の支出修正等は制限されています。'}
                 </p>
-                <form action={handleUnlock}>
-                  <button
-                    type="submit"
-                    className="w-full bg-white hover:bg-red-50 text-red-600 border border-red-200 font-bold py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-1.5 shadow-sm"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                    精算確定を解除
-                  </button>
-                </form>
               </div>
             )}
           </div>

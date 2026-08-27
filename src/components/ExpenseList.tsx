@@ -41,7 +41,7 @@ interface ExpenseListProps {
   projectId: string;
   projectStatus: string;
   isOwner?: boolean;
-  userRole?: 'owner' | 'viewer' | 'editor';
+  userRole?: string;
   currentUserId?: string;
 }
 
@@ -161,7 +161,7 @@ export default function ExpenseList({
           </select>
 
           {projectStatus === 'active' ? (
-            userRole !== 'viewer' && (
+            (userRole === 'owner' || userRole === 'editor') && (
               <Link
                 href={`/projects/${projectId}/expenses/new`}
                 className="bg-indigo-600 hover:bg-indigo-750 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition inline-flex items-center gap-1 shadow-sm flex-shrink-0"
@@ -278,8 +278,8 @@ export default function ExpenseList({
                       {expense.amount.toLocaleString()}円
                     </strong>
                     
-                    {/* 編集・削除（ステータスactiveのみ、かつ閲覧権限ではない場合） */}
-                    {projectStatus === 'active' && userRole !== 'viewer' && (
+                    {/* 編集・削除（ステータスactiveのみ、かつ編集権限がある場合） */}
+                    {projectStatus === 'active' && (userRole === 'owner' || userRole === 'editor') && (
                       (isOwner || expense.createdBy === currentUserId) ? (
                         <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                           <Link

@@ -19,6 +19,13 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // 領収書発行元情報
+  receiptIssuerName    String?
+  receiptIssuerZip     String?
+  receiptIssuerAddress String?
+  receiptIssuerTel     String?
+  receiptIssuerRegNo   String?
+
   createdProjects Project[]      @relation("CreatedProjects")
   masterMembers   MasterMember[]
 

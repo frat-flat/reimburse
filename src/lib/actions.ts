@@ -558,6 +558,9 @@ export async function actionConfirmSettlements(projectId: string) {
   });
 
   if (!project) return { error: 'プロジェクトが見つかりません。' };
+  if (project.createdBy !== currentUser.id) {
+    return { error: '精算を確定する権限がありません（主催者のみが確定できます）。' };
+  }
   if (project.status !== 'active') {
     return { error: '既に精算は確定されています。' };
   }
@@ -634,6 +637,9 @@ export async function actionUnlockSettlements(projectId: string) {
   });
 
   if (!project) return { error: 'プロジェクトが見つかりません。' };
+  if (project.createdBy !== currentUser.id) {
+    return { error: '精算確定を解除する権限がありません（主催者のみが解除できます）。' };
+  }
   if (project.status !== 'settlement_confirmed' && project.status !== 'completed') {
     return { error: '確定状態のプロジェクトのみ解除できます。' };
   }
@@ -1079,7 +1085,7 @@ export async function actionShareProject(
   if (!currentUser) return { error: 'ログインが必要です。' };
 
   let targetRole = role;
-  if (targetRole !== 'editor' && targetRole !== 'viewer_all' && targetRole !== 'viewer_personal') {
+  if (targetRole !== 'editor' && targetRole !== 'viewer_all' && targetRole !== 'viewer_personal' && targetRole !== 'viewer_receipt') {
     if (targetRole === 'viewer') {
       targetRole = 'viewer_all';
     } else {
@@ -1190,7 +1196,7 @@ export async function actionUpdateProjectShareRole(projectShareId: string, role:
   const currentUser = await getCurrentUser();
   if (!currentUser) return { error: 'ログインが必要です。' };
 
-  if (role !== 'editor' && role !== 'viewer_all' && role !== 'viewer_personal') {
+  if (role !== 'editor' && role !== 'viewer_all' && role !== 'viewer_personal' && role !== 'viewer_receipt') {
     return { error: '無効な権限が指定されました。' };
   }
 
@@ -1345,5 +1351,39 @@ export async function actionResetPassword(formData: FormData) {
   } catch (err: any) {
     console.error('Error during password reset:', err);
     return { error: err.message || 'パスワードの再設定中にエラーが発生しました。' };
+  }
+}
+
+// ==========================================
+// 10. プロフィール（領収書発行元情報）更新用 Server Action
+// ==========================================
+
+export async function actionUpdateProfile(formData: FormData) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return { error: 'ログインが必要です。' };
+
+  const receiptIssuerName = formData.get('receiptIssuerName') as string;
+  const receiptIssuerZip = formData.get('receiptIssuerZip') as string;
+  const receiptIssuerAddress = formData.get('receiptIssuerAddress') as string;
+  const receiptIssuerTel = formData.get('receiptIssuerTel') as string;
+  const receiptIssuerRegNo = formData.get('receiptIssuerRegNo') as string;
+
+  try {
+    await prisma.user.update({
+      where: { id: currentUser.id },
+      data: {
+        receiptIssuerName: receiptIssuerName ? receiptIssuerName.trim() : null,
+        receiptIssuerZip: receiptIssuerZip ? receiptIssuerZip.trim() : null,
+        receiptIssuerAddress: receiptIssuerAddress ? receiptIssuerAddress.trim() : null,
+        receiptIssuerTel: receiptIssuerTel ? receiptIssuerTel.trim() : null,
+        receiptIssuerRegNo: receiptIssuerRegNo ? receiptIssuerRegNo.trim() : null,
+      },
+    });
+
+    revalidatePath('/profile');
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error updating user profile:', err);
+    return { error: err.message || 'プロフィールの更新中にエラーが発生しました。' };
   }
 }

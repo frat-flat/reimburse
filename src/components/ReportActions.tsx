@@ -30,7 +30,7 @@ interface ReportActionsProps {
   showMemberTable?: boolean;
   showExpenseTable?: boolean;
   showMemberDetails?: boolean;
-  userRole?: 'owner' | 'editor' | 'viewer_all' | 'viewer_personal';
+  userRole?: 'owner' | 'editor' | 'viewer_all' | 'viewer_personal' | 'viewer_receipt';
 }
 
 export default function ReportActions({

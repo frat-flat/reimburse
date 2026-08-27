@@ -26,6 +26,9 @@ export default async function Header() {
             <Link href="/members" className="text-xs font-bold text-gray-600 hover:text-indigo-600 transition">
               ベースクルー登録
             </Link>
+            <Link href="/profile" className="text-xs font-bold text-gray-600 hover:text-indigo-600 transition">
+              マイページ
+            </Link>
             <form action={actionLogout}>
               <button type="submit" className="text-xs text-red-600 hover:text-red-800 border border-red-200 hover:bg-red-50 px-2 py-1 rounded">
                 ログアウト
@@ -45,6 +48,9 @@ export default async function Header() {
             </Link>
             <Link href="/members" className="text-sm font-bold text-gray-600 hover:text-indigo-600 transition">
               ベースクルー登録
+            </Link>
+            <Link href="/profile" className="text-sm font-bold text-gray-600 hover:text-indigo-600 transition">
+              マイページ
             </Link>
           </nav>
 

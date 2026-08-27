@@ -48,7 +48,7 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
   }
 
   // 閲覧権限ロール
-  const userRole = isOwner ? 'owner' : (userShare?.role as 'editor' | 'viewer_all' | 'viewer_personal' | undefined) || 'viewer_all';
+  const userRole = isOwner ? 'owner' : (userShare?.role as 'editor' | 'viewer_all' | 'viewer_personal' | 'viewer_receipt' | undefined) || 'viewer_all';
 
   // 1. 各メンバーの支払・負担集計および個別明細の作成
   const memberSummaries = project.members.map((m) => {
@@ -115,13 +115,13 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
 
   // メンバー別集計のフィルタリング
   let displayMemberSummaries = memberSummaries;
-  if (userRole === 'viewer_personal' && linkedMember) {
+  if ((userRole === 'viewer_personal' || userRole === 'viewer_receipt') && linkedMember) {
     displayMemberSummaries = memberSummaries.filter((m) => m.name === linkedMember.name);
   }
 
   // 支出の個人フィルタリング
   let displayExpenses = project.expenses;
-  if (userRole === 'viewer_personal' && linkedMember) {
+  if ((userRole === 'viewer_personal' || userRole === 'viewer_receipt') && linkedMember) {
     displayExpenses = project.expenses.filter((e) => {
       const isPayer = e.payments.some((p) => p.memberId === linkedMember.id);
       const isSharer = e.shares.some((s) => s.memberId === linkedMember.id);
@@ -151,7 +151,7 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
   // 3. 基本サマリー指標
   const totalExpense = displayExpenses.reduce((sum, e) => sum + e.amount, 0);
   const expenseCount = displayExpenses.length;
-  const memberCount = userRole === 'viewer_personal' ? 1 : project.members.length;
+  const memberCount = (userRole === 'viewer_personal' || userRole === 'viewer_receipt') ? 1 : project.members.length;
 
   // 利用日期間の算出
   let dateRange = '-';

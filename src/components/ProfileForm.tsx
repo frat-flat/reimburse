@@ -362,7 +362,16 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        onKeyDown={(e) => {
+          // input要素内でEnterが押された時、意図しないフォーム送信(Submit)と白飛びを防ぐ
+          if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') {
+            e.preventDefault();
+          }
+        }}
+        className="space-y-6"
+      >
         
         {/* 1. 領収書発行元情報 */}
         <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">

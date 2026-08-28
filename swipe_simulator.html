@@ -89,9 +89,9 @@
             </button>
 
             <!-- スワイプコンポーネントコンテナ -->
-            <div id="swipe-container" class="relative flex items-center h-10 w-48 rounded-full p-1 overflow-hidden transition-all shadow-inner bg-slate-100 border border-slate-200 text-slate-500">
+            <div id="swipe-container" class="relative flex items-center h-10 w-48 rounded-full p-1 overflow-hidden transition-all shadow-inner bg-slate-100 border border-slate-200 text-slate-500 touch-none">
               <!-- つまみボタン -->
-              <button id="swipe-handle" class="absolute left-1 h-8 w-8 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow transition-transform duration-75 ease-out z-10 bg-indigo-600 text-white">
+              <button id="swipe-handle" class="absolute left-1 h-8 w-8 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow transition-transform duration-75 ease-out z-10 bg-indigo-600 text-white touch-none">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                 </svg>
@@ -274,13 +274,13 @@
         btnReceipt.classList.remove('hidden');
       } else {
         // スライダーを表示
-        swipeContainer.className = "relative flex items-center h-10 w-48 rounded-full p-1 overflow-hidden transition-all shadow-inner " +
+        swipeContainer.className = "relative flex items-center h-10 w-48 rounded-full p-1 overflow-hidden transition-all shadow-inner touch-none " +
           (currentStatus === 'pending'
             ? "bg-slate-100 border border-slate-200 text-slate-500"
-            : "bg-emerald-50 border border-emerald-200 text-emerald-700");
+            : "bg-emerald-50 border border-emerald-250 text-emerald-700");
         
         // ハンドルの色
-        swipeHandle.className = "absolute left-1 h-8 w-8 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow transition-transform duration-75 ease-out z-10 " +
+        swipeHandle.className = "absolute left-1 h-8 w-8 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow transition-transform duration-75 ease-out z-10 touch-none " +
           (currentStatus === 'pending' ? "bg-indigo-600 text-white" : "bg-emerald-600 text-white");
 
         // 矢印ハンドルを再代入
@@ -298,18 +298,26 @@
       }
     }
 
+    // 座標を安全に取得するヘルパー
+    function getClientX(e) {
+      if (e.clientX !== undefined) return e.clientX;
+      if (e.touches && e.touches.length > 0) return e.touches[0].clientX;
+      if (e.changedTouches && e.changedTouches.length > 0) return e.changedTouches[0].clientX;
+      return 0;
+    }
+
     // ドラッグイベント処理 (マウス＆タッチ対応)
     function onStart(e) {
       if (!canOperate || currentStatus === 'receipt_issued') return;
       isDragging = true;
-      startX = e.clientX || e.touches[0].clientX;
+      startX = getClientX(e);
       swipeHandle.classList.remove('transition-transform');
       swipeHandle.classList.replace('cursor-grab', 'cursor-grabbing');
     }
 
     function onMove(e) {
       if (!isDragging) return;
-      const clientX = e.clientX || e.touches[0].clientX;
+      const clientX = getClientX(e);
       const deltaX = clientX - startX;
       const maxW = getMaxSlideWidth();
       dragX = Math.max(0, Math.min(maxW, deltaX));

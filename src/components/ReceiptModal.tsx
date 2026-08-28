@@ -189,8 +189,10 @@ export default function ReceiptModal({
               </div>
             </div>
 
-            {/* 領収書本体エリア */}
-            <div className="border-4 double border-double border-gray-400 p-6 md:p-8 space-y-8 bg-white print:border-gray-500">
+            {/* 領収書スクロールラッパー (モバイル用) */}
+            <div className="w-full overflow-x-auto pb-2 print:overflow-visible print:pb-0">
+              {/* 領収書本体エリア (固定幅580pxでPC/スマホ間の表示崩れを防ぐ) */}
+              <div className="w-[580px] mx-auto border-4 double border-double border-gray-400 p-8 space-y-8 bg-white print:border-gray-500 print:w-full print:mx-0 print:p-0">
               {/* タイトル */}
               <div className="text-center">
                 <h1 className="text-3xl font-extrabold tracking-widest text-gray-900 border-b-2 border-gray-900 pb-2 inline-block px-10 print:text-black">
@@ -223,7 +225,7 @@ export default function ReceiptModal({
               </div>
 
               {/* 発行元署名欄 */}
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 text-xs text-gray-750">
+              <div className="flex flex-row justify-between items-end gap-6 text-xs text-gray-750">
                 <div className="space-y-1">
                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">内訳</p>
                   <table className="text-[10px] text-gray-500 border border-collapse border-gray-300">
@@ -241,7 +243,7 @@ export default function ReceiptModal({
                 </div>
 
                 {/* あなた（発行元）の情報 */}
-                <div className="text-right space-y-1 border-t border-slate-200/50 pt-3 md:border-t-0 md:pt-0 relative pr-4">
+                <div className="text-right space-y-1 relative pr-4">
                   {stampImage && (
                     <div 
                       className={`absolute right-0 bottom-1 select-none z-10 touch-none ${
@@ -297,6 +299,7 @@ export default function ReceiptModal({
                 </div>
               </div>
             </div>
+          </div>
 
             {/* フッター閉じるボタン（印刷時は非表示） */}
             <div className="mt-6 flex justify-end print:hidden">

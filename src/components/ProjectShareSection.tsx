@@ -46,6 +46,14 @@ export default function ProjectShareSection({
   const [role, setRole] = useState<string>('viewer_all');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // クルーの権限情報を即時反映させるためのローカルステート
+  const [localShares, setLocalShares] = useState<ProjectShare[]>(projectShares);
+
+  // 親コンポーネントからの再レンダリングや共有追加/削除に伴う同期
+  React.useEffect(() => {
+    setLocalShares(projectShares);
+  }, [projectShares]);
+
   // まだ紐付けられていないメンバー
   const unlinkedMembers = members.filter((m) => !m.userId);
 
@@ -87,10 +95,25 @@ export default function ProjectShareSection({
 
   const handleRoleChange = (shareId: string, newRole: string) => {
     setErrorMsg(null);
+
+    // 1. クライアント側のラジオボタン表示状態を「即座に」パッと切り替える
+    const prevShares = [...localShares];
+    setLocalShares(
+      localShares.map((s) => (s.id === shareId ? { ...s, role: newRole } : s))
+    );
+
+    // 2. バックグラウンドで非同期にデータベースを更新する
     startTransition(async () => {
-      const res = await actionUpdateProjectShareRole(shareId, newRole);
-      if (res && res.error) {
-        setErrorMsg(res.error);
+      try {
+        const res = await actionUpdateProjectShareRole(shareId, newRole);
+        if (res && 'error' in res && res.error) {
+          throw new Error(res.error);
+        }
+      } catch (e: any) {
+        console.error('Failed to update role:', e);
+        setErrorMsg('権限の更新に失敗しました。');
+        // エラー時は元の状態にロールバック
+        setLocalShares(prevShares);
       }
     });
   };
@@ -248,7 +271,7 @@ export default function ProjectShareSection({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-155">
-                {projectShares.map((share) => {
+                {localShares.map((share) => {
                   const linkedMember = members.find((m) => m.userId === share.userId);
                   return (
                     <tr key={share.id} className="hover:bg-slate-50/50 transition-colors">

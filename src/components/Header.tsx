@@ -1,11 +1,35 @@
 import Link from 'next/link';
 import { getCurrentUser } from '@/lib/auth';
 import { actionLogout } from '@/lib/actions';
+import { prisma } from '@/lib/prisma';
 
 export default async function Header() {
   const currentUser = await getCurrentUser();
   
   if (!currentUser) return null;
+
+  // 未読のMate通知数をカウント
+  let mateNotificationCount = 0;
+  try {
+    const pendingReceivedCount = await prisma.friendship.count({
+      where: {
+        friendId: currentUser.id,
+        status: 'pending',
+      },
+    });
+
+    const unreadAcceptedCount = await prisma.friendship.count({
+      where: {
+        userId: currentUser.id,
+        status: 'accepted',
+        isReadBySender: false,
+      },
+    });
+
+    mateNotificationCount = pendingReceivedCount + unreadAcceptedCount;
+  } catch (e) {
+    console.error('Failed to load mate notification count:', e);
+  }
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50 print:hidden">
@@ -20,8 +44,13 @@ export default async function Header() {
             <Link href="/dashboard" className="text-xs font-bold text-gray-600 hover:text-indigo-600 transition">
               イベント
             </Link>
-            <Link href="/friends" className="text-xs font-bold text-gray-600 hover:text-indigo-600 transition">
-              Mate管理
+            <Link href="/friends" className="text-xs font-bold text-gray-600 hover:text-indigo-600 transition relative">
+              <span>Mate管理</span>
+              {mateNotificationCount > 0 && (
+                <span className="absolute -top-1.5 -right-2.5 bg-red-500 text-white text-[8px] px-1 py-0.2 rounded-full font-black leading-none min-w-[12px] text-center shadow-sm">
+                  {mateNotificationCount}
+                </span>
+              )}
             </Link>
             <Link href="/members" className="text-xs font-bold text-gray-600 hover:text-indigo-600 transition">
               ベースクルー登録
@@ -43,8 +72,13 @@ export default async function Header() {
             <Link href="/dashboard" className="text-sm font-bold text-gray-600 hover:text-indigo-600 transition">
               イベント一覧
             </Link>
-            <Link href="/friends" className="text-sm font-bold text-gray-600 hover:text-indigo-600 transition">
-              Mate管理
+            <Link href="/friends" className="text-sm font-bold text-gray-600 hover:text-indigo-600 transition relative">
+              <span>Mate管理</span>
+              {mateNotificationCount > 0 && (
+                <span className="absolute -top-1.5 -right-2.5 bg-red-500 text-white text-[8px] px-1.2 py-0.5 rounded-full font-black leading-none min-w-[12px] text-center shadow-sm">
+                  {mateNotificationCount}
+                </span>
+              )}
             </Link>
             <Link href="/members" className="text-sm font-bold text-gray-600 hover:text-indigo-600 transition">
               ベースクルー登録

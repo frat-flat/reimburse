@@ -183,12 +183,13 @@ model ExpenseAttachment {
 
 // 9. 友達関係
 model Friendship {
-  id        String   @id @default(uuid())
-  userId    String   // 申請者
-  friendId  String   // 被申請者
-  status    String   // pending (申請中) / accepted (友達) / rejected (拒否)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(uuid())
+  userId         String   // 申請者
+  friendId       String   // 被申請者
+  status         String   // pending (申請中) / accepted (友達) / rejected (拒否)
+  isReadBySender Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   user      User     @relation("UserFriendships", fields: [userId], references: [id], onDelete: Cascade)
   friend    User     @relation("FriendFriendships", fields: [friendId], references: [id], onDelete: Cascade)

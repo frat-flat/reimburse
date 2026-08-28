@@ -15,6 +15,22 @@ export default async function FriendsPage() {
     redirect('/login');
   }
 
+  // 自分が申請して相手に承認された未読通知を既読にする
+  try {
+    await prisma.friendship.updateMany({
+      where: {
+        userId: currentUser.id,
+        status: 'accepted',
+        isReadBySender: false,
+      },
+      data: {
+        isReadBySender: true,
+      },
+    });
+  } catch (e) {
+    console.error('Failed to mark friendships as read:', e);
+  }
+
   // 1. 友達一覧 (status === 'accepted') を取得
   let friendships: any[] = [];
   let incomingRequests: any[] = [];

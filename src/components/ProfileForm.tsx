@@ -160,6 +160,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
           (b) =>
             b.name.toLowerCase().includes(query) ||
             b.name_kana.toLowerCase().includes(query) ||
+            (b.hira && b.hira.includes(query)) ||
             b.code.includes(query)
         );
         setBankSuggestions(matched.slice(0, 10));
@@ -193,6 +194,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
           (b) =>
             b.name.toLowerCase().includes(query) ||
             b.name_kana.toLowerCase().includes(query) ||
+            (b.hira && b.hira.includes(query)) ||
             b.code.includes(query)
         );
         setBranchSuggestions(matched.slice(0, 10));
@@ -621,7 +623,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
               </div>
 
               {/* 銀行名 */}
-              <div className="md:col-span-2">
+              <div className="md:col-span-2 relative">
                 <label className="block text-slate-700 font-bold mb-1">
                   金融機関名 (サジェスト候補あり) {loadingBank && <span className="text-[9px] text-indigo-650 animate-pulse">(取得中...)</span>}
                 </label>
@@ -635,30 +637,30 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
                   placeholder="カタカナ・ひらがな・漢字で検索可能"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-bold"
                 />
-              </div>
 
-              {/* サジェストドロップダウン */}
-              {showBankSuggestions && bankSuggestions.length > 0 && (
-                <div className="absolute top-[56px] left-0 w-full z-30 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg">
-                  {bankSuggestions.map((b) => (
-                    <button
-                      key={b.code}
-                      type="button"
-                      onClick={() => {
-                        setBankCode(b.code);
-                        setBankName(b.name);
-                        setBranchCode('');
-                        setBranchName('');
-                        setShowBankSuggestions(false);
-                      }}
-                      className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 border-b border-slate-100 last:border-0 font-bold text-slate-700 flex justify-between items-center"
-                    >
-                      <span>{b.name} <span className="text-[9px] text-slate-400">({b.name_kana})</span></span>
-                      <span className="font-mono text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{b.code}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+                {/* サジェストドロップダウン */}
+                {showBankSuggestions && bankSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 w-full z-30 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg mt-1">
+                    {bankSuggestions.map((b) => (
+                      <button
+                        key={b.code}
+                        type="button"
+                        onClick={() => {
+                          setBankCode(b.code);
+                          setBankName(b.name);
+                          setBranchCode('');
+                          setBranchName('');
+                          setShowBankSuggestions(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 border-b border-slate-100 last:border-0 font-bold text-slate-700 flex justify-between items-center"
+                      >
+                        <span>{b.name} <span className="text-[9px] text-slate-400">({b.name_kana})</span></span>
+                        <span className="font-mono text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{b.code}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 relative" ref={branchRef}>
@@ -682,7 +684,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
               </div>
 
               {/* 支店名 */}
-              <div className="md:col-span-2">
+              <div className="md:col-span-2 relative">
                 <label className="block text-slate-700 font-bold mb-1">
                   支店名 (サジェスト候補あり) {loadingBranch && <span className="text-[9px] text-indigo-650 animate-pulse">(取得中...)</span>}
                 </label>
@@ -697,28 +699,28 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
                   placeholder={bankCode.length === 4 ? "カタカナ・ひらがな・漢字で検索可能" : "金融機関を先に選択してください"}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-bold disabled:bg-slate-50 disabled:text-slate-400"
                 />
-              </div>
 
-              {/* サジェストドロップダウン */}
-              {showBranchSuggestions && branchSuggestions.length > 0 && (
-                <div className="absolute top-[56px] left-0 w-full z-30 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg">
-                  {branchSuggestions.map((b) => (
-                    <button
-                      key={b.code}
-                      type="button"
-                      onClick={() => {
-                        setBranchCode(b.code);
-                        setBranchName(b.name);
-                        setShowBranchSuggestions(false);
-                      }}
-                      className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 border-b border-slate-100 last:border-0 font-bold text-slate-700 flex justify-between items-center"
-                    >
-                      <span>{b.name} <span className="text-[9px] text-slate-400">({b.name_kana})</span></span>
-                      <span className="font-mono text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{b.code}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+                {/* サジェストドロップダウン */}
+                {showBranchSuggestions && branchSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 w-full z-30 max-h-48 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-lg mt-1">
+                    {branchSuggestions.map((b) => (
+                      <button
+                        key={b.code}
+                        type="button"
+                        onClick={() => {
+                          setBranchCode(b.code);
+                          setBranchName(b.name);
+                          setShowBranchSuggestions(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 border-b border-slate-100 last:border-0 font-bold text-slate-700 flex justify-between items-center"
+                      >
+                        <span>{b.name} <span className="text-[9px] text-slate-400">({b.name_kana})</span></span>
+                        <span className="font-mono text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{b.code}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">

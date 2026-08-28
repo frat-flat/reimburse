@@ -251,12 +251,7 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
     });
   }
 
-  // 自分に関係する（自分が支払う、または自分が受け取る）精算ルートのみに絞り込む
-  if (linkedMember) {
-    settlementsList = settlementsList.filter(
-      (s) => s.fromUserId === linkedMember.id || s.toUserId === linkedMember.id
-    );
-  }
+
 
   // 利用日期間の算出
   let dateRange = '-';

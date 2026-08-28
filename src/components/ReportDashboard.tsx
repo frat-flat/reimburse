@@ -83,6 +83,15 @@ export default function ReportDashboard({
   const shouldBreakBeforeExpenseTable = showExpenseTable && hasMemberTablePrinted;
   const shouldBreakBeforeMemberDetails = showMemberDetails && (hasMemberTablePrinted || showExpenseTable);
 
+  // 表示対象のターゲットメンバー特定
+  const targetMemberName = selectedMemberName || currentMemberName || '';
+  const isSelf = !selectedMemberName || targetMemberName === currentMemberName;
+
+  // ターゲットメンバーが関わる取引のみに送金指示リストをフィルタリングする
+  const filteredSettlements = targetMemberName
+    ? settlementsList.filter((s) => s.fromUserName === targetMemberName || s.toUserName === targetMemberName)
+    : settlementsList;
+
   // 選択されたメンバーに基づいて個別明細をフィルタリング
   const filteredMemberSummaries = selectedMemberName
     ? memberSummaries.filter((m) => m.name === selectedMemberName)
@@ -159,7 +168,7 @@ export default function ReportDashboard({
               disabled={true}
               className="rounded text-indigo-650 border-gray-300 focus:ring-indigo-500 h-3.5 w-3.5 cursor-not-allowed"
             />
-            <span>あなたの精算状況 (必須)</span>
+            <span>{isSelf ? 'あなたの精算状況' : `${targetMemberName} の精算状況`} (必須)</span>
           </label>
 
           <label className="flex items-center gap-1.5 cursor-not-allowed text-gray-400">
@@ -216,8 +225,8 @@ export default function ReportDashboard({
 
       {/* 1. 自身の精算内訳サマリー（横長ワイド表示） */}
       {(() => {
-        if (!currentMemberName) return null;
-        const mySummary = memberSummaries.find((m) => m.name === currentMemberName);
+        if (!targetMemberName) return null;
+        const mySummary = memberSummaries.find((m) => m.name === targetMemberName);
         if (!mySummary) return null;
 
         const isCreditor = mySummary.diff > 0.001;
@@ -229,7 +238,9 @@ export default function ReportDashboard({
                 {mySummary.name.charAt(0)}
               </div>
               <div>
-                <h3 className="font-extrabold text-gray-900 text-base">あなたの精算状況</h3>
+                <h3 className="font-extrabold text-gray-900 text-base">
+                  {isSelf ? 'あなたの精算状況' : `${mySummary.name} の精算状況`}
+                </h3>
                 <p className="text-xs text-gray-500 font-semibold">{mySummary.name}</p>
               </div>
             </div>
@@ -268,8 +279,8 @@ export default function ReportDashboard({
         <h2 className="text-base font-bold text-gray-900 border-l-4 border-indigo-600 pl-2">
           メンバー間精算・送金指示リスト
         </h2>
-        {settlementsList.length === 0 ? (
-          <p className="text-sm text-gray-500 py-4 text-center">全員の立替・負担額が既に一致しているため、送金指示はありません。</p>
+        {filteredSettlements.length === 0 ? (
+          <p className="text-sm text-gray-500 py-4 text-center">送金指示はありません。</p>
         ) : (
           <div className="space-y-4">
             <div className="overflow-x-auto">
@@ -284,7 +295,7 @@ export default function ReportDashboard({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {settlementsList.map((s, index) => (
+                  {filteredSettlements.map((s, index) => (
                     <tr key={index} className="hover:bg-gray-50/50 print:hover:bg-transparent">
                       <td className="py-3 px-3 font-bold text-red-700">{s.fromUserName}</td>
                       <td className="py-3 px-3 text-center text-gray-400 font-bold">➔</td>
@@ -300,11 +311,11 @@ export default function ReportDashboard({
             </div>
 
             {/* 支払先の開示情報がある場合、印刷用データにも記載する */}
-            {settlementsList.some(s => s.toUserBankInfo || s.toUserPaypayInfo) && (
+            {filteredSettlements.some(s => s.toUserBankInfo || s.toUserPaypayInfo) && (
               <div className="pt-2.5 print:break-inside-avoid">
                 <h3 className="text-xs font-bold text-gray-700 mb-2">【開示されている振込先・送金情報】</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {settlementsList.map((s, index) => {
+                  {filteredSettlements.map((s, index) => {
                     if (!s.toUserBankInfo && !s.toUserPaypayInfo) return null;
                     return (
                       <div key={index} className="border border-slate-200 rounded-lg p-3 bg-slate-50/50 text-[11px] leading-relaxed print:bg-white print:border-gray-300">

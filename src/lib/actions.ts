@@ -1404,9 +1404,9 @@ export async function actionUpdateProfile(formData: FormData) {
   const stampSizeStr = formData.get('stampSize') as string;
   const stampSize = stampSizeStr ? parseInt(stampSizeStr, 10) : 60;
 
-  // 口座名義カナのサーバー側バリデーション (カタカナ、長音、スペース類のみ許容)
-  if (accountHolder && !/^[ァ-ヶーｱ-ﾝﾞﾟ\s　]+$/.test(accountHolder)) {
-    return { error: '口座名義は必ずカナ表記（カタカナ）で入力してください。' };
+  // 口座名義カナのサーバー側バリデーション (カタカナ・英数字・スペース、および主要記号 ( ) . , - / \ を全角・半角問わず許容。漢字は不可)
+  if (accountHolder && !/^[ァ-ヶーｱ-ﾝﾞﾟA-Za-zＡ-Ｚａ-ｚ0-9０-９\s　()（）.,，．\-－‐/／\\￥]+$/.test(accountHolder)) {
+    return { error: '口座名義はカナ・英数字・スペース・記号（カッコやピリオド等）で入力してください。' };
   }
 
   try {

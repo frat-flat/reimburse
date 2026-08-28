@@ -82,9 +82,10 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
   // 口座名義（カナ）のクライアント側リアルタイムバリデーション
   useEffect(() => {
     if (accountHolder) {
-      const isValid = /^[ァ-ヶーｱ-ﾝﾞﾟ\s　]+$/.test(accountHolder);
+      // カタカナ・英数字・スペース、および主要記号 ( ) . , - / \ を全角・半角問わず許容
+      const isValid = /^[ァ-ヶーｱ-ﾝﾞﾟA-Za-zＡ-Ｚａ-ｚ0-9０-９\s　()（）.,，．\-－‐/／\\￥]+$/.test(accountHolder);
       if (!isValid) {
-        setHolderError('口座名義はカナ表記（カタカナ・スペース）で入力してください（漢字・アルファベットは不可）。');
+        setHolderError('口座名義はカナ・英数字・スペース・記号（カッコやピリオド等）で入力してください（漢字は使用できません）。');
       } else {
         setHolderError(null);
       }

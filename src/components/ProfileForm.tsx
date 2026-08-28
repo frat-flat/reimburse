@@ -605,6 +605,8 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
                 setStampOffsetY(offset.y);
                 setStampOpacity(opacity);
               }}
+              closeButtonText="保存"
+              closeButtonType="submit"
             />
           </div>
         </div>

@@ -25,6 +25,8 @@ interface ReceiptModalProps {
   triggerButtonText?: string;
   triggerButtonClassName?: string;
   onStampChange?: (offset: { x: number; y: number }, opacity: number) => void;
+  closeButtonText?: string;
+  closeButtonType?: 'button' | 'submit';
 }
 
 export default function ReceiptModal({
@@ -37,6 +39,8 @@ export default function ReceiptModal({
   triggerButtonText,
   triggerButtonClassName,
   onStampChange,
+  closeButtonText,
+  closeButtonType,
 }: ReceiptModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [stampImage, setStampImage] = useState(issuerInfo.stampImage || '');
@@ -321,10 +325,11 @@ export default function ReceiptModal({
             {/* フッター閉じるボタン（印刷時は非表示） */}
             <div className="mt-6 flex justify-end print:hidden">
               <button
+                type={closeButtonType || "button"}
                 onClick={() => setIsOpen(false)}
-                className="bg-gray-150 hover:bg-gray-250 text-gray-700 font-bold py-2 px-4 rounded-xl text-xs transition cursor-pointer"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-xl text-xs transition cursor-pointer shadow-sm active:scale-95"
               >
-                閉じる
+                {closeButtonText || "閉じる"}
               </button>
             </div>
 

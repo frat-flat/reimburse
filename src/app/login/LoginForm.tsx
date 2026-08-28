@@ -107,7 +107,7 @@ export default function LoginForm() {
               type="email"
               required
               defaultValue="admin@example.com"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition text-gray-900 bg-white"
               placeholder="name@example.com"
             />
           </div>
@@ -129,7 +129,7 @@ export default function LoginForm() {
               type="password"
               required
               defaultValue="password"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition text-gray-900 bg-white"
               placeholder="••••••••"
             />
           </div>
@@ -152,7 +152,7 @@ export default function LoginForm() {
               name="name"
               type="text"
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition text-gray-900 bg-white"
               placeholder="例: 山田 太郎"
             />
             <p className="text-[10px] text-gray-400 mt-1">
@@ -167,7 +167,7 @@ export default function LoginForm() {
               name="email"
               type="email"
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition text-gray-900 bg-white"
               placeholder="admin@example.com"
             />
           </div>
@@ -178,7 +178,7 @@ export default function LoginForm() {
             <input
               name="password"
               type="password"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition text-gray-900 bg-white"
               placeholder="パスワードを入力してください（空欄時は 'password'）"
             />
           </div>
@@ -204,7 +204,7 @@ export default function LoginForm() {
               name="email"
               type="email"
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition text-sm"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition text-sm text-gray-900 bg-white"
               placeholder="admin@example.com"
             />
           </div>
@@ -216,7 +216,7 @@ export default function LoginForm() {
               name="name"
               type="text"
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition text-sm"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition text-sm text-gray-900 bg-white"
               placeholder="例: 吉田京平"
             />
           </div>
@@ -228,7 +228,7 @@ export default function LoginForm() {
               name="newPassword"
               type="password"
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition text-sm"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition text-sm text-gray-900 bg-white"
               placeholder="新しいパスワードを入力"
             />
           </div>

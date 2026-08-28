@@ -2,7 +2,7 @@
 
 import React, { useState, useTransition } from 'react';
 import { actionShareProject, actionRemoveProjectShare, actionUpdateProjectShareRole } from '@/lib/actions';
-import { Share2, User, Shield, X, AlertCircle } from 'lucide-react';
+import { Share2, User, Shield, X, AlertCircle, Pencil, Check } from 'lucide-react';
 
 interface Friend {
   id: string;
@@ -45,6 +45,26 @@ export default function ProjectShareSection({
   const [selectedMemberId, setSelectedMemberId] = useState('');
   const [role, setRole] = useState<string>('viewer_all');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // インライン編集用ステート
+  const [editingShareId, setEditingShareId] = useState<string | null>(null);
+  const [editingRole, setEditingRole] = useState<string>('');
+
+  const startEditing = (shareId: string, currentRole: string) => {
+    setEditingShareId(shareId);
+    setEditingRole(currentRole);
+  };
+
+  const saveRoleEdit = (shareId: string) => {
+    if (!editingRole) return;
+    handleRoleChange(shareId, editingRole);
+    setEditingShareId(null);
+  };
+
+  const cancelEditing = () => {
+    setEditingShareId(null);
+    setEditingRole('');
+  };
 
   // クルーの権限情報を即時反映させるためのローカルステート
   const [localShares, setLocalShares] = useState<ProjectShare[]>(projectShares);
@@ -264,15 +284,30 @@ export default function ProjectShareSection({
               <thead>
                 <tr className="bg-slate-50/75 border-b border-gray-200 text-gray-500 font-bold text-[10px]">
                   <th className="py-2.5 px-3.5 font-extrabold text-slate-600">クルー情報</th>
-                  <th className="py-2.5 px-2 text-center font-extrabold text-slate-600 w-20">個人閲覧</th>
-                  <th className="py-2.5 px-2 text-center font-extrabold text-slate-600 w-20">全体閲覧</th>
-                  <th className="py-2.5 px-2 text-center font-extrabold text-slate-600 w-20">編集可能</th>
-                  <th className="py-2.5 px-3 text-right font-extrabold text-slate-600 w-20">共有解除</th>
+                  <th className="py-2.5 px-2 text-center font-extrabold text-slate-600 w-36">付与された権限</th>
+                  <th className="py-2.5 px-3 text-right font-extrabold text-slate-600 w-16">共有解除</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-155">
                 {localShares.map((share) => {
                   const linkedMember = members.find((m) => m.userId === share.userId);
+                  const isEditing = share.id === editingShareId;
+                  
+                  const getRoleBadge = (r: string) => {
+                    switch (r) {
+                      case 'viewer_personal':
+                        return { text: '個人閲覧', style: 'bg-amber-50 text-amber-700 border-amber-250' };
+                      case 'viewer_all':
+                        return { text: '全体閲覧', style: 'bg-emerald-50 text-emerald-700 border-emerald-250' };
+                      case 'editor':
+                        return { text: '編集可能', style: 'bg-indigo-50 text-indigo-750 border-indigo-250' };
+                      default:
+                        return { text: r, style: 'bg-gray-50 text-gray-650 border-gray-250' };
+                    }
+                  };
+                  
+                  const badge = getRoleBadge(share.role);
+
                   return (
                     <tr key={share.id} className="hover:bg-slate-50/50 transition-colors">
                       {/* クルー情報 */}
@@ -291,46 +326,52 @@ export default function ProjectShareSection({
                         )}
                       </td>
                       
-                      {/* 個人閲覧 */}
-                      <td className="py-3 px-2 text-center">
-                        <label className="inline-flex items-center justify-center p-1.5 cursor-pointer">
-                          <input
-                            type="radio"
-                            name={`role-${share.id}`}
-                            checked={share.role === 'viewer_personal'}
-                            onChange={() => handleRoleChange(share.id, 'viewer_personal')}
-                            disabled={isPending}
-                            className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 cursor-pointer disabled:opacity-50"
-                          />
-                        </label>
-                      </td>
-
-                      {/* 全体閲覧 */}
-                      <td className="py-3 px-2 text-center">
-                        <label className="inline-flex items-center justify-center p-1.5 cursor-pointer">
-                          <input
-                            type="radio"
-                            name={`role-${share.id}`}
-                            checked={share.role === 'viewer_all'}
-                            onChange={() => handleRoleChange(share.id, 'viewer_all')}
-                            disabled={isPending}
-                            className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 cursor-pointer disabled:opacity-50"
-                          />
-                        </label>
-                      </td>
-
-                      {/* 編集可能 */}
-                      <td className="py-3 px-2 text-center">
-                        <label className="inline-flex items-center justify-center p-1.5 cursor-pointer">
-                          <input
-                            type="radio"
-                            name={`role-${share.id}`}
-                            checked={share.role === 'editor'}
-                            onChange={() => handleRoleChange(share.id, 'editor')}
-                            disabled={isPending}
-                            className="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500 cursor-pointer disabled:opacity-50"
-                          />
-                        </label>
+                      {/* 付与された権限 */}
+                      <td className="py-3 px-2 text-center w-36">
+                        {isEditing ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <select
+                              value={editingRole}
+                              onChange={(e) => setEditingRole(e.target.value)}
+                              disabled={isPending}
+                              className="text-[10px] font-bold bg-white border border-gray-300 rounded px-1 py-0.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                            >
+                              <option value="viewer_personal">個人閲覧</option>
+                              <option value="viewer_all">全体閲覧</option>
+                              <option value="editor">編集可能</option>
+                            </select>
+                            <button
+                              onClick={() => saveRoleEdit(share.id)}
+                              disabled={isPending}
+                              className="p-1 rounded bg-indigo-50 border border-indigo-200 text-indigo-600 hover:bg-indigo-100 transition cursor-pointer shadow-sm"
+                              title="保存"
+                            >
+                              <Check className="h-3 w-3" />
+                            </button>
+                            <button
+                              onClick={cancelEditing}
+                              disabled={isPending}
+                              className="p-1 rounded bg-slate-50 border border-slate-200 text-slate-500 hover:bg-slate-100 transition cursor-pointer shadow-sm"
+                              title="キャンセル"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${badge.style}`}>
+                              {badge.text}
+                            </span>
+                            <button
+                              onClick={() => startEditing(share.id, share.role)}
+                              disabled={isPending}
+                              className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition cursor-pointer"
+                              title="権限を編集"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </button>
+                          </div>
+                        )}
                       </td>
 
                       {/* 解除 */}

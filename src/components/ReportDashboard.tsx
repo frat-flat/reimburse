@@ -78,14 +78,32 @@ export default function ReportDashboard({
   const [showMemberDetails, setShowMemberDetails] = useState<boolean>(true);
   const [showSettlementTable, setShowSettlementTable] = useState<boolean>(true);
 
+  // 権限ごとの表示フラグの強制オーバーライド
+  const isPersonalViewer = userRole === 'viewer_personal';
+  const isWritableUser = userRole === 'owner' || userRole === 'editor';
+
+  // 閲覧権限（viewer_personal）は全体データを強制非表示
+  const displaySummaryCards = isPersonalViewer ? false : isWritableUser ? showSummaryCards : true;
+  const displayMemberTable = isPersonalViewer ? false : isWritableUser ? showMemberTable : true;
+  const displayExpenseTable = isPersonalViewer ? false : isWritableUser ? showExpenseTable : true;
+  const displayMemberDetails = isWritableUser ? showMemberDetails : true;
+
   // 印刷時に自分の前に「出力対象として選択された主要テーブル」がすでに印刷されているかどうかを判定
-  const hasMemberTablePrinted = showMemberTable;
-  const shouldBreakBeforeExpenseTable = showExpenseTable && hasMemberTablePrinted;
-  const shouldBreakBeforeMemberDetails = showMemberDetails && (hasMemberTablePrinted || showExpenseTable);
+  const hasMemberTablePrinted = displayMemberTable;
+  const shouldBreakBeforeExpenseTable = displayExpenseTable && hasMemberTablePrinted;
+  const shouldBreakBeforeMemberDetails = displayMemberDetails && (hasMemberTablePrinted || displayExpenseTable);
 
   // 表示対象のターゲットメンバー特定
-  const targetMemberName = selectedMemberName || currentMemberName || '';
-  const isSelf = !selectedMemberName || targetMemberName === currentMemberName;
+  // 個人閲覧（viewer_personal）の場合はログインユーザー自身に固定
+  // 全体閲覧（viewer_all）の場合は絞り込みなしで全員分
+  // 主催者/編集者はフィルター選択があればそれを優先、なければ自分自身
+  const targetMemberName = isPersonalViewer
+    ? (currentMemberName || '')
+    : isWritableUser
+    ? (selectedMemberName || currentMemberName || '')
+    : '';
+
+  const isSelf = isPersonalViewer || (!selectedMemberName && targetMemberName === currentMemberName);
 
   // ターゲットメンバーが関わる取引のみに送金指示リストをフィルタリングする
   const filteredSettlements = targetMemberName
@@ -93,7 +111,10 @@ export default function ReportDashboard({
     : settlementsList;
 
   // 選択されたメンバーに基づいて個別明細をフィルタリング
-  const filteredMemberSummaries = selectedMemberName
+  // 個人閲覧の場合は自分自身のみ
+  const filteredMemberSummaries = isPersonalViewer
+    ? memberSummaries.filter((m) => m.name === currentMemberName)
+    : selectedMemberName
     ? memberSummaries.filter((m) => m.name === selectedMemberName)
     : memberSummaries;
 
@@ -106,9 +127,9 @@ export default function ReportDashboard({
         members={memberSummaries}
         expenses={expenseSummaries}
         selectedMemberName={selectedMemberName || undefined}
-        showMemberTable={showMemberTable}
-        showExpenseTable={showExpenseTable}
-        showMemberDetails={showMemberDetails}
+        showMemberTable={displayMemberTable}
+        showExpenseTable={displayExpenseTable}
+        showMemberDetails={displayMemberDetails}
         userRole={userRole}
       />
 
@@ -124,104 +145,108 @@ export default function ReportDashboard({
         <p className="text-[10px] text-gray-400 mt-0.5">出力日: {new Date().toLocaleDateString('ja-JP')}</p>
       </div>
 
-      {/* メンバー選択フィルター (印刷時は非表示) */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 print:hidden">
-        <div className="flex items-center gap-2 text-sm font-bold text-gray-700">
-          <Filter className="h-4 w-4 text-indigo-600" />
-          <span>レポート出力フィルター</span>
+      {/* メンバー選択フィルター (主催者・編集者のみ表示、印刷時は非表示) */}
+      {isWritableUser && (
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 print:hidden">
+          <div className="flex items-center gap-2 text-sm font-bold text-gray-700">
+            <Filter className="h-4 w-4 text-indigo-600" />
+            <span>レポート出力フィルター</span>
+          </div>
+          <select
+            value={selectedMemberName}
+            onChange={(e) => setSelectedMemberName(e.target.value)}
+            className="text-sm bg-white border border-gray-300 rounded-lg px-3 py-2 font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm transition-all"
+          >
+            <option value="">-- 個別明細を出力するメンバーを選択 (全員分表示) --</option>
+            {memberSummaries.map((m) => (
+              <option key={m.name} value={m.name}>
+                {m.name}
+              </option>
+            ))}
+          </select>
         </div>
-        <select
-          value={selectedMemberName}
-          onChange={(e) => setSelectedMemberName(e.target.value)}
-          className="text-sm bg-white border border-gray-300 rounded-lg px-3 py-2 font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm transition-all"
-        >
-          <option value="">-- 個別明細を出力するメンバーを選択 (全員分表示) --</option>
-          {memberSummaries.map((m) => (
-            <option key={m.name} value={m.name}>
-              {m.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      )}
 
-      {/* 印刷項目の選択 (印刷時は非表示) */}
-      <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3 print:hidden">
-        <div className="flex items-center gap-2 text-sm font-bold text-gray-700">
-          <Settings className="h-4 w-4 text-indigo-600" />
-          <span>PDF（印刷）出力対象の選択</span>
+      {/* 印刷項目の選択 (主催者・編集者のみ表示、印刷時は非表示) */}
+      {isWritableUser && (
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3 print:hidden">
+          <div className="flex items-center gap-2 text-sm font-bold text-gray-700">
+            <Settings className="h-4 w-4 text-indigo-600" />
+            <span>PDF（印刷）出力対象の選択</span>
+          </div>
+          <div className="flex flex-wrap gap-4 text-xs font-semibold text-gray-600">
+            <label className="flex items-center gap-1.5 cursor-not-allowed text-gray-400">
+              <input
+                type="checkbox"
+                checked={true}
+                disabled={true}
+                className="rounded text-indigo-650 border-gray-300 focus:ring-indigo-500 h-3.5 w-3.5 cursor-not-allowed"
+              />
+              <span>タイトル (必須)</span>
+            </label>
+
+            <label className="flex items-center gap-1.5 cursor-not-allowed text-gray-400">
+              <input
+                type="checkbox"
+                checked={true}
+                disabled={true}
+                className="rounded text-indigo-650 border-gray-300 focus:ring-indigo-500 h-3.5 w-3.5 cursor-not-allowed"
+              />
+              <span>{isSelf ? 'あなたの精算状況' : `${targetMemberName} の精算状況`} (必須)</span>
+            </label>
+
+            <label className="flex items-center gap-1.5 cursor-not-allowed text-gray-400">
+              <input
+                type="checkbox"
+                checked={true}
+                disabled={true}
+                className="rounded text-indigo-650 border-gray-300 focus:ring-indigo-500 h-3.5 w-3.5 cursor-not-allowed"
+              />
+              <span>精算・送金指示リスト (必須)</span>
+            </label>
+
+            <label className="flex items-center gap-1.5 cursor-pointer text-gray-700 hover:text-indigo-600">
+              <input
+                type="checkbox"
+                checked={showSummaryCards}
+                onChange={(e) => setShowSummaryCards(e.target.checked)}
+                className="rounded text-indigo-600 border-gray-300 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
+              />
+              <span>イベントデータ</span>
+            </label>
+
+            <label className="flex items-center gap-1.5 cursor-pointer text-gray-700 hover:text-indigo-600">
+              <input
+                type="checkbox"
+                checked={showMemberTable}
+                onChange={(e) => setShowMemberTable(e.target.checked)}
+                className="rounded text-indigo-600 border-gray-300 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
+              />
+              <span>メンバー別支払・負担内訳</span>
+            </label>
+
+            <label className="flex items-center gap-1.5 cursor-pointer text-gray-700 hover:text-indigo-600">
+              <input
+                type="checkbox"
+                checked={showExpenseTable}
+                onChange={(e) => setShowExpenseTable(e.target.checked)}
+                className="rounded text-indigo-600 border-gray-300 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
+              />
+              <span>支出明細一覧</span>
+            </label>
+
+            <label className="flex items-center gap-1.5 cursor-pointer text-gray-700 hover:text-indigo-600">
+              <input
+                type="checkbox"
+                checked={showMemberDetails}
+                onChange={(e) => setShowMemberDetails(e.target.checked)}
+                className="rounded text-indigo-600 border-gray-300 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
+              />
+              <span>メンバー別明細</span>
+            </label>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-4 text-xs font-semibold text-gray-600">
-          <label className="flex items-center gap-1.5 cursor-not-allowed text-gray-400">
-            <input
-              type="checkbox"
-              checked={true}
-              disabled={true}
-              className="rounded text-indigo-650 border-gray-300 focus:ring-indigo-500 h-3.5 w-3.5 cursor-not-allowed"
-            />
-            <span>タイトル (必須)</span>
-          </label>
-
-          <label className="flex items-center gap-1.5 cursor-not-allowed text-gray-400">
-            <input
-              type="checkbox"
-              checked={true}
-              disabled={true}
-              className="rounded text-indigo-650 border-gray-300 focus:ring-indigo-500 h-3.5 w-3.5 cursor-not-allowed"
-            />
-            <span>{isSelf ? 'あなたの精算状況' : `${targetMemberName} の精算状況`} (必須)</span>
-          </label>
-
-          <label className="flex items-center gap-1.5 cursor-not-allowed text-gray-400">
-            <input
-              type="checkbox"
-              checked={true}
-              disabled={true}
-              className="rounded text-indigo-650 border-gray-300 focus:ring-indigo-500 h-3.5 w-3.5 cursor-not-allowed"
-            />
-            <span>精算・送金指示リスト (必須)</span>
-          </label>
-
-          <label className="flex items-center gap-1.5 cursor-pointer text-gray-700 hover:text-indigo-600">
-            <input
-              type="checkbox"
-              checked={showSummaryCards}
-              onChange={(e) => setShowSummaryCards(e.target.checked)}
-              className="rounded text-indigo-600 border-gray-300 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
-            />
-            <span>イベントデータ</span>
-          </label>
-
-          <label className="flex items-center gap-1.5 cursor-pointer text-gray-700 hover:text-indigo-600">
-            <input
-              type="checkbox"
-              checked={showMemberTable}
-              onChange={(e) => setShowMemberTable(e.target.checked)}
-              className="rounded text-indigo-600 border-gray-300 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
-            />
-            <span>メンバー別支払・負担内訳</span>
-          </label>
-
-          <label className="flex items-center gap-1.5 cursor-pointer text-gray-700 hover:text-indigo-600">
-            <input
-              type="checkbox"
-              checked={showExpenseTable}
-              onChange={(e) => setShowExpenseTable(e.target.checked)}
-              className="rounded text-indigo-600 border-gray-300 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
-            />
-            <span>支出明細一覧</span>
-          </label>
-
-          <label className="flex items-center gap-1.5 cursor-pointer text-gray-700 hover:text-indigo-600">
-            <input
-              type="checkbox"
-              checked={showMemberDetails}
-              onChange={(e) => setShowMemberDetails(e.target.checked)}
-              className="rounded text-indigo-600 border-gray-300 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
-            />
-            <span>メンバー別明細</span>
-          </label>
-        </div>
-      </div>
+      )}
 
       {/* 1. 自身の精算内訳サマリー（横長ワイド表示） */}
       {(() => {
@@ -351,7 +376,7 @@ export default function ReportDashboard({
       </div>
 
       {/* 3. イベントデータ (サマリーカード) */}
-      {showSummaryCards && (
+      {displaySummaryCards && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 print:grid-cols-4 print:gap-2">
           <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex items-center gap-3 print:border-gray-300">
             <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg print:bg-transparent">
@@ -396,7 +421,7 @@ export default function ReportDashboard({
       )}
 
       {/* メンバー別集計テーブル */}
-      {showMemberTable && (
+      {displayMemberTable && (
         <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4 print:border-none print:shadow-none print:p-0">
           <h2 className="text-base font-bold text-gray-900 border-l-4 border-indigo-600 pl-2">
             メンバー別支払・負担内訳
@@ -455,7 +480,7 @@ export default function ReportDashboard({
       )}
 
       {/* 支出明細テーブル */}
-      {showExpenseTable && (
+      {displayExpenseTable && (
         <div className={`bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4 print:border-none print:shadow-none print:p-0 print:pt-4 ${
           shouldBreakBeforeExpenseTable ? 'print:break-before-page' : ''
         }`}>
@@ -496,7 +521,7 @@ export default function ReportDashboard({
 
 
       {/* メンバー個別明細セクション (フィルタリング連動) */}
-      {showMemberDetails && (
+      {displayMemberDetails && (
         <div className={`bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-6 print:border-none print:shadow-none print:p-0 print:pt-4 ${
           shouldBreakBeforeMemberDetails ? 'print:break-before-page' : ''
         }`}>

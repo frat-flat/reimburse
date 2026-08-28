@@ -27,6 +27,7 @@ interface ReceiptModalProps {
   onStampChange?: (offset: { x: number; y: number }, opacity: number) => void;
   closeButtonText?: string;
   closeButtonType?: 'button' | 'submit';
+  showPrintButton?: boolean;
 }
 
 export default function ReceiptModal({
@@ -41,6 +42,7 @@ export default function ReceiptModal({
   onStampChange,
   closeButtonText,
   closeButtonType,
+  showPrintButton = true,
 }: ReceiptModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [stampImage, setStampImage] = useState(issuerInfo.stampImage || '');
@@ -114,17 +116,19 @@ export default function ReceiptModal({
             {/* 閉じる・印刷ヘッダー（印刷時は非表示） */}
             <div className="flex items-center justify-between border-b border-gray-200 pb-4 mb-6 print:hidden">
               <div className="flex items-center gap-2">
-                <Receipt className="h-5.5 w-5.5 text-indigo-650" />
+                <Receipt className="h-5.5 w-5.5 text-indigo-600" />
                 <h3 className="text-sm font-bold text-gray-800">領収書プレビュー</h3>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={handlePrint}
-                  className="bg-indigo-650 hover:bg-indigo-750 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition flex items-center gap-1 shadow-sm cursor-pointer"
-                >
-                  <Printer className="h-3.5 w-3.5" />
-                  <span>印刷・PDF出力</span>
-                </button>
+                {showPrintButton && (
+                  <button
+                    onClick={handlePrint}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition flex items-center gap-1 shadow-sm cursor-pointer"
+                  >
+                    <Printer className="h-3.5 w-3.5" />
+                    <span>印刷・PDF出力</span>
+                  </button>
+                )}
                 <button
                   onClick={() => setIsOpen(false)}
                   className="text-gray-400 hover:text-gray-650 p-1.5 rounded-md hover:bg-gray-100 transition cursor-pointer"

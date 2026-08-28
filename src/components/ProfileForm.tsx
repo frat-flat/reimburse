@@ -607,6 +607,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
               }}
               closeButtonText="保存"
               closeButtonType="submit"
+              showPrintButton={false}
             />
           </div>
         </div>

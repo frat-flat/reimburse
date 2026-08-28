@@ -30,20 +30,24 @@ export default function SwipeStatusButton({
     setLocalStatus(currentStatus);
   }, [currentStatus]);
 
+  // ドラッグ開始位置の記録用Ref
+  const startXRef = useRef(0);
+
   // 最大スライド可能幅の計算
   const getMaxSlideWidth = () => {
     if (!containerRef.current || !handleRef.current) return 0;
     return containerRef.current.clientWidth - handleRef.current.clientWidth - 8; // 左右パディング分
   };
 
-  const handleStart = () => {
+  const handleStart = (clientX: number) => {
     if (!canOperate || isPending || localStatus === 'receipt_issued') return;
     setIsDragging(true);
+    startXRef.current = clientX;
   };
 
-  const handleMove = (clientX: number, startX: number) => {
+  const handleMove = (clientX: number) => {
     if (!isDragging) return;
-    const deltaX = clientX - startX;
+    const deltaX = clientX - startXRef.current;
     const maxW = getMaxSlideWidth();
     setDragX(Math.max(0, Math.min(maxW, deltaX)));
   };
@@ -86,17 +90,15 @@ export default function SwipeStatusButton({
 
   // マウスイベントのバインド
   useEffect(() => {
-    let startX = 0;
     const onMouseDown = (e: MouseEvent) => {
       if (handleRef.current && handleRef.current.contains(e.target as Node)) {
-        startX = e.clientX;
-        handleStart();
+        handleStart(e.clientX);
       }
     };
 
     const onMouseMove = (e: MouseEvent) => {
       if (isDragging) {
-        handleMove(e.clientX, startX);
+        handleMove(e.clientX);
       }
     };
 
@@ -119,18 +121,16 @@ export default function SwipeStatusButton({
 
   // タッチイベントのバインド (モバイル対応)
   useEffect(() => {
-    let startX = 0;
     const handleElement = handleRef.current;
     if (!handleElement) return;
 
     const onTouchStart = (e: TouchEvent) => {
-      startX = e.touches[0].clientX;
-      handleStart();
+      handleStart(e.touches[0].clientX);
     };
 
     const onTouchMove = (e: TouchEvent) => {
       if (isDragging) {
-        handleMove(e.touches[0].clientX, startX);
+        handleMove(e.touches[0].clientX);
       }
     };
 

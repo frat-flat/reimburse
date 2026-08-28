@@ -13,19 +13,22 @@ export default function SwipeSimulatorPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<HTMLButtonElement>(null);
 
+  const startXRef = useRef(0);
+
   const getMaxSlideWidth = () => {
     if (!containerRef.current || !handleRef.current) return 0;
     return containerRef.current.clientWidth - handleRef.current.clientWidth - 8;
   };
 
-  const handleStart = () => {
+  const handleStart = (clientX: number) => {
     if (!canOperate || currentStatus === 'receipt_issued') return;
     setIsDragging(true);
+    startXRef.current = clientX;
   };
 
-  const handleMove = (clientX: number, startX: number) => {
+  const handleMove = (clientX: number) => {
     if (!isDragging) return;
-    const deltaX = clientX - startX;
+    const deltaX = clientX - startXRef.current;
     const maxW = getMaxSlideWidth();
     setDragX(Math.max(0, Math.min(maxW, deltaX)));
   };
@@ -48,15 +51,13 @@ export default function SwipeSimulatorPage() {
 
   // マウスイベントの監視
   useEffect(() => {
-    let startX = 0;
     const onMouseDown = (e: MouseEvent) => {
       if (handleRef.current && handleRef.current.contains(e.target as Node)) {
-        startX = e.clientX;
-        handleStart();
+        handleStart(e.clientX);
       }
     };
     const onMouseMove = (e: MouseEvent) => {
-      if (isDragging) handleMove(e.clientX, startX);
+      if (isDragging) handleMove(e.clientX);
     };
     const onMouseUp = () => {
       if (isDragging) handleEnd();
@@ -74,16 +75,14 @@ export default function SwipeSimulatorPage() {
 
   // タッチイベントの監視 (モバイル対応)
   useEffect(() => {
-    let startX = 0;
     const handleElement = handleRef.current;
     if (!handleElement) return;
 
     const onTouchStart = (e: TouchEvent) => {
-      startX = e.touches[0].clientX;
-      handleStart();
+      handleStart(e.touches[0].clientX);
     };
     const onTouchMove = (e: TouchEvent) => {
-      if (isDragging) handleMove(e.touches[0].clientX, startX);
+      if (isDragging) handleMove(e.touches[0].clientX);
     };
     const onTouchEnd = () => {
       if (isDragging) handleEnd();

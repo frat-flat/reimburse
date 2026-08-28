@@ -2,7 +2,7 @@
 
 import React, { useState, useTransition } from 'react';
 import { actionShareProject, actionRemoveProjectShare, actionUpdateProjectShareRole } from '@/lib/actions';
-import { Share2, User, Shield, X, AlertCircle, Pencil, Check } from 'lucide-react';
+import { Share2, User, Shield, X, AlertCircle, Pencil, Check, Trash2 } from 'lucide-react';
 
 interface Friend {
   id: string;
@@ -284,8 +284,7 @@ export default function ProjectShareSection({
               <thead>
                 <tr className="bg-slate-50/75 border-b border-gray-200 text-gray-500 font-bold text-[10px]">
                   <th className="py-2.5 px-3.5 font-extrabold text-slate-600">クルー情報</th>
-                  <th className="py-2.5 px-2 text-center font-extrabold text-slate-600 w-36">付与された権限</th>
-                  <th className="py-2.5 px-3 text-right font-extrabold text-slate-600 w-16">共有解除</th>
+                  <th className="py-2.5 px-2 text-center font-extrabold text-slate-600 w-44">付与された権限</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-155">
@@ -327,14 +326,14 @@ export default function ProjectShareSection({
                       </td>
                       
                       {/* 付与された権限 */}
-                      <td className="py-3 px-2 text-center w-36">
+                      <td className="py-3 px-2 text-center w-44">
                         {isEditing ? (
-                          <div className="flex items-center justify-center gap-1">
+                          <div className="flex items-center justify-center gap-1.5">
                             <select
                               value={editingRole}
                               onChange={(e) => setEditingRole(e.target.value)}
                               disabled={isPending}
-                              className="text-[10px] font-bold bg-white border border-gray-300 rounded px-1 py-0.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                              className="text-[10px] font-bold bg-white border border-gray-300 rounded px-1.5 py-1 text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-sm"
                             >
                               <option value="viewer_personal">個人閲覧</option>
                               <option value="viewer_all">全体閲覧</option>
@@ -356,6 +355,14 @@ export default function ProjectShareSection({
                             >
                               <X className="h-3 w-3" />
                             </button>
+                            <button
+                              onClick={() => handleRemove(share.id)}
+                              disabled={isPending}
+                              className="p-1 rounded bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 transition cursor-pointer shadow-sm ml-1"
+                              title="共有解除"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
                           </div>
                         ) : (
                           <div className="flex items-center justify-center gap-1.5">
@@ -372,18 +379,6 @@ export default function ProjectShareSection({
                             </button>
                           </div>
                         )}
-                      </td>
-
-                      {/* 解除 */}
-                      <td className="py-3 px-3 text-right">
-                        <button
-                          onClick={() => handleRemove(share.id)}
-                          disabled={isPending}
-                          className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition inline-flex items-center justify-center cursor-pointer"
-                          title="共有解除"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
                       </td>
                     </tr>
                   );

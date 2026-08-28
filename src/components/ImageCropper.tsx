@@ -199,7 +199,7 @@ export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: Ima
             step="0.05"
             value={zoom} 
             onChange={(e) => setZoom(parseFloat(e.target.value))}
-            className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-650"
+            className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
           />
         </div>
 
@@ -213,7 +213,7 @@ export default function ImageCropper({ imageSrc, onCropComplete, onCancel }: Ima
           </button>
           <button 
             onClick={handleCrop}
-            className="flex-1 bg-indigo-650 hover:bg-indigo-750 text-white font-bold py-2 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm"
+            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm"
           >
             <Check className="h-4 w-4" />
             <span>切り抜いて適用</span>

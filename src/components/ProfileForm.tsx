@@ -54,6 +54,8 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
     code: string;
     name: string;
     name_kana: string;
+    hira?: string;
+    roma?: string;
   }
   const [banksList, setBanksList] = useState<Record<string, ZenginItem>>({});
   const [branchesList, setBranchesList] = useState<Record<string, ZenginItem>>({});

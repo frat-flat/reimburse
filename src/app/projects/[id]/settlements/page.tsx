@@ -6,10 +6,10 @@ import { calculateSettlements } from '@/lib/settlement';
 import ReceiptModal from '@/components/ReceiptModal';
 import BankInfoModal from '@/components/BankInfoModal';
 import DisclosureToggles from '@/components/DisclosureToggles';
+import SwipeStatusButton from '@/components/SwipeStatusButton';
 import {
   actionConfirmSettlements,
   actionUnlockSettlements,
-  actionToggleSettlementPaid,
 } from '@/lib/actions';
 import { ArrowLeft, Landmark, AlertTriangle, ArrowRight, Sparkles, RefreshCw, Smartphone, Eye } from 'lucide-react';
 
@@ -106,7 +106,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
     toUserId: string;
     toUserName: string;
     amount: number;
-    status: 'pending' | 'paid';
+    status: 'pending' | 'paid' | 'receipt_issued';
   }[] = [];
 
   const isConfirmed = project.status === 'settlement_confirmed' || project.status === 'completed';
@@ -135,7 +135,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
       toUserId: s.receiverMemberId,
       toUserName: s.receiverMember.name,
       amount: s.amount,
-      status: s.status as 'pending' | 'paid',
+      status: s.status as 'pending' | 'paid' | 'receipt_issued',
     }));
   } else {
     // プレビュー状態の場合はリアルタイムに計算
@@ -148,7 +148,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
       toUserId: c.toUserId,
       toUserName: project.members.find((m) => m.id === c.toUserId)?.name || '不明',
       amount: c.amount,
-      status: 'pending',
+      status: 'pending' as 'pending' | 'paid' | 'receipt_issued',
     }));
   }
 
@@ -159,14 +159,6 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
     );
   }
 
-  // 支払済みトグルボタンのアクションラッパー
-  const handleTogglePaid = async (formData: FormData) => {
-    'use server';
-    const settlementId = formData.get('settlementId') as string;
-    const isPaidVal = formData.get('isPaid') === 'true';
-    if (!settlementId) return;
-    await actionToggleSettlementPaid(settlementId, isPaidVal);
-  };
 
   // 確定処理のアクションラッパー
   const handleConfirm = async () => {
@@ -244,7 +236,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                     <div
                       key={s.id || idx}
                       className={`flex items-center justify-between border rounded-xl p-4 transition-all ${
-                        s.status === 'paid'
+                        s.status === 'paid' || s.status === 'receipt_issued'
                           ? 'bg-gray-50 border-gray-200 opacity-60'
                           : 'bg-white border-indigo-100 shadow-sm'
                       }`}
@@ -276,7 +268,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                           {/* 領収書発行ボタン：
                               1. 主催者 (isOwner) の場合は、デモ確認・印刷テスト用にすべての支払済取引で領収書発行が可能
                               2. 一般メンバーの場合は、自分がReceiver（受け取る側）かつ「支払済(paid)」になっている取引のみ発行可能 */}
-                          {isConfirmed && s.status === 'paid' && (isOwner || (linkedMember && s.toUserId === linkedMember.id)) && (
+                          {isConfirmed && (s.status === 'paid' || s.status === 'receipt_issued') && (isOwner || (linkedMember && s.toUserId === linkedMember.id)) && (
                             <ReceiptModal
                               payerName={s.fromUserName}
                               receiverName={s.toUserName}
@@ -326,34 +318,11 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                             </div>
                           )}
 
-                          {isOwner ? (
-                            <form action={handleTogglePaid}>
-                              <input type="hidden" name="settlementId" value={s.id} />
-                              <input
-                                type="hidden"
-                                name="isPaid"
-                                value={s.status === 'paid' ? 'false' : 'true'}
-                              />
-                              <button
-                                type="submit"
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition cursor-pointer active:scale-95 ${
-                                  s.status === 'paid'
-                                    ? 'bg-indigo-650 hover:bg-indigo-755 border-indigo-600 text-white'
-                                    : 'bg-white hover:bg-gray-50 border-gray-300 text-gray-700 shadow-sm'
-                                }`}
-                              >
-                                {s.status === 'paid' ? '支払済' : '未支払'}
-                              </button>
-                            </form>
-                          ) : (
-                            <span className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${
-                              s.status === 'paid'
-                                ? 'bg-gray-100 border-gray-250 text-gray-550'
-                                : 'bg-amber-50 border-amber-200 text-amber-750'
-                            }`}>
-                              {s.status === 'paid' ? '精算済' : '未精算'}
-                            </span>
-                          )}
+                          <SwipeStatusButton
+                            settlementId={s.id}
+                            currentStatus={s.status as 'pending' | 'paid' | 'receipt_issued'}
+                            canOperate={!!linkedMember && s.toUserId === linkedMember.id}
+                          />
                         </div>
                       )}
                     </div>

@@ -719,6 +719,58 @@ export async function actionToggleSettlementPaid(settlementId: string, isPaid: b
   return { success: true };
 }
 
+export async function actionUpdateSettlementStatus(
+  settlementId: string,
+  newStatus: 'pending' | 'paid' | 'receipt_issued'
+) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return { error: 'ログインが必要です。' };
+
+  const settlement = await prisma.settlement.findUnique({
+    where: { id: settlementId },
+    include: { project: true },
+  });
+
+  if (!settlement) return { error: '精算レコードが見つかりません。' };
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // 支払ステータス更新
+      await tx.settlement.update({
+        where: { id: settlementId },
+        data: {
+          status: newStatus,
+          paidAt: newStatus === 'paid' || newStatus === 'receipt_issued' ? new Date() : null,
+        },
+      });
+
+      // そのプロジェクトのすべての精算が受取済み（paid）または領収書発行（receipt_issued）になったか確認
+      const allSettlements = await tx.settlement.findMany({
+        where: { projectId: settlement.projectId },
+      });
+
+      const allCompleted = allSettlements.every(
+        (s) => s.status === 'paid' || s.status === 'receipt_issued'
+      );
+
+      // 全て完了なら completed、そうでないなら settlement_confirmed
+      await tx.project.update({
+        where: { id: settlement.projectId },
+        data: {
+          status: allCompleted ? 'completed' : 'settlement_confirmed',
+        },
+      });
+    });
+  } catch (e) {
+    console.error(e);
+    return { error: 'ステータスの更新中にエラーが発生しました。' };
+  }
+
+  revalidatePath(`/projects/${settlement.projectId}`);
+  revalidatePath(`/projects/${settlement.projectId}/settlements`);
+  return { success: true };
+}
+
 export async function actionUpdateProject(projectId: string, formData: FormData) {
   const currentUser = await getCurrentUser();
   if (!currentUser) return { error: 'ログインが必要です。' };

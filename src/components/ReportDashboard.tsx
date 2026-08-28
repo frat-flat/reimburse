@@ -27,7 +27,7 @@ interface SettlementItem {
   toUserId: string;
   toUserName: string;
   amount: number;
-  status: 'pending' | 'paid';
+  status: 'pending' | 'paid' | 'receipt_issued';
   toUserBankInfo?: {
     bankName: string;
     bankCode?: string | null;
@@ -374,7 +374,7 @@ export default function ReportDashboard({
                         <td className="py-3 px-3 font-bold text-emerald-800">{s.toUserName}</td>
                         <td className="py-3 px-3 text-right font-black text-gray-950">{s.amount.toLocaleString()}円</td>
                         <td className="py-3 px-3 text-center text-gray-600 font-medium">
-                          {s.status === 'paid' ? '精算済' : '未精算'}
+                          {s.status === 'receipt_issued' ? '領収書発行済' : s.status === 'paid' ? '受取済' : '未精算'}
                         </td>
                       </tr>
                     ))}

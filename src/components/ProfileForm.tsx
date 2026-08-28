@@ -53,7 +53,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
   interface ZenginItem {
     code: string;
     name: string;
-    name_kana: string;
+    kana: string;
     hira?: string;
     roma?: string;
   }
@@ -161,7 +161,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
         const matched = Object.values(banksList).filter(
           (b) =>
             b.name.toLowerCase().includes(query) ||
-            b.name_kana.toLowerCase().includes(query) ||
+            b.kana.toLowerCase().includes(query) ||
             (b.hira && b.hira.includes(query)) ||
             b.code.includes(query)
         );
@@ -195,7 +195,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
         const matched = Object.values(branchesList).filter(
           (b) =>
             b.name.toLowerCase().includes(query) ||
-            b.name_kana.toLowerCase().includes(query) ||
+            b.kana.toLowerCase().includes(query) ||
             (b.hira && b.hira.includes(query)) ||
             b.code.includes(query)
         );
@@ -224,16 +224,16 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
 
     // 完全一致
     let matched = Object.values(banksList).find(
-      (b) => b.name.toLowerCase() === query || b.name_kana.toLowerCase() === query
+      (b) => b.name.toLowerCase() === query || b.kana.toLowerCase() === query
     );
     // 部分一致 (前方一致優先)
     if (!matched) {
       const candidates = Object.values(banksList).filter(
-        (b) => b.name.toLowerCase().includes(query) || b.name_kana.toLowerCase().includes(query)
+        (b) => b.name.toLowerCase().includes(query) || b.kana.toLowerCase().includes(query)
       );
       if (candidates.length > 0) {
         matched = candidates.find(
-          (c) => c.name.toLowerCase().startsWith(query) || c.name_kana.toLowerCase().startsWith(query)
+          (c) => c.name.toLowerCase().startsWith(query) || c.kana.toLowerCase().startsWith(query)
         ) || candidates[0];
       }
     }
@@ -260,16 +260,16 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
 
     // 完全一致
     let matched = Object.values(branchesList).find(
-      (b) => b.name.toLowerCase() === query || b.name_kana.toLowerCase() === query
+      (b) => b.name.toLowerCase() === query || b.kana.toLowerCase() === query
     );
     // 部分一致
     if (!matched) {
       const candidates = Object.values(branchesList).filter(
-        (b) => b.name.toLowerCase().includes(query) || b.name_kana.toLowerCase().includes(query)
+        (b) => b.name.toLowerCase().includes(query) || b.kana.toLowerCase().includes(query)
       );
       if (candidates.length > 0) {
         matched = candidates.find(
-          (c) => c.name.toLowerCase().startsWith(query) || c.name_kana.toLowerCase().startsWith(query)
+          (c) => c.name.toLowerCase().startsWith(query) || c.kana.toLowerCase().startsWith(query)
         ) || candidates[0];
       }
     }
@@ -656,7 +656,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
                         }}
                         className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 border-b border-slate-100 last:border-0 font-bold text-slate-700 flex justify-between items-center"
                       >
-                        <span>{b.name} <span className="text-[9px] text-slate-400">({b.name_kana})</span></span>
+                        <span>{b.name} <span className="text-[9px] text-slate-400">({b.kana})</span></span>
                         <span className="font-mono text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{b.code}</span>
                       </button>
                     ))}
@@ -716,7 +716,7 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
                         }}
                         className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 border-b border-slate-100 last:border-0 font-bold text-slate-700 flex justify-between items-center"
                       >
-                        <span>{b.name} <span className="text-[9px] text-slate-400">({b.name_kana})</span></span>
+                        <span>{b.name} <span className="text-[9px] text-slate-400">({b.kana})</span></span>
                         <span className="font-mono text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{b.code}</span>
                       </button>
                     ))}

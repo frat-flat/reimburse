@@ -428,63 +428,121 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
       {/* 下部：個人別内訳 */}
       <div className="space-y-4">
         <h2 className="text-lg font-bold text-gray-900">個人別内訳</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          {memberBalances
-            .filter((mb) => {
-              // 主催者 (isOwner) または編集者 (userRole === 'editor') は全員分表示
-              if (isOwner || userRole === 'editor') return true;
-              // 閲覧者の場合は自分自身のカードのみ表示
-              return linkedMember && mb.userId === linkedMember.id;
-            })
-            .map((mb) => {
-            const isCreditor = mb.balance > 0.001;
-            const isDebtor = mb.balance < -0.001;
 
-            return (
-              <div
-                key={mb.userId}
-                className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col justify-between"
-              >
-                <div>
-                  <h4 className="font-extrabold text-gray-900 text-base border-b border-gray-100 pb-2 mb-3">
-                    {mb.name}
-                  </h4>
-                  <div className="space-y-1.5 text-xs text-gray-500 mb-4">
-                    <div className="flex justify-between">
-                      <span>支払った額:</span>
-                      <span className="font-semibold text-gray-800">
-                        {mb.paid.toLocaleString()}円
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>本来の負担:</span>
-                      <span className="font-semibold text-gray-800">
-                        {mb.share.toLocaleString()}円
-                      </span>
-                    </div>
-                  </div>
+        {/* 1. 自身の横長ワイドカード */}
+        {(() => {
+          const myBalance = linkedMember ? memberBalances.find((mb) => mb.userId === linkedMember.id) : null;
+          if (!myBalance) return null;
+
+          const isCreditor = myBalance.balance > 0.001;
+          const isDebtor = myBalance.balance < -0.001;
+          return (
+            <div className="bg-indigo-50/50 border border-indigo-200 rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
+                  {myBalance.name.charAt(0)}
                 </div>
-
-                <div
-                  className={`mt-auto p-2.5 rounded-lg text-center text-xs font-bold border ${
-                    isCreditor
-                      ? 'bg-emerald-50 border-emerald-100 text-emerald-800'
-                      : isDebtor
-                      ? 'bg-red-50 border-red-100 text-red-800'
-                      : 'bg-gray-50 border-gray-100 text-gray-600'
-                  }`}
-                >
-                  <div className="text-[10px] uppercase tracking-wider mb-0.5 opacity-85">
-                    {isCreditor ? '受取額' : isDebtor ? '支払額' : '過不足なし'}
-                  </div>
-                  <strong className="text-sm font-black">
-                    {Math.abs(mb.balance).toLocaleString()}円
-                  </strong>
+                <div>
+                  <h3 className="font-extrabold text-gray-900 text-base">あなたの内訳</h3>
+                  <p className="text-xs text-gray-500 font-semibold">{myBalance.name}</p>
                 </div>
               </div>
-            );
-          })}
-        </div>
+
+              <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm font-semibold text-gray-700 md:border-l md:border-indigo-100 md:pl-6 flex-1 max-w-md">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-400">支払った額 (立替):</span>
+                  <span className="text-gray-900 font-black text-base">{myBalance.paid.toLocaleString()}円</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-400">本来の負担:</span>
+                  <span className="text-gray-900 font-black text-base">{myBalance.share.toLocaleString()}円</span>
+                </div>
+              </div>
+
+              <div className={`p-4 rounded-xl text-center font-bold border min-w-[160px] ${
+                isCreditor
+                  ? 'bg-emerald-50 border-emerald-250 text-emerald-800'
+                  : isDebtor
+                  ? 'bg-red-50 border-red-200 text-red-800'
+                  : 'bg-gray-50 border-gray-150 text-gray-650'
+              }`}>
+                <div className="text-[10px] uppercase tracking-wider mb-0.5 opacity-85">
+                  {isCreditor ? '受取額' : isDebtor ? '支払額' : '過不足なし'}
+                </div>
+                <strong className="text-lg font-black">
+                  {Math.abs(myBalance.balance).toLocaleString()}円
+                </strong>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* 2. 他のメンバーの格子カード (主催者・編集者のみ表示) */}
+        {(() => {
+          const otherBalances = memberBalances.filter((mb) => {
+            if (linkedMember && mb.userId === linkedMember.id) return false;
+            return isOwner || userRole === 'editor';
+          });
+          if (otherBalances.length === 0) return null;
+
+          return (
+            <div className="space-y-3 pt-2">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                他のクルーの内訳
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                {otherBalances.map((mb) => {
+                  const isCreditor = mb.balance > 0.001;
+                  const isDebtor = mb.balance < -0.001;
+
+                  return (
+                    <div
+                      key={mb.userId}
+                      className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col justify-between"
+                    >
+                      <div>
+                        <h4 className="font-extrabold text-gray-900 text-sm border-b border-gray-100 pb-2 mb-3">
+                          {mb.name}
+                        </h4>
+                        <div className="space-y-1.5 text-xs text-gray-500 mb-4">
+                          <div className="flex justify-between">
+                            <span>支払った額:</span>
+                            <span className="font-semibold text-gray-800">
+                              {mb.paid.toLocaleString()}円
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>本来の負担:</span>
+                            <span className="font-semibold text-gray-800">
+                              {mb.share.toLocaleString()}円
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        className={`mt-auto p-2.5 rounded-lg text-center text-xs font-bold border ${
+                          isCreditor
+                            ? 'bg-emerald-50 border-emerald-100 text-emerald-800'
+                            : isDebtor
+                            ? 'bg-red-50 border-red-100 text-red-800'
+                            : 'bg-gray-50 border-gray-100 text-gray-650'
+                        }`}
+                      >
+                        <div className="text-[10px] uppercase tracking-wider mb-0.5 opacity-85">
+                          {isCreditor ? '受取額' : isDebtor ? '支払額' : '過不足なし'}
+                        </div>
+                        <strong className="text-sm font-black">
+                          {Math.abs(mb.balance).toLocaleString()}円
+                        </strong>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

@@ -1343,6 +1343,7 @@ export async function actionRunDDL() {
         "userId" TEXT NOT NULL,
         "friendId" TEXT NOT NULL,
         "status" TEXT NOT NULL,
+        "isReadBySender" BOOLEAN NOT NULL DEFAULT false,
         "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updatedAt" TIMESTAMP(3) NOT NULL,
         CONSTRAINT "Friendship_pkey" PRIMARY KEY ("id")
@@ -1350,6 +1351,11 @@ export async function actionRunDDL() {
     `);
     await prisma.$executeRawUnsafe(`
       CREATE UNIQUE INDEX IF NOT EXISTS "Friendship_userId_friendId_key" ON "Friendship"("userId", "friendId");
+    `);
+
+    // 1.5. Friendship テーブルに isReadBySender カラムを追加（既にテーブルが存在する場合用）
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Friendship" ADD COLUMN IF NOT EXISTS "isReadBySender" BOOLEAN NOT NULL DEFAULT false;
     `);
 
     // 2. ProjectShare テーブルの作成

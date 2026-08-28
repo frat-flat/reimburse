@@ -206,17 +206,23 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
 
   // フォーカスアウト時の銀行情報自動補完
   const handleBankBlur = () => {
-    if (bankCode.length === 4 && banksList[bankCode] && banksList[bankCode].name === bankName) {
+    // 1. コードが4桁入力されているが、名前が空または一致しない場合、コードから名前を補完
+    if (bankCode.length === 4 && banksList[bankCode]) {
+      if (bankName !== banksList[bankCode].name) {
+        setBankName(banksList[bankCode].name);
+      }
       return;
     }
+
+    // 2. 名前が入力されている場合、名前からコードを検索・補完
     const query = bankName.trim().toLowerCase();
     if (!query) return;
 
-    // 1. 完全一致
+    // 完全一致
     let matched = Object.values(banksList).find(
       (b) => b.name.toLowerCase() === query || b.name_kana.toLowerCase() === query
     );
-    // 2. 部分一致 (前方一致優先)
+    // 部分一致 (前方一致優先)
     if (!matched) {
       const candidates = Object.values(banksList).filter(
         (b) => b.name.toLowerCase().includes(query) || b.name_kana.toLowerCase().includes(query)
@@ -236,17 +242,23 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
 
   // フォーカスアウト時の支店情報自動補完
   const handleBranchBlur = () => {
-    if (branchCode.length === 3 && branchesList[branchCode] && branchesList[branchCode].name === branchName) {
+    // 1. コードが3桁入力されているが、名前が空または一致しない場合、コードから名前を補完
+    if (branchCode.length === 3 && branchesList[branchCode]) {
+      if (branchName !== branchesList[branchCode].name) {
+        setBranchName(branchesList[branchCode].name);
+      }
       return;
     }
+
+    // 2. 名前が入力されている場合、名前からコードを検索・補完
     const query = branchName.trim().toLowerCase();
     if (!query) return;
 
-    // 1. 完全一致
+    // 完全一致
     let matched = Object.values(branchesList).find(
       (b) => b.name.toLowerCase() === query || b.name_kana.toLowerCase() === query
     );
-    // 2. 部分一致
+    // 部分一致
     if (!matched) {
       const candidates = Object.values(branchesList).filter(
         (b) => b.name.toLowerCase().includes(query) || b.name_kana.toLowerCase().includes(query)

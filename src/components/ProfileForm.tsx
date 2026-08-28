@@ -742,14 +742,14 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
               {/* 口座番号 */}
               <div className="md:col-span-2">
                 <label className="block text-slate-700 font-bold mb-1">
-                  口座番号 (7桁)
+                  口座番号 (7桁または6桁)
                 </label>
                 <input
                   type="text"
                   name="accountNumber"
                   value={accountNumber}
                   onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 7))}
-                  placeholder="例: 1234567"
+                  placeholder="例: 1234567 または 123456"
                   maxLength={7}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium font-mono"
                 />

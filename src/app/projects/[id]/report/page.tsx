@@ -4,6 +4,8 @@ import { redirect, notFound } from 'next/navigation';
 import ReportDashboard from '@/components/ReportDashboard';
 import { calculateSettlements } from '@/lib/settlement';
 
+export const dynamic = 'force-dynamic';
+
 interface ReportPageProps {
   params: Promise<{ id: string }>;
 }

@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { calculateSettlements } from '@/lib/settlement';
+
+export const dynamic = 'force-dynamic';
 import ReceiptModal from '@/components/ReceiptModal';
 import BankInfoModal from '@/components/BankInfoModal';
 import DisclosureToggles from '@/components/DisclosureToggles';

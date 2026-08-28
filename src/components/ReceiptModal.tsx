@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { X, Printer, Receipt } from 'lucide-react';
 import ImageCropper from './ImageCropper';
 
@@ -33,6 +33,31 @@ export default function ReceiptModal({
   const [stampImage, setStampImage] = useState(issuerInfo.stampImage || '');
   const [stampSize, setStampSize] = useState(issuerInfo.stampSize || 60);
   const [cropperSrc, setCropperSrc] = useState<string | null>(null);
+
+  // 印鑑ドラッグ用
+  const [stampOffset, setStampOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+
+  const handleStart = (clientX: number, clientY: number) => {
+    setIsDragging(true);
+    dragStart.current = {
+      x: clientX - stampOffset.x,
+      y: clientY - stampOffset.y
+    };
+  };
+
+  const handleMove = (clientX: number, clientY: number) => {
+    if (!isDragging) return;
+    setStampOffset({
+      x: clientX - dragStart.current.x,
+      y: clientY - dragStart.current.y
+    });
+  };
+
+  const handleEnd = () => {
+    setIsDragging(false);
+  };
 
   const handleLocalStampSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -198,13 +223,41 @@ export default function ReceiptModal({
                 <div className="text-right space-y-1 border-t border-slate-200/50 pt-3 md:border-t-0 md:pt-0 relative pr-4">
                   {stampImage && (
                     <div 
-                      className="absolute right-0 bottom-1 pointer-events-none select-none opacity-85 print:opacity-100 z-10"
+                      className={`absolute right-0 bottom-1 select-none opacity-85 print:opacity-100 z-10 touch-none ${
+                        isDragging ? 'cursor-grabbing' : 'cursor-grab'
+                      }`}
                       style={{
                         width: `${stampSize}px`,
                         height: `${stampSize}px`,
+                        transform: `translate(${stampOffset.x}px, ${stampOffset.y}px)`,
                       }}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handleStart(e.clientX, e.clientY);
+                      }}
+                      onMouseMove={(e) => {
+                        if (isDragging) {
+                          e.preventDefault();
+                          handleMove(e.clientX, e.clientY);
+                        }
+                      }}
+                      onMouseUp={handleEnd}
+                      onMouseLeave={handleEnd}
+                      onTouchStart={(e) => {
+                        e.preventDefault();
+                        const touch = e.touches[0];
+                        handleStart(touch.clientX, touch.clientY);
+                      }}
+                      onTouchMove={(e) => {
+                        if (isDragging) {
+                          e.preventDefault();
+                          const touch = e.touches[0];
+                          handleMove(touch.clientX, touch.clientY);
+                        }
+                      }}
+                      onTouchEnd={handleEnd}
                     >
-                      <img src={stampImage} alt="印影" className="w-full h-full object-contain" />
+                      <img src={stampImage} alt="印影" className="w-full h-full object-contain pointer-events-none" />
                     </div>
                   )}
                   <p className="text-xs text-gray-400 font-bold">発行者</p>

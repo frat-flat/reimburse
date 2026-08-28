@@ -52,6 +52,9 @@ export default async function Header() {
                 </span>
               )}
             </Link>
+            <Link href="/receipts" className="text-xs font-bold text-gray-600 hover:text-indigo-600 transition">
+              領収一覧
+            </Link>
             <Link href="/members" className="text-xs font-bold text-gray-600 hover:text-indigo-600 transition">
               ベースクルー登録
             </Link>
@@ -79,6 +82,9 @@ export default async function Header() {
                   {mateNotificationCount}
                 </span>
               )}
+            </Link>
+            <Link href="/receipts" className="text-sm font-bold text-gray-600 hover:text-indigo-600 transition">
+              領収一覧
             </Link>
             <Link href="/members" className="text-sm font-bold text-gray-600 hover:text-indigo-600 transition">
               ベースクルー登録

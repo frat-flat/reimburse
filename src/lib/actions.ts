@@ -1384,6 +1384,17 @@ export async function actionRunDDL() {
       ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS "duplicateConfirmed" BOOLEAN NOT NULL DEFAULT false;
     `);
 
+    // 5. User テーブルへの印影座標・透過率カラムの追加
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "stampOffsetX" INTEGER NOT NULL DEFAULT 0;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "stampOffsetY" INTEGER NOT NULL DEFAULT 0;
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "stampOpacity" DOUBLE PRECISION NOT NULL DEFAULT 0.85;
+    `);
+
     console.log('Manual DDL migrations completed successfully.');
     return { success: true };
   } catch (err: any) {
@@ -1461,6 +1472,13 @@ export async function actionUpdateProfile(formData: FormData) {
   const stampImage = formData.get('stampImage') as string;
   const stampSizeStr = formData.get('stampSize') as string;
   const stampSize = stampSizeStr ? parseInt(stampSizeStr, 10) : 60;
+  
+  const stampOffsetXStr = formData.get('stampOffsetX') as string;
+  const stampOffsetYStr = formData.get('stampOffsetY') as string;
+  const stampOpacityStr = formData.get('stampOpacity') as string;
+  const stampOffsetX = stampOffsetXStr ? parseInt(stampOffsetXStr, 10) : 0;
+  const stampOffsetY = stampOffsetYStr ? parseInt(stampOffsetYStr, 10) : 0;
+  const stampOpacity = stampOpacityStr ? parseFloat(stampOpacityStr) : 0.85;
 
   // 口座名義カナのサーバー側バリデーション (カタカナ・英数字・スペース、および主要記号 ( ) . , - / \ を全角・半角問わず許容。漢字は不可)
   if (accountHolder && !/^[ァ-ヶーｱ-ﾝﾞﾟA-Za-zＡ-Ｚａ-ｚ0-9０-９\s　()（）.,，．\-－‐/／\\￥]+$/.test(accountHolder)) {
@@ -1488,6 +1506,9 @@ export async function actionUpdateProfile(formData: FormData) {
         showPaypay,
         stampImage: stampImage || null,
         stampSize: stampSize,
+        stampOffsetX: stampOffsetX,
+        stampOffsetY: stampOffsetY,
+        stampOpacity: stampOpacity,
       },
     });
 

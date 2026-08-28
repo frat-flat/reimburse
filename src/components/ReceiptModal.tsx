@@ -18,9 +18,13 @@ interface ReceiptModalProps {
     regNo?: string | null;
     stampImage?: string | null;
     stampSize?: number | null;
+    stampOffsetX?: number | null;
+    stampOffsetY?: number | null;
+    stampOpacity?: number | null;
   };
   triggerButtonText?: string;
   triggerButtonClassName?: string;
+  onStampChange?: (offset: { x: number; y: number }, opacity: number) => void;
 }
 
 export default function ReceiptModal({
@@ -32,15 +36,19 @@ export default function ReceiptModal({
   issuerInfo,
   triggerButtonText,
   triggerButtonClassName,
+  onStampChange,
 }: ReceiptModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [stampImage, setStampImage] = useState(issuerInfo.stampImage || '');
   const [stampSize, setStampSize] = useState(issuerInfo.stampSize || 60);
-  const [stampOpacity, setStampOpacity] = useState(0.85);
+  const [stampOpacity, setStampOpacity] = useState(issuerInfo.stampOpacity ?? 0.85);
   const [cropperSrc, setCropperSrc] = useState<string | null>(null);
 
   // 印鑑ドラッグ用
-  const [stampOffset, setStampOffset] = useState({ x: 0, y: 0 });
+  const [stampOffset, setStampOffset] = useState({
+    x: issuerInfo.stampOffsetX || 0,
+    y: issuerInfo.stampOffsetY || 0
+  });
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0 });
 
@@ -62,6 +70,9 @@ export default function ReceiptModal({
 
   const handleEnd = () => {
     setIsDragging(false);
+    if (onStampChange) {
+      onStampChange(stampOffset, stampOpacity);
+    }
   };
 
   const handleLocalStampSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,7 +191,13 @@ export default function ReceiptModal({
                         max="100"
                         step="5"
                         value={Math.round(stampOpacity * 100)}
-                        onChange={(e) => setStampOpacity(parseInt(e.target.value, 10) / 100)}
+                        onChange={(e) => {
+                          const nextOpacity = parseInt(e.target.value, 10) / 100;
+                          setStampOpacity(nextOpacity);
+                          if (onStampChange) {
+                            onStampChange(stampOffset, nextOpacity);
+                          }
+                        }}
                         className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-650"
                       />
                     </div>

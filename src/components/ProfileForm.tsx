@@ -25,6 +25,9 @@ interface ProfileFormProps {
     showPaypay: boolean | null;
     stampImage: string | null;
     stampSize: number | null;
+    stampOffsetX?: number | null;
+    stampOffsetY?: number | null;
+    stampOpacity?: number | null;
   };
   updateAction: (formData: FormData) => Promise<{ success?: boolean; error?: string }>;
 }
@@ -56,6 +59,11 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
   const [issuerAddress, setIssuerAddress] = useState(initialData.receiptIssuerAddress || '');
   const [issuerTel, setIssuerTel] = useState(initialData.receiptIssuerTel || '');
   const [issuerRegNo, setIssuerRegNo] = useState(initialData.receiptIssuerRegNo || '');
+
+  // 印鑑座標・透過率ステート
+  const [stampOffsetX, setStampOffsetX] = useState(initialData.stampOffsetX || 0);
+  const [stampOffsetY, setStampOffsetY] = useState(initialData.stampOffsetY || 0);
+  const [stampOpacity, setStampOpacity] = useState(initialData.stampOpacity ?? 0.85);
 
   // API解決用およびサジェスト検索用の状態
   interface ZenginItem {
@@ -380,6 +388,10 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
         }}
         className="space-y-6"
       >
+        {/* 印影座標・透過率の隠しフィールド */}
+        <input type="hidden" name="stampOffsetX" value={stampOffsetX} />
+        <input type="hidden" name="stampOffsetY" value={stampOffsetY} />
+        <input type="hidden" name="stampOpacity" value={stampOpacity} />
         
         {/* 1. 領収書発行元情報 */}
         <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm space-y-4">
@@ -582,9 +594,17 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
                 regNo: issuerRegNo,
                 stampImage: stampImage,
                 stampSize: stampSize,
+                stampOffsetX: stampOffsetX,
+                stampOffsetY: stampOffsetY,
+                stampOpacity: stampOpacity,
               }}
               triggerButtonText="領収書の雛形プレビューを表示"
               triggerButtonClassName="inline-flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-3 py-2 rounded-xl text-xs border border-indigo-200 transition shadow-sm cursor-pointer active:scale-95 text-center flex-shrink-0"
+              onStampChange={(offset, opacity) => {
+                setStampOffsetX(offset.x);
+                setStampOffsetY(offset.y);
+                setStampOpacity(opacity);
+              }}
             />
           </div>
         </div>

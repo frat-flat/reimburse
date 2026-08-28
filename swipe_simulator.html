@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>スワイプ精算・領収書発行 シミュレーター</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* ドラッグ時の選択防止 */
+    .no-select {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans p-4 md:p-8 min-h-screen flex flex-col items-center justify-center no-select">
+
+  <div class="w-full max-w-2xl bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden">
+    <!-- ヘッダー -->
+    <div class="bg-indigo-900 text-white p-5">
+      <h1 class="text-lg font-bold flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        スワイプ精算ステータス・シミュレーター
+      </h1>
+      <p class="text-xs text-indigo-200 mt-1">
+        実際のシステムと同一のロジックで動作する体験型モックアップです。スワイプ操作や権限別の見え方をお試しいただけます。
+      </p>
+    </div>
+
+    <!-- コントロールパネル -->
+    <div class="p-5 border-b border-slate-100 bg-slate-50/50">
+      <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">シミュレーション設定（役割の切り替え）</h2>
+      <div class="grid grid-cols-2 gap-3">
+        <!-- 役割1: 受取人（操作可能） -->
+        <button id="btn-role-recipient" onclick="setRole(true)" class="flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-950 font-bold transition shadow-sm text-xs md:text-sm">
+          <span class="h-3.5 w-3.5 rounded-full border-4 border-indigo-600 bg-white inline-block" id="indicator-rec"></span>
+          自分が「受け取り側」である場合
+        </button>
+        <!-- 役割2: 他のメンバー（読み取り専用） -->
+        <button id="btn-role-other" onclick="setRole(false)" class="flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-200 bg-white text-slate-650 hover:bg-slate-50 font-semibold transition text-xs md:text-sm">
+          <span class="h-3.5 w-3.5 rounded-full border border-slate-300 bg-white inline-block" id="indicator-other"></span>
+          送金側・その他のメンバー
+        </button>
+      </div>
+    </div>
+
+    <!-- シミュレーションメインエリア -->
+    <div class="p-6 md:p-8 space-y-6">
+      <!-- 現在のテスト状態のアラート表示 -->
+      <div id="role-alert" class="bg-indigo-50 text-indigo-950 p-3.5 rounded-xl border border-indigo-150 text-xs leading-relaxed">
+        <strong>💡 現在のシナリオ: 自分が「受け取り側」</strong><br>
+        右端にある「スライドして〜」のスライダーを右にスワイプ（ドラッグ）することで、ステータスを段階的に進めることができます。
+      </div>
+
+      <!-- 精算カードモック -->
+      <div class="border border-slate-200 rounded-2xl p-5 bg-white shadow-sm flex flex-col md:flex-row items-center justify-between gap-4 transition-all">
+        <!-- 取引詳細 -->
+        <div class="flex items-center gap-4">
+          <!-- 送金元 -->
+          <div class="flex flex-col items-center">
+            <span class="text-[10px] font-bold text-red-650 bg-red-50 border border-red-100 px-2 py-0.5 rounded-full mb-1">支払う</span>
+            <strong class="text-sm font-bold text-slate-800">小笠原 太一</strong>
+          </div>
+          <!-- 矢印 -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+          <!-- 送金先 -->
+          <div class="flex flex-col items-center">
+            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full mb-1">受け取る</span>
+            <strong class="text-sm font-bold text-slate-800">テストユーザー (あなた)</strong>
+          </div>
+        </div>
+
+        <!-- 金額とスワイパー -->
+        <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0">
+          <strong class="text-lg md:text-xl font-black text-slate-900">98,474円</strong>
+          
+          <div class="flex items-center gap-2">
+            <!-- 領収書ボタン (初期状態は非表示) -->
+            <button id="btn-receipt" onclick="openReceipt()" class="hidden bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100 font-bold px-3 py-1.5 rounded-lg text-xs transition active:scale-95 flex items-center gap-1 shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              領収書発行
+            </button>
+
+            <!-- スワイプコンポーネントコンテナ -->
+            <div id="swipe-container" class="relative flex items-center h-10 w-48 rounded-full p-1 overflow-hidden transition-all shadow-inner bg-slate-100 border border-slate-200 text-slate-500">
+              <!-- つまみボタン -->
+              <button id="swipe-handle" class="absolute left-1 h-8 w-8 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow transition-transform duration-75 ease-out z-10 bg-indigo-600 text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+              <!-- 背景ガイドテキスト -->
+              <span id="swipe-text" class="w-full text-center text-[10px] font-extrabold tracking-tight pl-7 pr-2 transition-opacity duration-200">
+                スライドして受取完了
+              </span>
+            </div>
+
+            <!-- 読み取り専用バッジ (初期状態は非表示) -->
+            <span id="readonly-badge" class="hidden px-3 py-1.5 rounded-lg text-xs font-bold border bg-gray-150 border-gray-250 text-gray-550">
+              未払い
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- シミュレータのリセットボタン -->
+      <div class="flex justify-center pt-2">
+        <button onclick="resetSimulator()" class="px-4 py-2 border border-slate-300 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 transition active:scale-95 flex items-center gap-1.5">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17" />
+          </svg>
+          最初の状態にリセットする
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 領収書モーダルシミュレータ -->
+  <div id="receipt-modal" class="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-white border border-slate-300 rounded-2xl w-full max-w-md p-6 shadow-2xl relative transform scale-95 transition-transform duration-200" id="receipt-modal-content">
+      <!-- 閉じるボタン -->
+      <button onclick="closeReceipt()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-650 p-1.5 rounded-lg hover:bg-slate-50 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+
+      <!-- 領収書中身 -->
+      <div class="border-4 double border-slate-700 p-4 font-serif text-slate-900 bg-[#fcfbf9]">
+        <h2 class="text-center text-xl font-extrabold tracking-widest border-b border-slate-800 pb-2 mb-4">領　収　書</h2>
+        
+        <div class="space-y-4 text-sm leading-relaxed">
+          <div>
+            <span class="border-b border-slate-800 pb-0.5 inline-block w-40 font-bold">小笠原 太一 様</span>
+          </div>
+
+          <div class="text-center py-4 bg-white border border-slate-200 my-2">
+            <span class="text-xs text-slate-500 block">金額</span>
+            <strong class="text-2xl font-black font-sans">￥98,474-</strong>
+          </div>
+
+          <p class="text-xs text-slate-500">
+            但し、イベント（BBQ精算）メンバー間送金精算として上記金額を正に受領いたしました。
+          </p>
+
+          <div class="border-t border-slate-200 pt-4 flex justify-between text-xs font-sans">
+            <div>
+              <p>発行日: 2026年8月28日</p>
+              <p class="mt-2 font-serif font-bold text-slate-800">受領者: テストユーザー</p>
+              <p class="text-[9px] text-slate-400">（愛知県名古屋市中区...）</p>
+            </div>
+            <!-- 印鑑 -->
+            <div class="relative w-16 h-16 flex items-center justify-center">
+              <div class="border-2 border-red-500 text-red-500 rounded-full w-12 h-12 flex flex-col items-center justify-center rotate-6 text-[8px] font-bold select-none opacity-80">
+                <span class="scale-90 leading-none">テスト</span>
+                <span class="scale-95 leading-none">ユーザー</span>
+                <span class="scale-75 leading-none text-[6px] border-t border-red-400 pt-0.5">受領印</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 印刷デモボタン -->
+      <div class="mt-5 flex justify-end gap-2 font-sans text-xs">
+        <button onclick="alert('印刷用ウィンドウが開くシミュレーションです')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-lg transition active:scale-95">
+          印刷する
+        </button>
+        <button onclick="closeReceipt()" class="border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg transition">
+          閉じる
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript制御 -->
+  <script>
+    let canOperate = true; // true: 受取人（操作可能）, false: 他（読み取り専用）
+    let currentStatus = 'pending'; // 'pending' | 'paid' | 'receipt_issued'
+    
+    // ドラッグ状態変数
+    let isDragging = false;
+    let startX = 0;
+    let dragX = 0;
+
+    const swipeHandle = document.getElementById('swipe-handle');
+    const swipeContainer = document.getElementById('swipe-container');
+    const swipeText = document.getElementById('swipe-text');
+    const btnReceipt = document.getElementById('btn-receipt');
+    const readonlyBadge = document.getElementById('readonly-badge');
+    const roleAlert = document.getElementById('role-alert');
+
+    // 最大スライド可能幅を取得
+    function getMaxSlideWidth() {
+      return swipeContainer.clientWidth - swipeHandle.clientWidth - 8;
+    }
+
+    // 役割を切り替える
+    function setRole(isRecipient) {
+      canOperate = isRecipient;
+      
+      const btnRec = document.getElementById('btn-role-recipient');
+      const btnOther = document.getElementById('btn-role-other');
+      const indRec = document.getElementById('indicator-rec');
+      const indOther = document.getElementById('indicator-other');
+
+      if (isRecipient) {
+        btnRec.className = "flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-950 font-bold transition shadow-sm text-xs md:text-sm";
+        btnOther.className = "flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-semibold transition text-xs md:text-sm";
+        indRec.className = "h-3.5 w-3.5 rounded-full border-4 border-indigo-600 bg-white inline-block";
+        indOther.className = "h-3.5 w-3.5 rounded-full border border-slate-300 bg-white inline-block";
+        
+        roleAlert.className = "bg-indigo-50 text-indigo-950 p-3.5 rounded-xl border border-indigo-150 text-xs leading-relaxed";
+        roleAlert.innerHTML = `<strong>💡 現在のシナリオ: 自分が「受け取り側」</strong><br>右端にある「スライドして〜」のスライダーを右にスワイプ（ドラッグ）することで、ステータスを段階的に進めることができます。`;
+      } else {
+        btnRec.className = "flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-semibold transition text-xs md:text-sm";
+        btnOther.className = "flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-indigo-600 bg-indigo-50 text-indigo-950 font-bold transition shadow-sm text-xs md:text-sm";
+        indRec.className = "h-3.5 w-3.5 rounded-full border border-slate-300 bg-white inline-block";
+        indOther.className = "h-3.5 w-3.5 rounded-full border-4 border-indigo-600 bg-white inline-block";
+
+        roleAlert.className = "bg-amber-50 text-amber-950 p-3.5 rounded-xl border border-amber-150 text-xs leading-relaxed";
+        roleAlert.innerHTML = `<strong>⚠️ 現在のシナリオ: 送金側・他のメンバー</strong><br>受け取り手ではない第三者としてログインしているため、スワイプ操作はできません。静的なステータス表示のみが表示されます。`;
+      }
+
+      updateUI();
+    }
+
+    // UIの表示状態を更新
+    function updateUI() {
+      // 1. 操作権限がない（読み取り専用）の場合
+      if (!canOperate) {
+        swipeContainer.classList.add('hidden');
+        readonlyBadge.classList.remove('hidden');
+
+        if (currentStatus === 'pending') {
+          readonlyBadge.innerText = '未払い';
+          readonlyBadge.className = "px-3 py-1.5 rounded-lg text-xs font-bold border bg-gray-150 border-gray-250 text-gray-550";
+        } else if (currentStatus === 'paid') {
+          readonlyBadge.innerText = '受取済み (未発行)';
+          readonlyBadge.className = "px-3 py-1.5 rounded-lg text-xs font-bold border bg-emerald-50 border-emerald-250 text-emerald-700";
+        } else {
+          readonlyBadge.innerText = '領収書発行済';
+          readonlyBadge.className = "px-3 py-1.5 rounded-lg text-xs font-bold border bg-indigo-50 border-indigo-200 text-indigo-900";
+        }
+
+        // 領収書ボタンは、相手が「領収書発行」または「受取済み」にしていたら他の人でも見える
+        if (currentStatus === 'paid' || currentStatus === 'receipt_issued') {
+          btnReceipt.classList.remove('hidden');
+        } else {
+          btnReceipt.classList.add('hidden');
+        }
+        return;
+      }
+
+      // 2. 操作権限（受取人）がある場合
+      readonlyBadge.classList.add('hidden');
+      
+      if (currentStatus === 'receipt_issued') {
+        // スライダーを隠して完了テキストにする
+        swipeContainer.className = "relative flex items-center h-10 w-48 rounded-full p-1 overflow-hidden transition-all shadow-inner bg-indigo-50 border border-indigo-200 text-indigo-900 justify-center gap-1 font-bold text-xs";
+        swipeContainer.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          領収書発行済
+        `;
+        btnReceipt.classList.remove('hidden');
+      } else {
+        // スライダーを表示
+        swipeContainer.className = "relative flex items-center h-10 w-48 rounded-full p-1 overflow-hidden transition-all shadow-inner " +
+          (currentStatus === 'pending'
+            ? "bg-slate-100 border border-slate-200 text-slate-500"
+            : "bg-emerald-50 border border-emerald-200 text-emerald-700");
+        
+        // ハンドルの色
+        swipeHandle.className = "absolute left-1 h-8 w-8 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow transition-transform duration-75 ease-out z-10 " +
+          (currentStatus === 'pending' ? "bg-indigo-600 text-white" : "bg-emerald-600 text-white");
+
+        // 矢印ハンドルを再代入
+        swipeContainer.innerHTML = '';
+        swipeContainer.appendChild(swipeHandle);
+        swipeContainer.appendChild(swipeText);
+
+        swipeText.innerText = currentStatus === 'pending' ? 'スライドして受取完了' : 'スライドして領収書発行';
+        
+        if (currentStatus === 'paid') {
+          btnReceipt.classList.remove('hidden'); // 受取済みなら発行ボタンを出す
+        } else {
+          btnReceipt.classList.add('hidden');
+        }
+      }
+    }
+
+    // ドラッグイベント処理 (マウス＆タッチ対応)
+    function onStart(e) {
+      if (!canOperate || currentStatus === 'receipt_issued') return;
+      isDragging = true;
+      startX = e.clientX || e.touches[0].clientX;
+      swipeHandle.classList.remove('transition-transform');
+      swipeHandle.classList.replace('cursor-grab', 'cursor-grabbing');
+    }
+
+    function onMove(e) {
+      if (!isDragging) return;
+      const clientX = e.clientX || e.touches[0].clientX;
+      const deltaX = clientX - startX;
+      const maxW = getMaxSlideWidth();
+      dragX = Math.max(0, Math.min(maxW, deltaX));
+      
+      swipeHandle.style.transform = `translateX(${dragX}px)`;
+      
+      // テキストの透明度をドラッグ量に応じて変える
+      const ratio = dragX / maxW;
+      swipeText.style.opacity = Math.max(0.1, 1 - ratio * 1.5);
+    }
+
+    function onEnd() {
+      if (!isDragging) return;
+      isDragging = false;
+      swipeHandle.classList.add('transition-transform');
+      swipeHandle.classList.replace('cursor-grabbing', 'cursor-grab');
+
+      const maxW = getMaxSlideWidth();
+      const ratio = dragX / maxW;
+
+      // 70%以上スライドで確定
+      if (ratio >= 0.7) {
+        if (currentStatus === 'pending') {
+          currentStatus = 'paid';
+        } else if (currentStatus === 'paid') {
+          currentStatus = 'receipt_issued';
+        }
+        
+        // 成功時のフェード演出後リセット
+        setTimeout(() => {
+          dragX = 0;
+          swipeHandle.style.transform = `translateX(0px)`;
+          swipeText.style.opacity = '1';
+          updateUI();
+        }, 150);
+      } else {
+        // キャンセル: 元に戻す
+        dragX = 0;
+        swipeHandle.style.transform = `translateX(0px)`;
+        swipeText.style.opacity = '1';
+      }
+    }
+
+    // マウスイベントリスナー
+    swipeHandle.addEventListener('mousedown', onStart);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onEnd);
+
+    // タッチイベントリスナー
+    swipeHandle.addEventListener('touchstart', onStart, { passive: true });
+    window.addEventListener('touchmove', onMove, { passive: true });
+    window.addEventListener('touchend', onEnd);
+
+    // 領収書モーダル制御
+    function openReceipt() {
+      const modal = document.getElementById('receipt-modal');
+      const content = document.getElementById('receipt-modal-content');
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        content.classList.remove('scale-95');
+      }, 10);
+    }
+
+    function closeReceipt() {
+      const modal = document.getElementById('receipt-modal');
+      const content = document.getElementById('receipt-modal-content');
+      modal.classList.add('opacity-0');
+      content.classList.add('scale-95');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 200);
+    }
+
+    // リセット
+    function resetSimulator() {
+      currentStatus = 'pending';
+      dragX = 0;
+      swipeHandle.style.transform = `translateX(0px)`;
+      swipeText.style.opacity = '1';
+      updateUI();
+    }
+
+    // 初期化実行
+    updateUI();
+  </script>
+</body>
+</html>

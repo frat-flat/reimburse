@@ -514,7 +514,14 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
       <div className="space-y-4">
         <h2 className="text-lg font-bold text-gray-900">個人別内訳</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          {memberBalances.map((mb) => {
+          {memberBalances
+            .filter((mb) => {
+              // 主催者 (isOwner) または編集者 (userRole === 'editor') は全員分表示
+              if (isOwner || userRole === 'editor') return true;
+              // 閲覧者の場合は自分自身のカードのみ表示
+              return linkedMember && mb.userId === linkedMember.id;
+            })
+            .map((mb) => {
             const isCreditor = mb.balance > 0.001;
             const isDebtor = mb.balance < -0.001;
 

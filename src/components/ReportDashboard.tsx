@@ -21,6 +21,27 @@ interface ExpenseSummary {
   shareCount: number;
 }
 
+interface SettlementItem {
+  fromUserId: string;
+  fromUserName: string;
+  toUserId: string;
+  toUserName: string;
+  amount: number;
+  status: 'pending' | 'paid';
+  toUserBankInfo?: {
+    bankName: string;
+    bankCode?: string | null;
+    branchName?: string | null;
+    branchCode?: string | null;
+    accountType?: string | null;
+    accountNumber: string;
+    accountHolder: string;
+  } | null;
+  toUserPaypayInfo?: {
+    url: string;
+  } | null;
+}
+
 interface ReportDashboardProps {
   projectName: string;
   projectId: string;
@@ -32,6 +53,7 @@ interface ReportDashboardProps {
   dateRange: string;
   projectDescription?: string | null;
   userRole?: 'owner' | 'editor' | 'viewer_all' | 'viewer_personal' | 'viewer_receipt';
+  settlementsList?: SettlementItem[];
 }
 
 export default function ReportDashboard({
@@ -45,12 +67,14 @@ export default function ReportDashboard({
   dateRange,
   projectDescription,
   userRole = 'owner',
+  settlementsList = [],
 }: ReportDashboardProps) {
   const [selectedMemberName, setSelectedMemberName] = useState<string>('');
   const [showSummaryCards, setShowSummaryCards] = useState<boolean>(true);
   const [showMemberTable, setShowMemberTable] = useState<boolean>(true);
   const [showExpenseTable, setShowExpenseTable] = useState<boolean>(true);
   const [showMemberDetails, setShowMemberDetails] = useState<boolean>(true);
+  const [showSettlementTable, setShowSettlementTable] = useState<boolean>(true);
 
   // 印刷時に自分の前に「出力対象として選択された主要テーブル」がすでに印刷されているかどうかを判定
   const hasMemberTablePrinted = showMemberTable;
@@ -164,6 +188,16 @@ export default function ReportDashboard({
               className="rounded text-indigo-600 border-gray-300 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
             />
             <span>メンバー別明細</span>
+          </label>
+
+          <label className="flex items-center gap-1.5 cursor-pointer text-gray-700 hover:text-indigo-600">
+            <input
+              type="checkbox"
+              checked={showSettlementTable}
+              onChange={(e) => setShowSettlementTable(e.target.checked)}
+              className="rounded text-indigo-600 border-gray-300 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
+            />
+            <span>精算・送金指示リスト</span>
           </label>
         </div>
       </div>
@@ -306,6 +340,84 @@ export default function ReportDashboard({
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 精算・送金指示リスト */}
+      {showSettlementTable && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4 print:border-none print:shadow-none print:p-0 print:pt-4">
+          <h2 className="text-base font-bold text-gray-900 border-l-4 border-indigo-600 pl-2">
+            メンバー間精算・送金指示リスト
+          </h2>
+          {settlementsList.length === 0 ? (
+            <p className="text-sm text-gray-500 py-4 text-center">全員の立替・負担額が既に一致しているため、送金指示はありません。</p>
+          ) : (
+            <div className="space-y-4">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left border-collapse print:text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-200 bg-gray-50 print:bg-gray-100">
+                      <th className="py-2.5 px-3 font-semibold text-gray-600">送金元 (支払う人)</th>
+                      <th className="py-2.5 px-3 text-center text-gray-400 font-semibold">→</th>
+                      <th className="py-2.5 px-3 font-semibold text-gray-600">送金先 (受け取る人)</th>
+                      <th className="py-2.5 px-3 font-semibold text-gray-600 text-right">送金額</th>
+                      <th className="py-2.5 px-3 font-semibold text-gray-600 text-center">状態</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {settlementsList.map((s, index) => (
+                      <tr key={index} className="hover:bg-gray-50/50 print:hover:bg-transparent">
+                        <td className="py-3 px-3 font-bold text-red-700">{s.fromUserName}</td>
+                        <td className="py-3 px-3 text-center text-gray-400 font-bold">➔</td>
+                        <td className="py-3 px-3 font-bold text-emerald-800">{s.toUserName}</td>
+                        <td className="py-3 px-3 text-right font-black text-gray-950">{s.amount.toLocaleString()}円</td>
+                        <td className="py-3 px-3 text-center text-gray-600 font-medium">
+                          {s.status === 'paid' ? '精算済' : '未精算'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* 支払先の開示情報がある場合、印刷用データにも記載する */}
+              {settlementsList.some(s => s.toUserBankInfo || s.toUserPaypayInfo) && (
+                <div className="pt-2.5 print:break-inside-avoid">
+                  <h3 className="text-xs font-bold text-gray-700 mb-2">【開示されている振込先・送金情報】</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {settlementsList.map((s, index) => {
+                      if (!s.toUserBankInfo && !s.toUserPaypayInfo) return null;
+                      return (
+                        <div key={index} className="border border-slate-200 rounded-lg p-3 bg-slate-50/50 text-[11px] leading-relaxed print:bg-white print:border-gray-300">
+                          <div className="font-bold text-gray-800 mb-1 flex items-center justify-between border-b border-slate-200 pb-1">
+                            <span>受取人: {s.toUserName} (送金元: {s.fromUserName})</span>
+                            <span className="text-xs font-extrabold text-indigo-950">{s.amount.toLocaleString()}円</span>
+                          </div>
+                          
+                          {/* 銀行口座情報 */}
+                          {s.toUserBankInfo && (
+                            <div className="space-y-0.5 text-slate-700">
+                              <div><strong className="text-slate-500">銀行名:</strong> {s.toUserBankInfo.bankName} {s.toUserBankInfo.bankCode && `(${s.toUserBankInfo.bankCode})`}</div>
+                              <div><strong className="text-slate-500">支店名:</strong> {s.toUserBankInfo.branchName || '-'} {s.toUserBankInfo.branchCode && `(${s.toUserBankInfo.branchCode})`}</div>
+                              <div><strong className="text-slate-500">種別/口座番号:</strong> {s.toUserBankInfo.accountType || '普通'} / {s.toUserBankInfo.accountNumber}</div>
+                              <div><strong className="text-slate-500">口座名義:</strong> {s.toUserBankInfo.accountHolder}</div>
+                            </div>
+                          )}
+
+                          {/* PayPay情報 */}
+                          {s.toUserPaypayInfo && (
+                            <div className="mt-1 text-slate-700">
+                              <strong className="text-slate-500">PayPay受取リンク:</strong> <span className="font-mono text-gray-600">{s.toUserPaypayInfo.url}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

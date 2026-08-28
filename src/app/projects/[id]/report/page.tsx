@@ -2,6 +2,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect, notFound } from 'next/navigation';
 import ReportDashboard from '@/components/ReportDashboard';
+import { calculateSettlements } from '@/lib/settlement';
 
 interface ReportPageProps {
   params: Promise<{ id: string }>;
@@ -19,7 +20,11 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     include: {
-      members: true,
+      members: {
+        include: {
+          user: true,
+        },
+      },
       expenses: {
         include: {
           payments: { include: { member: true } },
@@ -27,6 +32,17 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
         },
         orderBy: { expenseDate: 'asc' },
       },
+      settlements: {
+        include: {
+          payerMember: true,
+          receiverMember: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      },
+      projectShares: true,
     },
   });
 
@@ -153,6 +169,95 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
   const expenseCount = displayExpenses.length;
   const memberCount = (userRole !== 'owner' && userRole !== 'editor') ? 1 : project.members.length;
 
+  // 4. 精算・送金ルート指示の計算・構築
+  const memberBalances = project.members.map((m) => {
+    let paid = 0;
+    let share = 0;
+    project.expenses.forEach((e) => {
+      e.payments.forEach((p) => { if (p.memberId === m.id) paid += p.amount; });
+      e.shares.forEach((s) => { if (s.memberId === m.id) share += s.shareAmount; });
+    });
+    return {
+      userId: m.id,
+      name: m.name,
+      paid,
+      share,
+      balance: paid - share,
+    };
+  });
+
+  const isConfirmed = project.status === 'settlement_confirmed' || project.status === 'completed';
+  let settlementsList: any[] = [];
+
+  if (isConfirmed) {
+    settlementsList = project.settlements.map((s) => {
+      const recMember = project.members.find((m) => m.id === s.receiverMemberId);
+      const recUser = recMember?.user;
+      const showBank = recMember?.showBankAccount !== false && recUser?.bankName && recUser?.accountNumber && recUser?.accountHolder;
+      const showPaypay = recMember?.showPaypay !== false && recUser?.paypayUrl;
+
+      return {
+        fromUserId: s.payerMemberId,
+        fromUserName: s.payerMember.name,
+        toUserId: s.receiverMemberId,
+        toUserName: s.receiverMember.name,
+        amount: s.amount,
+        status: s.status,
+        toUserBankInfo: showBank ? {
+          bankName: recUser.bankName,
+          bankCode: recUser.bankCode,
+          branchName: recUser.branchName,
+          branchCode: recUser.branchCode,
+          accountType: recUser.accountType,
+          accountNumber: recUser.accountNumber,
+          accountHolder: recUser.accountHolder,
+        } : null,
+        toUserPaypayInfo: showPaypay ? {
+          url: recUser.paypayUrl,
+        } : null,
+      };
+    });
+  } else {
+    const calculated = calculateSettlements(
+      memberBalances.map((mb) => ({ userId: mb.userId, balance: mb.balance }))
+    );
+    settlementsList = calculated.map((c) => {
+      const recMember = project.members.find((m) => m.id === c.toUserId);
+      const recUser = recMember?.user;
+      const fromMember = project.members.find((m) => m.id === c.fromUserId);
+      const showBank = recMember?.showBankAccount !== false && recUser?.bankName && recUser?.accountNumber && recUser?.accountHolder;
+      const showPaypay = recMember?.showPaypay !== false && recUser?.paypayUrl;
+
+      return {
+        fromUserId: c.fromUserId,
+        fromUserName: fromMember?.name || '不明',
+        toUserId: c.toUserId,
+        toUserName: recMember?.name || '不明',
+        amount: c.amount,
+        status: 'pending',
+        toUserBankInfo: showBank ? {
+          bankName: recUser.bankName,
+          bankCode: recUser.bankCode,
+          branchName: recUser.branchName,
+          branchCode: recUser.branchCode,
+          accountType: recUser.accountType,
+          accountNumber: recUser.accountNumber,
+          accountHolder: recUser.accountHolder,
+        } : null,
+        toUserPaypayInfo: showPaypay ? {
+          url: recUser.paypayUrl,
+        } : null,
+      };
+    });
+  }
+
+  // 閲覧者の場合：自分に関係する（自分が支払う、または自分が受け取る）精算ルートのみに絞り込む
+  if (userRole !== 'owner' && userRole !== 'editor' && linkedMember) {
+    settlementsList = settlementsList.filter(
+      (s) => s.fromUserId === linkedMember.id || s.toUserId === linkedMember.id
+    );
+  }
+
   // 利用日期間の算出
   let dateRange = '-';
   if (displayExpenses.length > 0) {
@@ -180,6 +285,7 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
       dateRange={dateRange}
       projectDescription={project.description}
       userRole={userRole}
+      settlementsList={settlementsList}
     />
   );
 }

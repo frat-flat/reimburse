@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Landmark, Smartphone, AlertCircle, HelpCircle } from 'lucide-react';
 import ImageCropper from './ImageCropper';
+import ReceiptModal from './ReceiptModal';
 
 interface ProfileFormProps {
   initialData: {
@@ -48,6 +49,13 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
   const [stampImage, setStampImage] = useState(initialData.stampImage || '');
   const [stampSize, setStampSize] = useState(initialData.stampSize || 60);
   const [cropperSrc, setCropperSrc] = useState<string | null>(null);
+
+  // 領収書発行元情報ステート
+  const [issuerName, setIssuerName] = useState(initialData.receiptIssuerName || '');
+  const [issuerZip, setIssuerZip] = useState(initialData.receiptIssuerZip || '');
+  const [issuerAddress, setIssuerAddress] = useState(initialData.receiptIssuerAddress || '');
+  const [issuerTel, setIssuerTel] = useState(initialData.receiptIssuerTel || '');
+  const [issuerRegNo, setIssuerRegNo] = useState(initialData.receiptIssuerRegNo || '');
 
   // API解決用およびサジェスト検索用の状態
   interface ZenginItem {
@@ -395,7 +403,8 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
               <input
                 type="text"
                 name="receiptIssuerName"
-                defaultValue={initialData.receiptIssuerName || ''}
+                value={issuerName}
+                onChange={(e) => setIssuerName(e.target.value)}
                 placeholder="例: たろう / 合同会社たろう企画"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium"
               />
@@ -409,7 +418,8 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
               <input
                 type="text"
                 name="receiptIssuerRegNo"
-                defaultValue={initialData.receiptIssuerRegNo || ''}
+                value={issuerRegNo}
+                onChange={(e) => setIssuerRegNo(e.target.value)}
                 placeholder="例: T1234567890123"
                 maxLength={14}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium"
@@ -424,7 +434,8 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
                 <input
                   type="text"
                   name="receiptIssuerZip"
-                  defaultValue={initialData.receiptIssuerZip || ''}
+                  value={issuerZip}
+                  onChange={(e) => setIssuerZip(e.target.value)}
                   placeholder="例: 100-0001"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium"
                 />
@@ -437,7 +448,8 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
                 <input
                   type="tel"
                   name="receiptIssuerTel"
-                  defaultValue={initialData.receiptIssuerTel || ''}
+                  value={issuerTel}
+                  onChange={(e) => setIssuerTel(e.target.value)}
                   placeholder="例: 090-0000-0000"
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium"
                 />
@@ -451,7 +463,8 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
               <input
                 type="text"
                 name="receiptIssuerAddress"
-                defaultValue={initialData.receiptIssuerAddress || ''}
+                value={issuerAddress}
+                onChange={(e) => setIssuerAddress(e.target.value)}
                 placeholder="例: 東京都千代田区千代田1-1"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium"
               />
@@ -548,6 +561,31 @@ export default function ProfileForm({ initialData, updateAction }: ProfileFormPr
                 <p className="text-[10px] text-slate-400 font-bold py-6">印影未設定</p>
               )}
             </div>
+          </div>
+
+          {/* 領収書の雛形プレビューボタン */}
+          <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <span className="text-[10px] text-slate-500 font-semibold leading-relaxed">
+              現在の設定内容（氏名、住所、印影等）がどのように領収書に反映されるか、テストデータでプレビューを確認できます。
+            </span>
+            <ReceiptModal
+              payerName="山田 太郎 (支払者デモ)"
+              receiverName={issuerName || "あなたの名前"}
+              amount={10000}
+              projectName="プレビュー用デモイベント"
+              dateString={new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+              issuerInfo={{
+                name: issuerName,
+                zip: issuerZip,
+                address: issuerAddress,
+                tel: issuerTel,
+                regNo: issuerRegNo,
+                stampImage: stampImage,
+                stampSize: stampSize,
+              }}
+              triggerButtonText="領収書の雛形プレビューを表示"
+              triggerButtonClassName="inline-flex items-center gap-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-3 py-2 rounded-xl text-xs border border-indigo-200 transition shadow-sm cursor-pointer active:scale-95 text-center flex-shrink-0"
+            />
           </div>
         </div>
 

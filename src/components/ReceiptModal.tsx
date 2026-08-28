@@ -19,6 +19,8 @@ interface ReceiptModalProps {
     stampImage?: string | null;
     stampSize?: number | null;
   };
+  triggerButtonText?: string;
+  triggerButtonClassName?: string;
 }
 
 export default function ReceiptModal({
@@ -28,6 +30,8 @@ export default function ReceiptModal({
   projectName,
   dateString,
   issuerInfo,
+  triggerButtonText,
+  triggerButtonClassName,
 }: ReceiptModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [stampImage, setStampImage] = useState(issuerInfo.stampImage || '');
@@ -80,10 +84,10 @@ export default function ReceiptModal({
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center gap-1 bg-white hover:bg-indigo-50 text-indigo-700 font-extrabold px-2.5 py-1.5 rounded-lg text-[10px] border border-indigo-200 transition shadow-sm cursor-pointer active:scale-95"
+        className={triggerButtonClassName || "inline-flex items-center gap-1 bg-white hover:bg-indigo-50 text-indigo-700 font-extrabold px-2.5 py-1.5 rounded-lg text-[10px] border border-indigo-200 transition shadow-sm cursor-pointer active:scale-95"}
       >
         <Receipt className="h-3.5 w-3.5" />
-        <span>領収書を発行</span>
+        <span>{triggerButtonText || "領収書を発行"}</span>
       </button>
 
       {isOpen && (

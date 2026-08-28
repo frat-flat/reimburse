@@ -36,6 +36,7 @@ export default function ReceiptModal({
   const [isOpen, setIsOpen] = useState(false);
   const [stampImage, setStampImage] = useState(issuerInfo.stampImage || '');
   const [stampSize, setStampSize] = useState(issuerInfo.stampSize || 60);
+  const [stampOpacity, setStampOpacity] = useState(0.85);
   const [cropperSrc, setCropperSrc] = useState<string | null>(null);
 
   // 印鑑ドラッグ用
@@ -154,19 +155,35 @@ export default function ReceiptModal({
                   </label>
                 </div>
 
-                {/* サイズ調整スライダー */}
+                {/* スライダーグループ */}
                 {stampImage && (
-                  <div className="flex items-center gap-2 text-xs flex-1 min-w-[150px]">
-                    <span className="font-bold text-slate-550 whitespace-nowrap text-[10px]">印影サイズ: {stampSize}px</span>
-                    <input
-                      type="range"
-                      min="40"
-                      max="120"
-                      step="5"
-                      value={stampSize}
-                      onChange={(e) => setStampSize(parseInt(e.target.value, 10))}
-                      className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-650"
-                    />
+                  <div className="flex flex-col sm:flex-row gap-3 flex-1 min-w-[300px]">
+                    {/* サイズ調整スライダー */}
+                    <div className="flex items-center gap-2 text-xs flex-1 min-w-[140px]">
+                      <span className="font-bold text-slate-550 whitespace-nowrap text-[10px]">印影サイズ: {stampSize}px</span>
+                      <input
+                        type="range"
+                        min="40"
+                        max="120"
+                        step="5"
+                        value={stampSize}
+                        onChange={(e) => setStampSize(parseInt(e.target.value, 10))}
+                        className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-650"
+                      />
+                    </div>
+                    {/* 透過率スライダー */}
+                    <div className="flex items-center gap-2 text-xs flex-1 min-w-[140px]">
+                      <span className="font-bold text-slate-550 whitespace-nowrap text-[10px]">不透明度: {Math.round(stampOpacity * 100)}%</span>
+                      <input
+                        type="range"
+                        min="20"
+                        max="100"
+                        step="5"
+                        value={Math.round(stampOpacity * 100)}
+                        onChange={(e) => setStampOpacity(parseInt(e.target.value, 10) / 100)}
+                        className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-650"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -227,12 +244,13 @@ export default function ReceiptModal({
                 <div className="text-right space-y-1 border-t border-slate-200/50 pt-3 md:border-t-0 md:pt-0 relative pr-4">
                   {stampImage && (
                     <div 
-                      className={`absolute right-0 bottom-1 select-none opacity-85 print:opacity-100 z-10 touch-none ${
+                      className={`absolute right-0 bottom-1 select-none z-10 touch-none ${
                         isDragging ? 'cursor-grabbing' : 'cursor-grab'
                       }`}
                       style={{
                         width: `${stampSize}px`,
                         height: `${stampSize}px`,
+                        opacity: stampOpacity,
                         transform: `translate(${stampOffset.x}px, ${stampOffset.y}px)`,
                       }}
                       onMouseDown={(e) => {

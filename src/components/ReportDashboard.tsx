@@ -54,6 +54,7 @@ interface ReportDashboardProps {
   projectDescription?: string | null;
   userRole?: 'owner' | 'editor' | 'viewer_all' | 'viewer_personal' | 'viewer_receipt';
   settlementsList?: SettlementItem[];
+  currentMemberName?: string | null;
 }
 
 export default function ReportDashboard({
@@ -68,6 +69,7 @@ export default function ReportDashboard({
   projectDescription,
   userRole = 'owner',
   settlementsList = [],
+  currentMemberName = null,
 }: ReportDashboardProps) {
   const [selectedMemberName, setSelectedMemberName] = useState<string>('');
   const [showSummaryCards, setShowSummaryCards] = useState<boolean>(true);
@@ -246,6 +248,55 @@ export default function ReportDashboard({
           </div>
         </div>
       )}
+
+      {/* 自身の精算内訳サマリー（横長ワイド表示） */}
+      {(() => {
+        if (!currentMemberName) return null;
+        const mySummary = memberSummaries.find((m) => m.name === currentMemberName);
+        if (!mySummary) return null;
+
+        const isCreditor = mySummary.diff > 0.001;
+        const isDebtor = mySummary.diff < -0.001;
+        return (
+          <div className="bg-indigo-50/50 border border-indigo-200 rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 print:bg-indigo-50/20 print:border-indigo-300">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-base shadow-sm print:bg-indigo-750">
+                {mySummary.name.charAt(0)}
+              </div>
+              <div>
+                <h3 className="font-extrabold text-gray-900 text-base">あなたの精算状況</h3>
+                <p className="text-xs text-gray-500 font-semibold">{mySummary.name}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm font-semibold text-gray-700 md:border-l md:border-indigo-150 md:pl-6 flex-1 max-w-lg">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-400">支払った額 (立替合計):</span>
+                <span className="text-gray-900 font-black text-base">{mySummary.totalPaid.toLocaleString()}円</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-400">本来の負担 (消費合計):</span>
+                <span className="text-gray-900 font-black text-base">{mySummary.totalShared.toLocaleString()}円</span>
+              </div>
+            </div>
+
+            <div className={`p-4 rounded-xl text-center font-bold border min-w-[180px] ${
+              isCreditor
+                ? 'bg-emerald-50 border-emerald-250 text-emerald-800'
+                : isDebtor
+                ? 'bg-red-50 border-red-250 text-red-850'
+                : 'bg-gray-50 border-gray-150 text-gray-650'
+            }`}>
+              <div className="text-[10px] uppercase tracking-wider mb-0.5 opacity-85">
+                {isCreditor ? '返金（受取額）' : isDebtor ? '不足（支払額）' : '過不足なし'}
+              </div>
+              <strong className="text-lg font-black">
+                {Math.abs(mySummary.diff).toLocaleString()}円
+              </strong>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* メンバー別集計テーブル */}
       {showMemberTable && (

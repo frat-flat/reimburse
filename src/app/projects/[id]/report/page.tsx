@@ -286,6 +286,7 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
       projectDescription={project.description}
       userRole={userRole}
       settlementsList={settlementsList}
+      currentMemberName={linkedMember?.name || null}
     />
   );
 }

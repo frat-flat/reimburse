@@ -17,9 +17,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "TaTekæTa",
   description: "TaTekæTa - 割り勘・精算最適化システム",
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: "/icon.png",
-    apple: "/apple-icon.png",
+    apple: "/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "TaTekæTa",
   },
 };
 

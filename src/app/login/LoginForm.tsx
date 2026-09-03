@@ -55,8 +55,9 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="max-w-md w-full space-y-6 bg-white p-6 md:p-8 rounded-xl shadow-md border border-gray-100">
-      <div>
+    <div className="max-w-md w-full space-y-6 bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-gray-100">
+      <div className="flex flex-col items-center">
+        <img src="/logo.png" alt="TaTekæTa Logo" className="w-16 h-16 rounded-2xl shadow-md mb-3 object-contain" />
         <h2 className="text-center text-3xl font-black text-gray-900 tracking-tight">
           TaTekæTa
         </h2>

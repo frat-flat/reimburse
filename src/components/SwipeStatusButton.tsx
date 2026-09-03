@@ -9,12 +9,14 @@ interface SwipeStatusButtonProps {
   settlementId: string;
   currentStatus: 'pending' | 'paid' | 'receipt_issued';
   canOperate: boolean; // 受取人本人だけが操作可能
+  isParticipant?: boolean; // 当事者（支払者または受取人）かどうか
 }
 
 export default function SwipeStatusButton({
   settlementId,
   currentStatus,
   canOperate,
+  isParticipant = false,
 }: SwipeStatusButtonProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -178,21 +180,26 @@ export default function SwipeStatusButton({
 
   const ui = getUIConfig();
 
-  // 領収書発行完了時：親コンポーネントで「領収書を確認」ボタンが表示されるため、ここでは何も表示しない
+  // 領収書発行完了時：当事者（isParticipant）は親で「領収書を確認」ボタンが表示されるため非表示、非当事者には「精算完了」バッジを表示
   if (localStatus === 'receipt_issued') {
-    return null;
+    if (isParticipant) return null;
+    return (
+      <span className="px-3 py-1.5 rounded-lg text-xs font-bold border bg-indigo-50 border-indigo-200 text-indigo-900 select-none">
+        精算完了
+      </span>
+    );
   }
 
-  // 操作権限がない場合：単なる読み取り専用バッジとして表示
+  // 操作権限がない場合（支払者本人または閲覧者）：状況に応じた読み取り専用バッジとして表示
   if (!canOperate) {
     let displayText = '';
     let badgeColor = '';
     if (localStatus === 'pending') {
       displayText = '未払い';
-      badgeColor = 'bg-gray-150 border-gray-250 text-gray-550';
+      badgeColor = 'bg-gray-100 border-gray-300 text-gray-700';
     } else {
-      displayText = '受取済み (未発行)';
-      badgeColor = 'bg-emerald-50 border-emerald-250 text-emerald-755';
+      displayText = '支払済';
+      badgeColor = 'bg-emerald-50 border-emerald-300 text-emerald-800';
     }
 
     return (

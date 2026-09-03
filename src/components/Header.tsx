@@ -3,6 +3,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { actionLogout } from '@/lib/actions';
 import { prisma } from '@/lib/prisma';
 import { Calendar, Users, Receipt, UserCheck, CircleUser, LogOut } from 'lucide-react';
+import MobileDrawerNav from './MobileDrawerNav';
 
 export default async function Header() {
   const currentUser = await getCurrentUser();
@@ -34,70 +35,18 @@ export default async function Header() {
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50 print:hidden">
-      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-3">
+      <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-3">
         <div className="flex items-center justify-between">
-          <Link href="/dashboard" className="text-lg sm:text-xl font-black tracking-tight text-indigo-600 flex items-center gap-2 hover:opacity-90 flex-shrink-0">
+          <Link href="/dashboard" className="text-xl font-black tracking-tight text-indigo-600 flex items-center gap-2 hover:opacity-90 flex-shrink-0">
             <img src="/logo.png" alt="TaTekæTa Logo" className="w-7 h-7 rounded-lg object-contain shadow-xs flex-shrink-0" />
             <span>TaTekæTa</span>
           </Link>
           
-          {/* モバイル用ナビゲーション & ログアウト（洗練された線画アイコンのみで配置） */}
-          <div className="flex items-center gap-0.5 sm:gap-1 md:hidden">
-            <Link
-              href="/dashboard"
-              title="イベント一覧"
-              className="p-2 text-slate-600 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition"
-            >
-              <Calendar className="h-5 w-5" strokeWidth={1.8} />
-            </Link>
-            
-            <Link
-              href="/friends"
-              title="Mate管理"
-              className="p-2 text-slate-600 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition relative"
-            >
-              <Users className="h-5 w-5" strokeWidth={1.8} />
-              {mateNotificationCount > 0 && (
-                <span className="absolute top-1 right-1 bg-red-500 text-white text-[8px] px-1 py-0.2 rounded-full font-black leading-none min-w-[12px] text-center shadow-sm">
-                  {mateNotificationCount}
-                </span>
-              )}
-            </Link>
-            
-            <Link
-              href="/receipts"
-              title="領収一覧"
-              className="p-2 text-slate-600 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition"
-            >
-              <Receipt className="h-5 w-5" strokeWidth={1.8} />
-            </Link>
-            
-            <Link
-              href="/members"
-              title="ベースクルー登録"
-              className="p-2 text-slate-600 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition"
-            >
-              <UserCheck className="h-5 w-5" strokeWidth={1.8} />
-            </Link>
-            
-            <Link
-              href="/profile"
-              title="マイページ"
-              className="p-2 text-slate-600 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition"
-            >
-              <CircleUser className="h-5 w-5" strokeWidth={1.8} />
-            </Link>
-            
-            <form action={actionLogout} className="flex items-center">
-              <button
-                type="submit"
-                title="ログアウト"
-                className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-              >
-                <LogOut className="h-5 w-5" strokeWidth={1.8} />
-              </button>
-            </form>
-          </div>
+          {/* モバイル用ハンバーガードロワーナビゲーション */}
+          <MobileDrawerNav
+            currentUser={{ name: currentUser.name, email: currentUser.email }}
+            mateNotificationCount={mateNotificationCount}
+          />
         </div>
 
         {/* デスクトップ用ナビゲーション & ログインステータス */}

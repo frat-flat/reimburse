@@ -32,6 +32,26 @@ export default async function NewExpensePage({ params }: NewExpensePageProps) {
     redirect(`/projects/${projectId}`);
   }
 
+  // 権限検証: オーナー または 共有クルーであること
+  const isOwner = project.createdBy === currentUser.id;
+  let projectShare = null;
+  if (!isOwner) {
+    try {
+      projectShare = await prisma.projectShare.findFirst({
+        where: {
+          projectId,
+          userId: currentUser.id,
+        },
+      });
+    } catch (err) {
+      console.error('Failed to check project share:', err);
+    }
+  }
+
+  if (!isOwner && !projectShare) {
+    redirect('/dashboard');
+  }
+
   const members = project.members.map((m) => ({
     id: m.id,
     name: m.name,

@@ -49,6 +49,29 @@ export default async function EditExpensePage({ params }: EditExpensePageProps) 
     notFound();
   }
 
+  // 権限検証: オーナー または editor または 作成者本人 であること
+  const isOwner = project.createdBy === currentUser.id;
+  let canEdit = isOwner || expense.createdBy === currentUser.id;
+  if (!canEdit) {
+    try {
+      const projectShare = await prisma.projectShare.findFirst({
+        where: {
+          projectId,
+          userId: currentUser.id,
+        },
+      });
+      if (projectShare?.role === 'editor') {
+        canEdit = true;
+      }
+    } catch (err) {
+      console.error('Failed to check project share for edit:', err);
+    }
+  }
+
+  if (!canEdit) {
+    redirect(`/projects/${projectId}`);
+  }
+
   const members = project.members.map((m) => ({
     id: m.id,
     name: m.name,

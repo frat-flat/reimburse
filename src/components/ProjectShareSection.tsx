@@ -225,7 +225,7 @@ export default function ProjectShareSection({
                     className="sr-only"
                   />
                   <span className="text-[10px]">個人閲覧</span>
-                  <span className="text-[7px] text-gray-400 mt-0.5">個人分のみ</span>
+                  <span className="text-[7px] text-gray-500 mt-0.5 font-medium">個人分 (支払追加可)</span>
                 </label>
 
                 <label className={`flex flex-col items-center justify-center p-2 rounded-lg cursor-pointer border text-center select-none transition ${
@@ -241,7 +241,7 @@ export default function ProjectShareSection({
                     className="sr-only"
                   />
                   <span className="text-[10px]">全体閲覧</span>
-                  <span className="text-[7px] text-gray-400 mt-0.5">全体計算</span>
+                  <span className="text-[7px] text-gray-500 mt-0.5 font-medium">全体計算 (支払追加可)</span>
                 </label>
 
                 <label className={`flex flex-col items-center justify-center p-2 rounded-lg cursor-pointer border text-center select-none transition ${
@@ -257,7 +257,7 @@ export default function ProjectShareSection({
                     className="sr-only"
                   />
                   <span className="text-[10px]">編集可能</span>
-                  <span className="text-[7px] text-gray-400 mt-0.5">支出追加可</span>
+                  <span className="text-[7px] text-gray-500 mt-0.5 font-medium">全データ編集可</span>
                 </label>
               </div>
             </div>
@@ -266,7 +266,7 @@ export default function ProjectShareSection({
           <button
             type="submit"
             disabled={isPending}
-            className="w-full bg-indigo-600 hover:bg-indigo-750 text-white font-bold py-2 rounded-lg text-xs transition shadow-sm disabled:opacity-50 cursor-pointer"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs transition shadow-sm disabled:opacity-50 cursor-pointer"
           >
             {isPending ? '共有処理中...' : 'crewを追加'}
           </button>

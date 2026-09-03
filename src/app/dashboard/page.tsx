@@ -74,7 +74,7 @@ export default async function DashboardPage() {
         membersText: proj.members.map((mem: { name: string }) => mem.name).join(' / '),
         totalExpense,
         createdAt: proj.createdAt,
-        role: share.role as 'viewer' | 'editor',
+        role: share.role as 'editor' | 'viewer_all' | 'viewer_personal' | 'viewer',
         ownerName: proj.creator.name,
       };
     })
@@ -186,10 +186,12 @@ export default async function DashboardPage() {
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         <span className={`text-[9px] px-2 py-0.5 rounded font-bold border ${
                           project.role === 'editor' 
-                            ? 'bg-indigo-50 border-indigo-100 text-indigo-750' 
-                            : 'bg-gray-50 border-gray-200 text-gray-600'
+                            ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
+                            : project.role === 'viewer_personal'
+                            ? 'bg-amber-50 border-amber-200 text-amber-700'
+                            : 'bg-emerald-50 border-emerald-200 text-emerald-700'
                         }`}>
-                          {project.role === 'editor' ? '編集可能' : '閲覧のみ'}
+                          {project.role === 'editor' ? '編集可能' : project.role === 'viewer_personal' ? '個人閲覧' : '全体閲覧'}
                         </span>
                         {getStatusBadge(project.status)}
                       </div>

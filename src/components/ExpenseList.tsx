@@ -161,15 +161,13 @@ export default function ExpenseList({
           </select>
 
           {projectStatus === 'active' ? (
-            (userRole === 'owner' || userRole === 'editor') && (
-              <Link
-                href={`/projects/${projectId}/expenses/new`}
-                className="bg-indigo-600 hover:bg-indigo-750 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition inline-flex items-center gap-1 shadow-sm flex-shrink-0"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                支出を追加
-              </Link>
-            )
+            <Link
+              href={`/projects/${projectId}/expenses/new`}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition inline-flex items-center gap-1 shadow-sm flex-shrink-0"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              支出を追加
+            </Link>
           ) : (
             <span className="text-[10px] text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded border border-gray-200">
               追加不可 (ロック済)
@@ -278,13 +276,13 @@ export default function ExpenseList({
                       {expense.amount.toLocaleString()}円
                     </strong>
                     
-                    {/* 編集・削除（ステータスactiveのみ、かつ編集権限がある場合） */}
-                    {projectStatus === 'active' && (userRole === 'owner' || userRole === 'editor') && (
-                      (isOwner || expense.createdBy === currentUserId) ? (
+                    {/* 編集・削除（ステータスactiveのみ。オーナー または editor または 自身が作成した支出の場合） */}
+                    {projectStatus === 'active' && (
+                      (isOwner || userRole === 'editor' || expense.createdBy === currentUserId) ? (
                         <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                           <Link
                             href={`/projects/${projectId}/expenses/${expense.id}/edit`}
-                            className="p-1.5 hover:bg-gray-50 border-r border-gray-200 text-gray-500 hover:text-indigo-650 transition"
+                            className="p-1.5 hover:bg-gray-50 border-r border-gray-200 text-gray-500 hover:text-indigo-600 transition"
                             title="編集"
                           >
                             <Edit2 className="h-3.5 w-3.5" />

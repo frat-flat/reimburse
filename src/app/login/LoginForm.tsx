@@ -57,8 +57,8 @@ export default function LoginForm() {
   return (
     <div className="max-w-md w-full space-y-6 bg-white p-6 md:p-8 rounded-xl shadow-md border border-gray-100">
       <div>
-        <h2 className="text-center text-3xl font-extrabold text-gray-900">
-          立替精算システム
+        <h2 className="text-center text-3xl font-black text-gray-900 tracking-tight">
+          TaTekæTa
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           複数人での支出を簡単に割り勘・精算

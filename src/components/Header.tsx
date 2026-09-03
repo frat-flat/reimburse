@@ -35,8 +35,8 @@ export default async function Header() {
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50 print:hidden">
       <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div className="flex items-center justify-between">
-          <Link href="/dashboard" className="text-xl font-bold text-indigo-600 flex items-center gap-1.5 hover:opacity-90">
-            <span>立替精算システム</span>
+          <Link href="/dashboard" className="text-xl font-black tracking-tight text-indigo-600 flex items-center gap-1.5 hover:opacity-90">
+            <span>TaTekæTa</span>
           </Link>
           
           {/* モバイル用ナビゲーション & ログアウト */}

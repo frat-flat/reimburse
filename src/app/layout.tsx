@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "立替精算システム",
-  description: "割り勘・精算最適化システム",
+  title: "TaTekæTa",
+  description: "TaTekæTa - 割り勘・精算最適化システム",
 };
 
 export default function RootLayout({

@@ -22,6 +22,9 @@ interface ReceiptData {
       receiptIssuerRegNo: string | null;
       stampImage: string | null;
       stampSize: number | null;
+      stampOffsetX?: number | null;
+      stampOffsetY?: number | null;
+      stampOpacity?: number | null;
     } | null;
   };
   receiverMember: {
@@ -35,6 +38,9 @@ interface ReceiptData {
       receiptIssuerRegNo: string | null;
       stampImage: string | null;
       stampSize: number | null;
+      stampOffsetX?: number | null;
+      stampOffsetY?: number | null;
+      stampOpacity?: number | null;
     } | null;
   };
 }
@@ -145,6 +151,9 @@ export default function ReceiptsList({ receivedReceipts, issuedReceipts }: Recei
                           regNo: recUser?.receiptIssuerRegNo || '',
                           stampImage: recUser?.stampImage || '',
                           stampSize: recUser?.stampSize || 60,
+                          stampOffsetX: recUser?.stampOffsetX,
+                          stampOffsetY: recUser?.stampOffsetY,
+                          stampOpacity: recUser?.stampOpacity,
                         }}
                       />
                     </td>

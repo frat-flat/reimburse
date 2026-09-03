@@ -234,12 +234,15 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                 {settlementsList.map((s, idx) => {
                   const recMember = project.members.find((m) => m.id === s.toUserId);
                   const recUser = recMember?.user;
+                  const isPayer = !!linkedMember && s.fromUserId === linkedMember.id;
+                  const isReceiver = !!linkedMember && s.toUserId === linkedMember.id;
+
                   return (
                     <div
                       key={s.id || idx}
                       className={`flex items-center justify-between border rounded-xl p-4 transition-all ${
                         s.status === 'paid' || s.status === 'receipt_issued'
-                          ? 'bg-gray-50 border-gray-200 opacity-60'
+                          ? 'bg-slate-50 border-gray-200 shadow-sm'
                           : 'bg-white border-indigo-100 shadow-sm'
                       }`}
                     >
@@ -268,9 +271,14 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                       {isConfirmed && s.id && (
                         <div className="flex items-center gap-2">
                           {/* 領収書発行ボタン：
-                              1. 主催者 (isOwner) の場合は、デモ確認・印刷テスト用にすべての支払済取引で領収書発行が可能
-                              2. 一般メンバーの場合は、自分がReceiver（受け取る側）かつ「支払済(paid)」になっている取引のみ発行可能 */}
-                          {isConfirmed && (s.status === 'paid' || s.status === 'receipt_issued') && (isOwner || (linkedMember && s.toUserId === linkedMember.id)) && (
+                              受取人（isReceiver）または 支払者（isPayer）のみに表示。
+                              - 受取人: 支払完了(paid) または 領収書発行済(receipt_issued) のとき表示
+                              - 支払者: 領収書発行済(receipt_issued) のときのみ、自身の支払取引に表示
+                              - 第三者（発起人であっても非当事者の場合）: 一切非表示 */}
+                          {isConfirmed && (
+                            (isReceiver && (s.status === 'paid' || s.status === 'receipt_issued')) ||
+                            (isPayer && s.status === 'receipt_issued')
+                          ) && (
                             <ReceiptModal
                               payerName={s.fromUserName}
                               receiverName={s.toUserName}
@@ -285,12 +293,15 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                                 regNo: recUser?.receiptIssuerRegNo || '',
                                 stampImage: recUser?.stampImage || '',
                                 stampSize: recUser?.stampSize || 60,
+                                stampOffsetX: recUser?.stampOffsetX,
+                                stampOffsetY: recUser?.stampOffsetY,
+                                stampOpacity: recUser?.stampOpacity,
                               }}
                             />
                           )}
 
-                          {/* 送金元（支払う側）の時の送金アクションショートカット（または主催者のデモ用） */}
-                          {(isOwner || (linkedMember && s.fromUserId === linkedMember.id)) && (
+                          {/* 送金元（支払う側本人）かつ 未払い（pending）の時のみ、振込先口座情報やPayPay送金ボタンを表示 */}
+                          {isConfirmed && isPayer && s.status === 'pending' && (
                             <div className="flex items-center gap-1.5 mr-1">
                               {/* PayPayで送金 */}
                               {project.allowPaypay !== false && recUser?.paypayUrl && recMember?.showPaypay !== false && (

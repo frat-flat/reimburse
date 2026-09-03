@@ -178,6 +178,11 @@ export default function SwipeStatusButton({
 
   const ui = getUIConfig();
 
+  // 領収書発行完了時：親コンポーネントで「領収書を確認」ボタンが表示されるため、ここでは何も表示しない
+  if (localStatus === 'receipt_issued') {
+    return null;
+  }
+
   // 操作権限がない場合：単なる読み取り専用バッジとして表示
   if (!canOperate) {
     let displayText = '';
@@ -185,12 +190,9 @@ export default function SwipeStatusButton({
     if (localStatus === 'pending') {
       displayText = '未払い';
       badgeColor = 'bg-gray-150 border-gray-250 text-gray-550';
-    } else if (localStatus === 'paid') {
+    } else {
       displayText = '受取済み (未発行)';
       badgeColor = 'bg-emerald-50 border-emerald-250 text-emerald-755';
-    } else {
-      displayText = '領収書発行済';
-      badgeColor = 'bg-indigo-50 border-indigo-200 text-indigo-900';
     }
 
     return (
@@ -206,27 +208,18 @@ export default function SwipeStatusButton({
       ref={containerRef}
       className={`relative flex items-center h-10 w-48 rounded-full p-1 select-none overflow-hidden transition-all shadow-inner ${ui.bg}`}
     >
-      {localStatus !== 'receipt_issued' ? (
-        <>
-          <button
-            ref={handleRef}
-            type="button"
-            style={{ transform: `translateX(${dragX}px)` }}
-            className={`absolute left-1 h-8 w-8 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow transition-transform duration-75 ease-out z-10 ${ui.btnBg}`}
-          >
-            <ArrowRight className="h-4 w-4" />
-          </button>
-          
-          <span className="w-full text-center text-[10px] font-extrabold tracking-tight pl-7 pr-2">
-            {isPending ? '同期中...' : ui.text}
-          </span>
-        </>
-      ) : (
-        <div className="w-full flex items-center justify-center gap-1 text-[11px] font-bold text-indigo-900">
-          <Check className="h-3.5 w-3.5 text-indigo-600" />
-          <span>領収書発行済</span>
-        </div>
-      )}
+      <button
+        ref={handleRef}
+        type="button"
+        style={{ transform: `translateX(${dragX}px)` }}
+        className={`absolute left-1 h-8 w-8 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow transition-transform duration-75 ease-out z-10 ${ui.btnBg}`}
+      >
+        <ArrowRight className="h-4 w-4" />
+      </button>
+      
+      <span className="w-full text-center text-[10px] font-extrabold tracking-tight pl-7 pr-2">
+        {isPending ? '同期中...' : ui.text}
+      </span>
     </div>
   );
 }

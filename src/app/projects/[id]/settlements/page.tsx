@@ -262,44 +262,17 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                      <strong className="text-lg md:text-xl font-black text-indigo-950">
-                        {s.amount.toLocaleString()}円
-                      </strong>
+                    <div className="flex items-center gap-3 sm:gap-5 flex-shrink-0">
+                      {/* 金額表示：右寄せ固定幅で上下を垂直に整列 */}
+                      <div className="w-28 sm:w-36 text-right flex-shrink-0">
+                        <strong className="text-base sm:text-xl font-black font-mono text-indigo-950 tracking-tight">
+                          {s.amount.toLocaleString()}円
+                        </strong>
+                      </div>
 
-                      {/* 支払済みチェックボタントグル（確定時のみ） */}
+                      {/* アクションボタングループ（確定時のみ） */}
                       {isConfirmed && s.id && (
-                        <div className="flex items-center gap-2">
-                          {/* 領収書発行ボタン：
-                              受取人（isReceiver）または 支払者（isPayer）のみに表示。
-                              - 受取人: 支払完了(paid) または 領収書発行済(receipt_issued) のとき表示
-                              - 支払者: 領収書発行済(receipt_issued) のときのみ、自身の支払取引に表示
-                              - 第三者（発起人であっても非当事者の場合）: 一切非表示 */}
-                          {isConfirmed && (
-                            (isReceiver && (s.status === 'paid' || s.status === 'receipt_issued')) ||
-                            (isPayer && s.status === 'receipt_issued')
-                          ) && (
-                            <ReceiptModal
-                              payerName={s.fromUserName}
-                              receiverName={s.toUserName}
-                              amount={s.amount}
-                              projectName={project.name}
-                              dateString={dateString}
-                              issuerInfo={{
-                                name: recUser?.receiptIssuerName || recUser?.name || s.toUserName,
-                                zip: recUser?.receiptIssuerZip || '',
-                                address: recUser?.receiptIssuerAddress || '',
-                                tel: recUser?.receiptIssuerTel || '',
-                                regNo: recUser?.receiptIssuerRegNo || '',
-                                stampImage: recUser?.stampImage || '',
-                                stampSize: recUser?.stampSize || 60,
-                                stampOffsetX: recUser?.stampOffsetX,
-                                stampOffsetY: recUser?.stampOffsetY,
-                                stampOpacity: recUser?.stampOpacity,
-                              }}
-                            />
-                          )}
-
+                        <div className="min-w-[180px] sm:min-w-[200px] flex justify-end items-center gap-2 flex-shrink-0">
                           {/* 送金元（支払う側本人）かつ 未払い（pending）の時のみ、振込先口座情報やPayPay送金ボタンを表示 */}
                           {isConfirmed && isPayer && s.status === 'pending' && (
                             <div className="flex items-center gap-1.5 mr-1">
@@ -331,6 +304,39 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                             </div>
                           )}
 
+                          {/* 領収書ボタン：
+                              受取人（isReceiver）または 支払者（isPayer）のみに表示。
+                              - 受取人: 支払完了(paid) または 領収書発行済(receipt_issued) のとき表示
+                              - 支払者: 領収書発行済(receipt_issued) のときのみ、自身の支払取引に表示
+                              - 第三者（発起人であっても非当事者の場合）: 一切非表示 */}
+                          {isConfirmed && (
+                            (isReceiver && (s.status === 'paid' || s.status === 'receipt_issued')) ||
+                            (isPayer && s.status === 'receipt_issued')
+                          ) && (
+                            <ReceiptModal
+                              payerName={s.fromUserName}
+                              receiverName={s.toUserName}
+                              amount={s.amount}
+                              projectName={project.name}
+                              dateString={dateString}
+                              triggerButtonText={s.status === 'receipt_issued' ? "領収書を確認" : "領収書を発行"}
+                              triggerButtonClassName="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-indigo-50 text-indigo-700 font-extrabold px-3 py-1.5 rounded-lg text-xs border border-indigo-200 transition shadow-sm cursor-pointer active:scale-95 text-center"
+                              issuerInfo={{
+                                name: recUser?.receiptIssuerName || recUser?.name || s.toUserName,
+                                zip: recUser?.receiptIssuerZip || '',
+                                address: recUser?.receiptIssuerAddress || '',
+                                tel: recUser?.receiptIssuerTel || '',
+                                regNo: recUser?.receiptIssuerRegNo || '',
+                                stampImage: recUser?.stampImage || '',
+                                stampSize: recUser?.stampSize || 60,
+                                stampOffsetX: recUser?.stampOffsetX,
+                                stampOffsetY: recUser?.stampOffsetY,
+                                stampOpacity: recUser?.stampOpacity,
+                              }}
+                            />
+                          )}
+
+                          {/* ステータススワイプ操作 / 未払い・受取済バッジ */}
                           <SwipeStatusButton
                             settlementId={s.id}
                             currentStatus={s.status as 'pending' | 'paid' | 'receipt_issued'}

@@ -17,13 +17,33 @@ export default async function ReceiptsPage() {
   let dbError = false;
 
   try {
+    // ログインユーザー名と一致する未紐付けメンバーを自動的にアカウントへ紐付け
+    await prisma.member.updateMany({
+      where: {
+        name: currentUser.name,
+        userId: null,
+      },
+      data: {
+        userId: currentUser.id,
+      },
+    });
+
     // 1. 受け取った領収書 (自分が支払う側かつ領収書発行済み)
     receivedReceipts = await prisma.settlement.findMany({
       where: {
         status: 'receipt_issued',
-        payerMember: {
-          userId: currentUser.id,
-        },
+        OR: [
+          {
+            payerMember: {
+              userId: currentUser.id,
+            },
+          },
+          {
+            payerMember: {
+              name: currentUser.name,
+            },
+          },
+        ],
       },
       include: {
         project: true,
@@ -47,9 +67,18 @@ export default async function ReceiptsPage() {
     issuedReceipts = await prisma.settlement.findMany({
       where: {
         status: 'receipt_issued',
-        receiverMember: {
-          userId: currentUser.id,
-        },
+        OR: [
+          {
+            receiverMember: {
+              userId: currentUser.id,
+            },
+          },
+          {
+            receiverMember: {
+              name: currentUser.name,
+            },
+          },
+        ],
       },
       include: {
         project: true,

@@ -136,6 +136,7 @@ export default function ReceiptsList({ receivedReceipts, issuedReceipts }: Recei
 
                     <ReceiptModal
                       readOnly={true}
+                      triggerButtonText="領収書を確認"
                       payerName={payerName}
                       receiverName={receiverName}
                       amount={s.amount}
@@ -202,6 +203,7 @@ export default function ReceiptsList({ receivedReceipts, issuedReceipts }: Recei
                       <td className="py-4 px-4 text-center">
                         <ReceiptModal
                           readOnly={true}
+                          triggerButtonText="領収書を確認"
                           payerName={payerName}
                           receiverName={receiverName}
                           amount={s.amount}

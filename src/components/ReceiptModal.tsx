@@ -251,27 +251,33 @@ export default function ReceiptModal({
               {/* 但し書き */}
               <div className="border-b border-gray-200 pb-4 text-xs font-semibold text-gray-700 space-y-1.5">
                 <p>
-                  但し、イベント「<span className="font-extrabold text-gray-900">{projectName}</span>」の立替精算分として、正に領収いたしました。
+                  但し、イベント「<span className="font-extrabold text-gray-900">{projectName}</span>」の参加費として、正に領収いたしました。
                 </p>
               </div>
 
               {/* 発行元署名欄 */}
               <div className="flex flex-row justify-between items-end gap-6 text-xs text-gray-750">
-                <div className="space-y-1">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">内訳</p>
-                  <table className="text-[10px] text-gray-500 border border-collapse border-gray-300">
-                    <tbody>
-                      <tr>
-                        <td className="border border-gray-300 px-2 py-0.5 font-bold">税抜金額</td>
-                        <td className="border border-gray-300 px-3 py-0.5 text-right font-mono">¥{amount.toLocaleString()}</td>
-                      </tr>
-                      <tr>
-                        <td className="border border-gray-300 px-2 py-0.5 font-bold">消費税等(10%)</td>
-                        <td className="border border-gray-300 px-3 py-0.5 text-right font-mono">¥0</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+                {(() => {
+                  const taxExcluded = Math.round(amount / 1.1);
+                  const taxAmount = amount - taxExcluded;
+                  return (
+                    <div className="space-y-1">
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">内訳 (10%対象)</p>
+                      <table className="text-[10px] text-gray-500 border border-collapse border-gray-300">
+                        <tbody>
+                          <tr>
+                            <td className="border border-gray-300 px-2 py-0.5 font-bold">税抜金額</td>
+                            <td className="border border-gray-300 px-3 py-0.5 text-right font-mono">¥{taxExcluded.toLocaleString()}</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-gray-300 px-2 py-0.5 font-bold">消費税額等(10%)</td>
+                            <td className="border border-gray-300 px-3 py-0.5 text-right font-mono">¥{taxAmount.toLocaleString()}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
 
                 {/* あなた（発行元）の情報 */}
                 <div className="text-right space-y-1 relative pr-4">

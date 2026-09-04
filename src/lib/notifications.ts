@@ -2,6 +2,7 @@
 
 import { prisma } from './prisma';
 import { getCurrentUser } from './auth';
+import { sendNotificationEmail } from './email';
 import { revalidatePath } from 'next/cache';
 
 export type NotificationType =
@@ -23,7 +24,7 @@ export interface CreateNotificationInput {
 }
 
 /**
- * 個別ユーザー宛てに通知を作成
+ * 個別ユーザー宛てに通知を作成＆登録メールアドレスへ自動配信
  */
 export async function createNotification(input: CreateNotificationInput) {
   try {
@@ -37,6 +38,34 @@ export async function createNotification(input: CreateNotificationInput) {
         link: input.link || null,
       },
     });
+
+    // 受信者の登録メールアドレスを取得してメール通知を配信
+    const recipient = await prisma.user.findUnique({
+      where: { id: input.userId },
+      select: { email: true, name: true },
+    });
+
+    let senderName: string | null = null;
+    if (input.senderId) {
+      const sender = await prisma.user.findUnique({
+        where: { id: input.senderId },
+        select: { name: true },
+      });
+      senderName = sender?.name || null;
+    }
+
+    if (recipient?.email) {
+      sendNotificationEmail({
+        to: recipient.email,
+        toName: recipient.name,
+        title: input.title,
+        message: input.message,
+        link: input.link,
+        senderName,
+        type: input.type,
+      }).catch((err) => console.error('[Notification Email Error]:', err));
+    }
+
     return notification;
   } catch (error) {
     console.error('Failed to create notification:', error);
@@ -45,7 +74,7 @@ export async function createNotification(input: CreateNotificationInput) {
 }
 
 /**
- * 全アクティブユーザー宛てに運営・システム通知を一斉配信
+ * 全アクティブユーザー宛てに運営・システム通知を一斉配信＆メール配信
  */
 export async function createSystemNotificationToAllUsers(data: {
   title: string;
@@ -56,7 +85,7 @@ export async function createSystemNotificationToAllUsers(data: {
   try {
     const users = await prisma.user.findMany({
       where: { status: 'active' },
-      select: { id: true },
+      select: { id: true, email: true, name: true },
     });
 
     if (users.length === 0) return { count: 0 };
@@ -70,6 +99,21 @@ export async function createSystemNotificationToAllUsers(data: {
         message: data.message,
         link: data.link || null,
       })),
+    });
+
+    // メール一括配信
+    users.forEach((u) => {
+      if (u.email) {
+        sendNotificationEmail({
+          to: u.email,
+          toName: u.name,
+          title: data.title,
+          message: data.message,
+          link: data.link,
+          senderName: 'TaTekæTa 運営',
+          type: data.type || 'SYSTEM',
+        }).catch((err) => console.error('[Broadcast Email Error]:', err));
+      }
     });
 
     return { count: result.count };

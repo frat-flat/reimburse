@@ -22,11 +22,13 @@ interface MobileDrawerNavProps {
     email?: string | null;
   };
   mateNotificationCount: number;
+  unreadNotificationCount?: number;
 }
 
 export default function MobileDrawerNav({
   currentUser,
   mateNotificationCount,
+  unreadNotificationCount = 0,
 }: MobileDrawerNavProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();

@@ -3,6 +3,7 @@
 import { prisma } from './prisma';
 import { getCurrentUser, login, logout } from './auth';
 import { calculateShares, calculateSettlements } from './settlement';
+import { createNotification } from './notifications';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
@@ -728,7 +729,15 @@ export async function actionUpdateSettlementStatus(
 
   const settlement = await prisma.settlement.findUnique({
     where: { id: settlementId },
-    include: { project: true },
+    include: {
+      project: true,
+      payerMember: {
+        include: { user: true },
+      },
+      receiverMember: {
+        include: { user: true },
+      },
+    },
   });
 
   if (!settlement) return { error: '精算レコードが見つかりません。' };
@@ -761,6 +770,30 @@ export async function actionUpdateSettlementStatus(
         },
       });
     });
+
+    // 通知送信処理（支払者宛て）
+    const targetUserId = settlement.payerMember.userId || (await prisma.user.findFirst({ where: { name: settlement.payerMember.name } }))?.id;
+    if (targetUserId && targetUserId !== currentUser.id) {
+      if (newStatus === 'paid') {
+        await createNotification({
+          userId: targetUserId,
+          senderId: currentUser.id,
+          type: 'SETTLEMENT_PAID',
+          title: `【${settlement.project.name}】精算の受取が確認されました`,
+          message: `${currentUser.name}さんが立替精算（¥${settlement.amount.toLocaleString()}）の受取を確認しました。`,
+          link: `/projects/${settlement.projectId}/settlements`,
+        });
+      } else if (newStatus === 'receipt_issued') {
+        await createNotification({
+          userId: targetUserId,
+          senderId: currentUser.id,
+          type: 'RECEIPT_ISSUED',
+          title: `【${settlement.project.name}】領収書が発行されました`,
+          message: `${currentUser.name}さんから領収書（¥${settlement.amount.toLocaleString()}）が発行されました。領収一覧または精算画面から確認・PDF出力できます。`,
+          link: `/receipts`,
+        });
+      }
+    }
   } catch (e) {
     console.error(e);
     return { error: 'ステータスの更新中にエラーが発生しました。' };
@@ -768,6 +801,7 @@ export async function actionUpdateSettlementStatus(
 
   revalidatePath(`/projects/${settlement.projectId}`);
   revalidatePath(`/projects/${settlement.projectId}/settlements`);
+  revalidatePath('/receipts');
   return { success: true };
 }
 
@@ -1073,6 +1107,16 @@ export async function actionSendFriendRequest(email: string) {
       },
     });
 
+    // Mate申請通知を相手へ送信
+    await createNotification({
+      userId: friend.id,
+      senderId: currentUser.id,
+      type: 'MATE_REQUEST',
+      title: `${currentUser.name}さんからMate申請が届きました`,
+      message: `${currentUser.name}さんからMate（フレンド）申請が届いています。承認して精算や割り勘をスムーズに行いましょう。`,
+      link: '/friends',
+    });
+
     revalidatePath('/friends');
   } catch (e) {
     console.error(e);
@@ -1099,6 +1143,16 @@ export async function actionAcceptFriendRequest(friendshipId: string) {
     await prisma.friendship.update({
       where: { id: friendshipId },
       data: { status: 'accepted' },
+    });
+
+    // 承認通知を申請者へ送信
+    await createNotification({
+      userId: friendship.userId,
+      senderId: currentUser.id,
+      type: 'MATE_ACCEPTED',
+      title: `${currentUser.name}さんがMate申請を承認しました`,
+      message: `${currentUser.name}さんとMate（フレンド）になりました！イベントの割り勘や精算で選択できます。`,
+      link: '/friends',
     });
 
     revalidatePath('/friends');
@@ -1210,6 +1264,18 @@ export async function actionShareProject(
         });
       }
     });
+
+    // 共有相手宛てに通知を送信
+    if (friendUserId !== currentUser.id) {
+      await createNotification({
+        userId: friendUserId,
+        senderId: currentUser.id,
+        type: 'PROJECT_SHARE',
+        title: `【${project.name}】イベントが共有されました`,
+        message: `${currentUser.name}さんからイベント「${project.name}」が共有されました。支出内容や精算内訳を確認できます。`,
+        link: `/projects/${projectId}`,
+      });
+    }
 
     revalidatePath(`/projects/${projectId}`);
   } catch (e) {

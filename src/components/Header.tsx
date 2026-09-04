@@ -4,6 +4,7 @@ import { actionLogout } from '@/lib/actions';
 import { prisma } from '@/lib/prisma';
 import { Calendar, Users, Receipt, UserCheck, CircleUser, LogOut } from 'lucide-react';
 import MobileDrawerNav from './MobileDrawerNav';
+import NotificationDropdown from './NotificationDropdown';
 
 export default async function Header() {
   const currentUser = await getCurrentUser();
@@ -33,6 +34,19 @@ export default async function Header() {
     console.error('Failed to load mate notification count:', e);
   }
 
+  // 未読通知数をカウント
+  let unreadNotificationCount = 0;
+  try {
+    unreadNotificationCount = await prisma.notification.count({
+      where: {
+        userId: currentUser.id,
+        isRead: false,
+      },
+    });
+  } catch (e) {
+    console.error('Failed to load notification count:', e);
+  }
+
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50 print:hidden">
       <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-3">
@@ -42,15 +56,19 @@ export default async function Header() {
             <span>TaTekæTa</span>
           </Link>
           
-          {/* モバイル用ハンバーガードロワーナビゲーション */}
-          <MobileDrawerNav
-            currentUser={{ name: currentUser.name, email: currentUser.email }}
-            mateNotificationCount={mateNotificationCount}
-          />
+          {/* モバイル用：ベル通知ボタン & ハンバーガードロワーナビゲーション */}
+          <div className="flex md:hidden items-center gap-1">
+            <NotificationDropdown initialUnreadCount={unreadNotificationCount} />
+            <MobileDrawerNav
+              currentUser={{ name: currentUser.name, email: currentUser.email }}
+              mateNotificationCount={mateNotificationCount}
+              unreadNotificationCount={unreadNotificationCount}
+            />
+          </div>
         </div>
 
         {/* デスクトップ用ナビゲーション & ログインステータス */}
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden md:flex items-center gap-5">
           <nav className="flex items-center gap-4">
             <Link href="/dashboard" className="text-sm font-bold text-slate-600 hover:text-indigo-600 transition flex items-center gap-1.5">
               <Calendar className="h-4 w-4" strokeWidth={1.8} />
@@ -79,7 +97,10 @@ export default async function Header() {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            {/* ベル通知ドロップダウン */}
+            <NotificationDropdown initialUnreadCount={unreadNotificationCount} />
+
             <span className="text-sm text-slate-700 font-medium bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg">
               ログイン: <strong className="text-slate-900">{currentUser.name}</strong>
             </span>

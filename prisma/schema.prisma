@@ -55,6 +55,10 @@ model User {
   // プロジェクト共有
   projectShares        ProjectShare[]
   projectMembers       Member[]
+
+  // 通知
+  notifications        Notification[] @relation("UserNotifications")
+  sentNotifications    Notification[] @relation("SentNotifications")
 }
 
 // 1.5 共通メンバーマスタ（事前に登録するよく使うメンバー）
@@ -213,4 +217,23 @@ model ProjectShare {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, userId])
+}
+
+// 11. 通知
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   // 受信者ユーザー
+  senderId  String?  // 送信元ユーザー（運営・システム通知の場合は null）
+  type      String   // SYSTEM, MATE_REQUEST, MATE_ACCEPTED, SETTLEMENT_PAID, RECEIPT_ISSUED, RECEIPT_REISSUE_REQUEST, PROJECT_SHARE
+  title     String
+  message   String
+  link      String?  // 遷移先URL
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  sender    User?    @relation("SentNotifications", fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isRead])
 }

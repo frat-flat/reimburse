@@ -137,20 +137,24 @@ export default function ExpenseList({
   const sortedExpenses = getSortedExpenses();
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
+    <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
       {/* ヘッダー部分 */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
         <div className="flex items-center gap-2">
-          <ArrowUpDown className="h-5 w-5 text-indigo-600" />
-          <h2 className="text-base font-bold text-gray-900">支出項目 ({initialExpenses.length}件)</h2>
+          <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+            <ArrowUpDown className="h-4 w-4" />
+          </div>
+          <h2 className="text-sm sm:text-base font-extrabold text-slate-900">
+            支出項目 <span className="text-slate-400 font-normal">({initialExpenses.length}件)</span>
+          </h2>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           {/* ソートセレクター */}
           <select
             value={sortKey}
             onChange={(e) => setSortKey(e.target.value as SortKey)}
-            className="text-xs bg-white border border-gray-300 rounded-lg px-2.5 py-1.5 font-semibold text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-sm"
+            className="text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 cursor-pointer flex-1 sm:flex-initial"
           >
             <option value="expenseDate-desc">利用日: 新しい順</option>
             <option value="expenseDate-asc">利用日: 古い順</option>
@@ -163,13 +167,13 @@ export default function ExpenseList({
           {projectStatus === 'active' ? (
             <Link
               href={`/projects/${projectId}/expenses/new`}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition inline-flex items-center gap-1 shadow-sm flex-shrink-0"
+              className="bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-extrabold px-3.5 py-2 rounded-xl text-xs transition inline-flex items-center justify-center gap-1.5 shadow-sm flex-shrink-0"
             >
               <Plus className="h-3.5 w-3.5" />
-              支出を追加
+              <span>支出を追加</span>
             </Link>
           ) : (
-            <span className="text-[10px] text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded border border-gray-200">
+            <span className="text-[11px] text-slate-500 font-bold bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-200">
               追加不可 (ロック済)
             </span>
           )}
@@ -178,11 +182,11 @@ export default function ExpenseList({
 
       {/* 支出リスト本体 */}
       {sortedExpenses.length === 0 ? (
-        <div className="text-center py-10 text-gray-500 text-sm">
+        <div className="text-center py-12 text-slate-400 text-xs sm:text-sm font-semibold">
           登録されている支出項目はありません。
         </div>
       ) : (
-        <div className="divide-y divide-gray-100">
+        <div className="space-y-3">
           {sortedExpenses.map((expense) => {
             const payerName = expense.payments[0]?.member.name || '不明';
             const shareMemberNames = expense.shares.map((s) => s.member.name).join(', ');
@@ -195,13 +199,18 @@ export default function ExpenseList({
               : '';
 
             return (
-              <div key={expense.id} className="py-4 first:pt-0 last:pb-0 space-y-2">
-                <div className="flex justify-between items-start">
-                  <div>
+              <div
+                key={expense.id}
+                className="bg-slate-50/50 hover:bg-slate-50/90 border border-slate-200/80 rounded-2xl p-4 transition-all duration-150 space-y-3"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                  <div className="space-y-1.5 flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-bold text-gray-900">{expense.title}</h3>
+                      <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">
+                        {expense.title}
+                      </h3>
                       {formattedDate && (
-                        <span className="text-[10px] bg-gray-100 border border-gray-200 text-gray-600 px-1.5 py-0.5 rounded-md font-bold">
+                        <span className="text-[10px] bg-white border border-slate-200 text-slate-600 px-2 py-0.5 rounded-md font-bold">
                           {formattedDate}
                         </span>
                       )}
@@ -218,7 +227,7 @@ export default function ExpenseList({
                                 e.preventDefault();
                                 setOpenDuplicateId(openDuplicateId === expense.id ? null : expense.id);
                               }}
-                              className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-250 px-2 py-0.5 rounded-md transition shadow-sm animate-pulse"
+                              className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-md transition shadow-xs animate-pulse cursor-pointer"
                               title="重複の可能性のある支出があります"
                             >
                               <AlertTriangle className="h-3 w-3 text-amber-500" />
@@ -226,25 +235,25 @@ export default function ExpenseList({
                             </button>
 
                             {openDuplicateId === expense.id && (
-                              <div className="absolute left-0 mt-1 bg-white border border-amber-250 rounded-xl shadow-2xl p-4 w-72 text-xs space-y-3 text-gray-800 text-left">
-                                <div className="flex items-center justify-between border-b border-gray-100 pb-1.5">
+                              <div className="absolute left-0 mt-1 bg-white border border-amber-200 rounded-2xl shadow-xl p-4 w-72 text-xs space-y-3 text-slate-800 text-left z-50">
+                                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                                   <span className="font-extrabold text-amber-800 flex items-center gap-1">
                                     <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
                                     類似する支出を検出
                                   </span>
                                   <button
                                     onClick={() => setOpenDuplicateId(null)}
-                                    className="text-gray-400 hover:text-gray-605 p-0.5"
+                                    className="text-slate-400 hover:text-slate-600 p-0.5"
                                   >
-                                    <X className="h-3.5 w-3.5" />
+                                    <X className="h-4 w-4" />
                                   </button>
                                 </div>
-                                <p className="text-[10px] text-gray-500 leading-relaxed font-semibold">
+                                <p className="text-[11px] text-slate-500 leading-relaxed font-semibold">
                                   日付（{formattedDate}）と金額（{expense.amount.toLocaleString()}円）が一致する支出が存在します。
                                 </p>
-                                <div className="space-y-1.5 bg-amber-50 border border-amber-150 p-2.5 rounded-lg max-h-24 overflow-y-auto">
+                                <div className="space-y-1.5 bg-amber-50/70 border border-amber-200/60 p-2.5 rounded-xl max-h-24 overflow-y-auto">
                                   {duplicates.map((dup) => (
-                                    <div key={dup.id} className="text-[10px] text-amber-900 border-b border-amber-200/50 pb-1 last:border-b-0 last:pb-0">
+                                    <div key={dup.id} className="text-[10px] text-amber-900 border-b border-amber-200/40 pb-1 last:border-b-0 last:pb-0">
                                       ・<strong>{dup.title}</strong> ({dup.payments[0]?.member.name || '支払者不明'} 払)
                                     </div>
                                   ))}
@@ -252,10 +261,10 @@ export default function ExpenseList({
                                 <button
                                   onClick={() => handleConfirmDuplicate(expense.id)}
                                   disabled={isPending}
-                                  className="w-full inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold py-2 rounded-lg text-xs transition shadow-sm"
+                                  className="w-full inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold py-2 rounded-xl text-xs transition shadow-xs cursor-pointer"
                                 >
                                   <CheckSquare className="h-3.5 w-3.5" />
-                                  <span>違う支出であることを確認 (警告消去)</span>
+                                  <span>違う支出であることを確認</span>
                                 </button>
                               </div>
                             )}
@@ -263,26 +272,31 @@ export default function ExpenseList({
                         );
                       })()}
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      支払者: <strong className="text-gray-700">{payerName}</strong>
-                      {' | '}
-                      負担: <span className="text-gray-600" title={shareMemberNames}>
-                        {expense.shares.length}人 ({expense.shares[0]?.member.name}...)
+
+                    {/* 支払者・負担者タグ */}
+                    <div className="flex items-center gap-1.5 flex-wrap text-xs pt-0.5">
+                      <span className="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-md text-[11px] border border-indigo-100">
+                        支払: {payerName}
                       </span>
-                    </p>
+                      <span className="inline-flex items-center gap-1 bg-white text-slate-600 font-bold px-2 py-0.5 rounded-md text-[11px] border border-slate-200" title={shareMemberNames}>
+                        負担: {expense.shares.length}人 ({shareMemberNames})
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <strong className="text-base font-black text-gray-900">
-                      {expense.amount.toLocaleString()}円
+
+                  {/* 金額 & 編集・削除ボタン */}
+                  <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                    <strong className="text-lg sm:text-xl font-black font-mono text-slate-900">
+                      {expense.amount.toLocaleString()}<span className="text-xs font-sans font-bold ml-0.5">円</span>
                     </strong>
                     
-                    {/* 編集・削除（ステータスactiveのみ。オーナー または editor または 自身が作成した支出の場合） */}
+                    {/* 編集・削除ボタン */}
                     {projectStatus === 'active' && (
                       (isOwner || userRole === 'editor' || expense.createdBy === currentUserId) ? (
-                        <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                        <div className="flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
                           <Link
                             href={`/projects/${projectId}/expenses/${expense.id}/edit`}
-                            className="p-1.5 hover:bg-gray-50 border-r border-gray-200 text-gray-500 hover:text-indigo-600 transition"
+                            className="p-2 hover:bg-slate-50 border-r border-slate-200 text-slate-500 hover:text-indigo-600 transition"
                             title="編集"
                           >
                             <Edit2 className="h-3.5 w-3.5" />
@@ -290,23 +304,25 @@ export default function ExpenseList({
                           <DeleteExpenseButton expenseId={expense.id} />
                         </div>
                       ) : (
-                        <span className="text-[10px] text-gray-400 font-semibold bg-gray-50 px-2 py-1 rounded border border-gray-200 flex-shrink-0" title="他人の支出は編集・削除できません">
-                          編集不可 (他人の支出)
+                        <span className="text-[10px] text-slate-400 font-bold bg-white px-2 py-1 rounded-lg border border-slate-200 flex-shrink-0">
+                          他人の支出
                         </span>
                       )
                     )}
                   </div>
                 </div>
                 
+                {/* メモ */}
                 {expense.memo && (
-                  <div className="text-xs text-gray-600 bg-gray-50 p-2.5 rounded-lg border border-gray-100 flex items-start gap-1">
-                    <MessageSquare className="h-3 w-3 text-gray-400 mt-0.5 flex-shrink-0" />
-                    <p>{expense.memo}</p>
+                  <div className="text-xs text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200/80 flex items-start gap-1.5">
+                    <MessageSquare className="h-3.5 w-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
+                    <p className="leading-relaxed">{expense.memo}</p>
                   </div>
                 )}
 
+                {/* 添付ファイル */}
                 {expense.attachments && expense.attachments.length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-1">
+                  <div className="flex flex-wrap gap-2 pt-0.5">
                     {expense.attachments.map((att) => {
                       const isPdf = att.fileType.includes('pdf') || att.fileName.toLowerCase().endsWith('.pdf');
                       const isHeic = att.fileType.includes('heic') || att.fileName.toLowerCase().endsWith('.heic');
@@ -322,10 +338,10 @@ export default function ExpenseList({
                           <a
                             href={att.fileData}
                             download={att.fileName}
-                            className="inline-flex items-center gap-1.5 text-[10px] text-indigo-650 bg-indigo-50/50 hover:bg-indigo-100/80 border border-indigo-100 hover:border-indigo-300 px-2.5 py-1 rounded-md transition font-bold"
+                            className="inline-flex items-center gap-1.5 text-[11px] text-indigo-700 bg-white hover:bg-indigo-50/70 border border-slate-200 hover:border-indigo-300 px-2.5 py-1 rounded-lg transition font-bold shadow-2xs"
                             title={att.fileName}
                           >
-                            <svg className="w-3.5 h-3.5 text-indigo-550 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3.5 h-3.5 text-indigo-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                             </svg>
                             <span className="truncate max-w-[150px]">{att.fileName}</span>
@@ -333,26 +349,26 @@ export default function ExpenseList({
 
                           {/* ホバープレビューポップオーバー */}
                           {hoveredAttId === att.id && (
-                            <div className="absolute bottom-full mb-2 left-0 z-50 bg-white border border-gray-200 rounded-lg shadow-xl p-2 max-w-[320px] pointer-events-none">
+                            <div className="absolute bottom-full mb-2 left-0 z-50 bg-white border border-slate-200 rounded-xl shadow-xl p-2 max-w-[320px] pointer-events-none">
                               {isImage ? (
-                                <img src={att.fileData} alt={att.fileName} className="max-w-[280px] max-h-[200px] object-contain rounded" />
+                                <img src={att.fileData} alt={att.fileName} className="max-w-[280px] max-h-[200px] object-contain rounded-lg" />
                               ) : isPdf ? (
-                                <div className="w-[280px] h-[200px] flex flex-col items-center justify-center bg-gray-50 rounded border border-gray-150 p-2 text-center">
-                                  <span className="text-sm font-bold text-red-650 bg-red-50 border border-red-150 px-2 py-0.5 rounded-full mb-2">PDF</span>
-                                  <p className="text-[10px] text-gray-500 font-semibold truncate w-full">{att.fileName}</p>
-                                  <iframe src={att.fileData} className="w-full h-full mt-2 rounded border border-gray-200 pointer-events-none bg-white" />
+                                <div className="w-[280px] h-[200px] flex flex-col items-center justify-center bg-slate-50 rounded-lg border border-slate-200 p-2 text-center">
+                                  <span className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full mb-2">PDF</span>
+                                  <p className="text-[10px] text-slate-500 font-semibold truncate w-full">{att.fileName}</p>
+                                  <iframe src={att.fileData} className="w-full h-full mt-2 rounded border border-slate-200 pointer-events-none bg-white" />
                                 </div>
                               ) : isHeic ? (
-                                <div className="w-[280px] p-3 text-center bg-gray-50 border border-gray-100 rounded flex flex-col items-center gap-1.5">
-                                  <span className="text-sm font-bold text-indigo-600 bg-indigo-50 border border-indigo-150 px-2 py-0.5 rounded-full">HEIC</span>
-                                  <p className="text-[10px] text-gray-500 font-semibold">{att.fileName}</p>
-                                  <p className="text-[9px] text-amber-600 font-bold bg-amber-50 border border-amber-100 px-2 py-1 rounded">
+                                <div className="w-[280px] p-3 text-center bg-slate-50 border border-slate-200 rounded-lg flex flex-col items-center gap-1.5">
+                                  <span className="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">HEIC</span>
+                                  <p className="text-[10px] text-slate-500 font-semibold">{att.fileName}</p>
+                                  <p className="text-[9px] text-amber-700 font-bold bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg">
                                     ※ HEIC 形式はブラウザ直接プレビュー非対応です。ダウンロードしてご覧ください。
                                   </p>
                                 </div>
                               ) : (
-                                <div className="w-[280px] p-3 text-center bg-gray-50 border border-gray-100 rounded">
-                                  <p className="text-[10px] text-gray-500 font-semibold truncate">{att.fileName}</p>
+                                <div className="w-[280px] p-3 text-center bg-slate-50 border border-slate-200 rounded-lg">
+                                  <p className="text-[10px] text-slate-500 font-semibold truncate">{att.fileName}</p>
                                 </div>
                               )}
                             </div>

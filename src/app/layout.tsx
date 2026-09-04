@@ -35,12 +35,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja">
+    <html lang="ja" className="scroll-smooth">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900 min-h-screen flex flex-col`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50/90 text-slate-900 min-h-screen flex flex-col selection:bg-indigo-100 selection:text-indigo-900`}
       >
         <Header />
-        <main className="flex-1 w-full max-w-6xl mx-auto p-4 md:p-6">
+        <main className="flex-1 w-full max-w-6xl mx-auto px-3.5 py-4 sm:px-5 sm:py-6 md:p-8">
           {children}
         </main>
         <FloatingCalculator />

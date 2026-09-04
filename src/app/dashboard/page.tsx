@@ -84,74 +84,103 @@ export default async function DashboardPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
-        return <span className="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-semibold">精算中</span>;
+        return (
+          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs px-2.5 py-0.5 rounded-full font-bold">
+            精算中
+          </span>
+        );
       case 'settlement_confirmed':
-        return <span className="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-semibold">精算確定</span>;
+        return (
+          <span className="bg-amber-50 text-amber-700 border border-amber-200 text-xs px-2.5 py-0.5 rounded-full font-bold">
+            精算確定
+          </span>
+        );
       case 'completed':
-        return <span className="bg-gray-100 text-gray-800 text-xs px-2.5 py-1 rounded-full font-semibold">完了</span>;
+        return (
+          <span className="bg-slate-100 text-slate-700 border border-slate-200 text-xs px-2.5 py-0.5 rounded-full font-bold">
+            完了
+          </span>
+        );
       default:
-        return <span className="bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-full font-semibold">{status}</span>;
+        return (
+          <span className="bg-blue-50 text-blue-700 border border-blue-200 text-xs px-2.5 py-0.5 rounded-full font-bold">
+            {status}
+          </span>
+        );
     }
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900">マイイベント</h1>
-        <p className="text-sm text-gray-600 mt-1">
-          現在参加している精算イベントの一覧です。
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">マイイベント</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            参加・作成した精算イベントの確認と管理ができます。
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* 左側：イベント一覧 */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-6 sm:space-y-8">
           {/* マイイベント (発起人) */}
           <div className="space-y-3">
-            <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
-              <span>自分で作成したイベント ({projects.length})</span>
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm sm:text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <span>自分で作成したイベント</span>
+                <span className="bg-indigo-50 text-indigo-700 text-xs px-2 py-0.5 rounded-full font-bold">
+                  {projects.length}
+                </span>
+              </h2>
+            </div>
+
             {projects.length === 0 ? (
-              <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-500 shadow-sm">
-                <FolderPlus className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-                <p className="font-semibold text-sm text-gray-700">作成したイベントはありません</p>
-                <p className="text-xs text-gray-500 mt-1">右側のフォームから新しく作成してください。</p>
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-8 sm:p-10 text-center text-slate-500 shadow-xs">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3">
+                  <FolderPlus className="h-6 w-6" />
+                </div>
+                <p className="font-extrabold text-sm text-slate-800">作成したイベントはありません</p>
+                <p className="text-xs text-slate-500 mt-1">右側のフォームから新しくイベントを作成してください。</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
                 {projects.map((project) => (
                   <Link
                     key={project.id}
                     href={`/projects/${project.id}`}
-                    className="block bg-white border border-gray-200 hover:border-indigo-300 rounded-xl p-5 hover:shadow-md transition-all duration-200 group relative"
+                    className="block bg-white border border-slate-200/80 hover:border-indigo-300 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md active:scale-[0.99] transition-all duration-200 group relative"
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-gray-900 text-base group-hover:text-indigo-600 transition-colors line-clamp-1 pr-6">
+                    <div className="flex justify-between items-start mb-2 gap-2">
+                      <h3 className="font-extrabold text-slate-900 text-base group-hover:text-indigo-600 transition-colors line-clamp-1 flex-1">
                         {project.name}
                       </h3>
                       <div className="flex-shrink-0">{getStatusBadge(project.status)}</div>
                     </div>
                     {project.description && (
-                      <p className="text-xs text-gray-600 line-clamp-2 mb-4">
+                      <p className="text-xs text-slate-500 line-clamp-2 mb-3">
                         {project.description}
                       </p>
                     )}
-                    <div className="space-y-2 mt-auto pt-4 border-t border-gray-100 text-xs text-gray-500">
-                      <div className="flex items-center gap-1.5">
-                        <Users className="h-3.5 w-3.5" />
-                        <span className="font-medium text-gray-700">参加者 {project.memberCount}人</span>
-                        <span className="text-gray-400">({project.membersText})</span>
+                    <div className="space-y-2.5 mt-auto pt-3 border-t border-slate-100 text-xs text-slate-500">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="inline-flex items-center gap-1 bg-slate-100/80 text-slate-700 font-bold px-2 py-0.5 rounded-md text-[11px]">
+                          <Users className="h-3 w-3 text-slate-500" />
+                          {project.memberCount}人
+                        </span>
+                        <span className="text-slate-400 text-[11px] truncate max-w-[200px]">
+                          {project.membersText}
+                        </span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <DollarSign className="h-3.5 w-3.5 text-indigo-500" />
-                          <span className="font-medium text-gray-700">総支出: </span>
-                          <strong className="text-gray-900 text-sm">
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="flex items-center gap-1">
+                          <span className="text-[11px] font-bold text-slate-500">総支出:</span>
+                          <strong className="text-indigo-950 font-black font-mono text-base">
                             {project.totalExpense.toLocaleString()}円
                           </strong>
                         </div>
-                        <span className="text-indigo-650 font-medium inline-flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
-                          詳細 <ArrowRight className="h-3 w-3" />
+                        <span className="text-xs font-bold text-indigo-600 inline-flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                          詳細 <ArrowRight className="h-3.5 w-3.5" />
                         </span>
                       </div>
                     </div>
@@ -162,29 +191,37 @@ export default async function DashboardPage() {
           </div>
 
           {/* 共有されたイベント */}
-          <div className="space-y-3 pt-6 border-t border-gray-200">
-            <h2 className="text-base font-bold text-gray-900 flex items-center gap-1.5">
-              <span>Mateから共有されたイベント ({sharedProjects.length})</span>
-            </h2>
+          <div className="space-y-3 pt-4 sm:pt-6 border-t border-slate-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm sm:text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <span>Mateから共有されたイベント</span>
+                <span className="bg-slate-100 text-slate-700 text-xs px-2 py-0.5 rounded-full font-bold">
+                  {sharedProjects.length}
+                </span>
+              </h2>
+            </div>
+
             {sharedProjects.length === 0 ? (
-              <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-500 shadow-sm">
-                <Users className="mx-auto h-10 w-10 text-gray-300 mb-2" />
-                <p className="text-xs text-gray-500">共有されたイベントはありません</p>
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-8 sm:p-10 text-center text-slate-500 shadow-xs">
+                <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2">
+                  <Users className="h-5 w-5" />
+                </div>
+                <p className="text-xs text-slate-500">現在、Mateから共有されているイベントはありません</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
                 {sharedProjects.map((project) => (
                   <Link
                     key={project.id}
                     href={`/projects/${project.id}`}
-                    className="block bg-white border border-gray-200 hover:border-indigo-300 rounded-xl p-5 hover:shadow-md transition-all duration-200 group relative"
+                    className="block bg-white border border-slate-200/80 hover:border-indigo-300 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md active:scale-[0.99] transition-all duration-200 group relative"
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-gray-900 text-base group-hover:text-indigo-600 transition-colors line-clamp-1 pr-6">
+                    <div className="flex justify-between items-start mb-2 gap-2">
+                      <h3 className="font-extrabold text-slate-900 text-base group-hover:text-indigo-600 transition-colors line-clamp-1 flex-1">
                         {project.name}
                       </h3>
                       <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <span className={`text-[9px] px-2 py-0.5 rounded font-bold border ${
+                        <span className={`text-[10px] px-2 py-0.5 rounded-md font-extrabold border ${
                           project.role === 'editor' 
                             ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
                             : project.role === 'viewer_personal'
@@ -197,23 +234,27 @@ export default async function DashboardPage() {
                       </div>
                     </div>
                     {project.description && (
-                      <p className="text-xs text-gray-600 line-clamp-2 mb-4">
+                      <p className="text-xs text-slate-500 line-clamp-2 mb-3">
                         {project.description}
                       </p>
                     )}
-                    <div className="space-y-2 mt-auto pt-4 border-t border-gray-100 text-xs text-gray-500">
-                      <div className="flex items-center gap-1.5">
-                        <Users className="h-3.5 w-3.5" />
-                        <span className="font-medium text-gray-700">参加者 {project.memberCount}人</span>
-                        <span className="text-gray-400">({project.membersText})</span>
+                    <div className="space-y-2.5 mt-auto pt-3 border-t border-slate-100 text-xs text-slate-500">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="inline-flex items-center gap-1 bg-slate-100/80 text-slate-700 font-bold px-2 py-0.5 rounded-md text-[11px]">
+                          <Users className="h-3 w-3 text-slate-500" />
+                          {project.memberCount}人
+                        </span>
+                        <span className="text-slate-400 text-[11px] truncate max-w-[200px]">
+                          {project.membersText}
+                        </span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <DollarSign className="h-3.5 w-3.5 text-indigo-500" />
-                          <span className="font-medium text-gray-700">発起人: <strong className="text-gray-800">{project.ownerName}</strong></span>
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="flex items-center gap-1">
+                          <span className="text-[11px] font-bold text-slate-500">発起人:</span>
+                          <strong className="text-slate-800 font-bold text-xs">{project.ownerName}</strong>
                         </div>
-                        <span className="text-indigo-650 font-medium inline-flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
-                          詳細 <ArrowRight className="h-3 w-3" />
+                        <span className="text-xs font-bold text-indigo-600 inline-flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform">
+                          詳細 <ArrowRight className="h-3.5 w-3.5" />
                         </span>
                       </div>
                     </div>

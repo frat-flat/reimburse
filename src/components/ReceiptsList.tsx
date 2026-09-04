@@ -135,6 +135,7 @@ export default function ReceiptsList({ receivedReceipts, issuedReceipts }: Recei
                     </div>
 
                     <ReceiptModal
+                      readOnly={true}
                       payerName={payerName}
                       receiverName={receiverName}
                       amount={s.amount}
@@ -200,6 +201,7 @@ export default function ReceiptsList({ receivedReceipts, issuedReceipts }: Recei
                       </td>
                       <td className="py-4 px-4 text-center">
                         <ReceiptModal
+                          readOnly={true}
                           payerName={payerName}
                           receiverName={receiverName}
                           amount={s.amount}

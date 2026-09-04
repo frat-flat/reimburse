@@ -325,6 +325,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                                 amount={s.amount}
                                 projectName={project.name}
                                 dateString={dateString}
+                                readOnly={s.status === 'receipt_issued' || isPayer}
                                 triggerButtonText={s.status === 'receipt_issued' ? "領収書を確認" : "領収書を発行"}
                                 triggerButtonClassName="inline-flex items-center justify-center gap-1 bg-white hover:bg-indigo-50 text-indigo-700 font-extrabold px-3 py-1.5 rounded-xl text-xs border border-indigo-200 transition shadow-2xs cursor-pointer active:scale-95 text-center"
                                 issuerInfo={{

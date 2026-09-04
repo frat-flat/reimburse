@@ -28,6 +28,7 @@ interface ReceiptModalProps {
   closeButtonText?: string;
   closeButtonType?: 'button' | 'submit';
   showPrintButton?: boolean;
+  readOnly?: boolean;
 }
 
 export default function ReceiptModal({
@@ -43,6 +44,7 @@ export default function ReceiptModal({
   closeButtonText,
   closeButtonType,
   showPrintButton = true,
+  readOnly = false,
 }: ReceiptModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [stampImage, setStampImage] = useState(issuerInfo.stampImage || '');
@@ -59,6 +61,7 @@ export default function ReceiptModal({
   const dragStart = useRef({ x: 0, y: 0 });
 
   const handleStart = (clientX: number, clientY: number) => {
+    if (readOnly) return;
     setIsDragging(true);
     dragStart.current = {
       x: clientX - stampOffset.x,
@@ -67,7 +70,7 @@ export default function ReceiptModal({
   };
 
   const handleMove = (clientX: number, clientY: number) => {
-    if (!isDragging) return;
+    if (readOnly || !isDragging) return;
     setStampOffset({
       x: clientX - dragStart.current.x,
       y: clientY - dragStart.current.y
@@ -75,6 +78,7 @@ export default function ReceiptModal({
   };
 
   const handleEnd = () => {
+    if (readOnly) return;
     setIsDragging(false);
     if (onStampChange) {
       onStampChange(stampOffset, stampOpacity);
@@ -138,81 +142,83 @@ export default function ReceiptModal({
               </div>
             </div>
 
-            {/* 印影追加コントロール (印刷時は非表示) */}
-            <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl mb-4 text-xs space-y-2 print:hidden animate-fade">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-slate-750">領収書に印影 (ハンコ) を配置する:</span>
-                {stampImage && (
-                  <button
-                    onClick={() => setStampImage('')}
-                    className="text-[10px] text-red-650 font-bold hover:text-red-750"
-                  >
-                    配置を解除する
-                  </button>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-4 items-center">
-                <div className="flex gap-2">
-                  <label className="flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-750 font-bold py-1.5 px-3 rounded-lg cursor-pointer transition">
-                    <span>📷 カメラを起動して撮影</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={handleLocalStampSelect}
-                      className="hidden"
-                    />
-                  </label>
-                  <label className="flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-755 font-bold py-1.5 px-3 rounded-lg cursor-pointer transition">
-                    <span>📁 ファイルから選択</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLocalStampSelect}
-                      className="hidden"
-                    />
-                  </label>
+            {/* 印影追加コントロール (発行者向け設定時のみ表示、発行済・readOnly時は非表示) */}
+            {!readOnly && (
+              <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl mb-4 text-xs space-y-2 print:hidden animate-fade">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-750">領収書に印影 (ハンコ) を配置する:</span>
+                  {stampImage && (
+                    <button
+                      onClick={() => setStampImage('')}
+                      className="text-[10px] text-red-650 font-bold hover:text-red-750 cursor-pointer"
+                    >
+                      配置を解除する
+                    </button>
+                  )}
                 </div>
-
-                {/* スライダーグループ */}
-                {stampImage && (
-                  <div className="flex flex-col sm:flex-row gap-3 flex-1 min-w-[300px]">
-                    {/* サイズ調整スライダー */}
-                    <div className="flex items-center gap-2 text-xs flex-1 min-w-[140px]">
-                      <span className="font-bold text-slate-550 whitespace-nowrap text-[10px]">印影サイズ: {stampSize}px</span>
+                <div className="flex flex-wrap gap-4 items-center">
+                  <div className="flex gap-2">
+                    <label className="flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-750 font-bold py-1.5 px-3 rounded-lg cursor-pointer transition">
+                      <span>📷 カメラを起動して撮影</span>
                       <input
-                        type="range"
-                        min="40"
-                        max="120"
-                        step="5"
-                        value={stampSize}
-                        onChange={(e) => setStampSize(parseInt(e.target.value, 10))}
-                        className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-650"
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleLocalStampSelect}
+                        className="hidden"
                       />
-                    </div>
-                    {/* 透過率スライダー */}
-                    <div className="flex items-center gap-2 text-xs flex-1 min-w-[140px]">
-                      <span className="font-bold text-slate-550 whitespace-nowrap text-[10px]">不透明度: {Math.round(stampOpacity * 100)}%</span>
+                    </label>
+                    <label className="flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-300 text-slate-755 font-bold py-1.5 px-3 rounded-lg cursor-pointer transition">
+                      <span>📁 ファイルから選択</span>
                       <input
-                        type="range"
-                        min="20"
-                        max="100"
-                        step="5"
-                        value={Math.round(stampOpacity * 100)}
-                        onChange={(e) => {
-                          const nextOpacity = parseInt(e.target.value, 10) / 100;
-                          setStampOpacity(nextOpacity);
-                          if (onStampChange) {
-                            onStampChange(stampOffset, nextOpacity);
-                          }
-                        }}
-                        className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-650"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLocalStampSelect}
+                        className="hidden"
                       />
-                    </div>
+                    </label>
                   </div>
-                )}
+
+                  {/* スライダーグループ */}
+                  {stampImage && (
+                    <div className="flex flex-col sm:flex-row gap-3 flex-1 min-w-[300px]">
+                      {/* サイズ調整スライダー */}
+                      <div className="flex items-center gap-2 text-xs flex-1 min-w-[140px]">
+                        <span className="font-bold text-slate-550 whitespace-nowrap text-[10px]">印影サイズ: {stampSize}px</span>
+                        <input
+                          type="range"
+                          min="40"
+                          max="120"
+                          step="5"
+                          value={stampSize}
+                          onChange={(e) => setStampSize(parseInt(e.target.value, 10))}
+                          className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-650"
+                        />
+                      </div>
+                      {/* 透過率スライダー */}
+                      <div className="flex items-center gap-2 text-xs flex-1 min-w-[140px]">
+                        <span className="font-bold text-slate-550 whitespace-nowrap text-[10px]">不透明度: {Math.round(stampOpacity * 100)}%</span>
+                        <input
+                          type="range"
+                          min="20"
+                          max="100"
+                          step="5"
+                          value={Math.round(stampOpacity * 100)}
+                          onChange={(e) => {
+                            const nextOpacity = parseInt(e.target.value, 10) / 100;
+                            setStampOpacity(nextOpacity);
+                            if (onStampChange) {
+                              onStampChange(stampOffset, nextOpacity);
+                            }
+                          }}
+                          className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-650"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* 領収書スクロールラッパー (モバイル用) */}
             <div className="w-full overflow-x-auto pb-2 print:overflow-visible print:pb-0">
@@ -271,8 +277,10 @@ export default function ReceiptModal({
                 <div className="text-right space-y-1 relative pr-4">
                   {stampImage && (
                     <div 
-                      className={`absolute right-0 bottom-1 select-none z-10 touch-none ${
-                        isDragging ? 'cursor-grabbing' : 'cursor-grab'
+                      className={`absolute right-0 bottom-1 select-none z-10 ${
+                        readOnly
+                          ? 'pointer-events-none cursor-default'
+                          : `touch-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`
                       }`}
                       style={{
                         width: `${stampSize}px`,
@@ -280,31 +288,31 @@ export default function ReceiptModal({
                         opacity: stampOpacity,
                         transform: `translate(${stampOffset.x}px, ${stampOffset.y}px)`,
                       }}
-                      onMouseDown={(e) => {
+                      onMouseDown={readOnly ? undefined : (e) => {
                         e.preventDefault();
                         handleStart(e.clientX, e.clientY);
                       }}
-                      onMouseMove={(e) => {
+                      onMouseMove={readOnly ? undefined : (e) => {
                         if (isDragging) {
                           e.preventDefault();
                           handleMove(e.clientX, e.clientY);
                         }
                       }}
-                      onMouseUp={handleEnd}
-                      onMouseLeave={handleEnd}
-                      onTouchStart={(e) => {
+                      onMouseUp={readOnly ? undefined : handleEnd}
+                      onMouseLeave={readOnly ? undefined : handleEnd}
+                      onTouchStart={readOnly ? undefined : (e) => {
                         e.preventDefault();
                         const touch = e.touches[0];
                         handleStart(touch.clientX, touch.clientY);
                       }}
-                      onTouchMove={(e) => {
+                      onTouchMove={readOnly ? undefined : (e) => {
                         if (isDragging) {
                           e.preventDefault();
                           const touch = e.touches[0];
                           handleMove(touch.clientX, touch.clientY);
                         }
                       }}
-                      onTouchEnd={handleEnd}
+                      onTouchEnd={readOnly ? undefined : handleEnd}
                     >
                       <img src={stampImage} alt="印影" className="w-full h-full object-contain pointer-events-none" />
                     </div>

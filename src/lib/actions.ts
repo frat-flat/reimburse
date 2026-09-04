@@ -960,6 +960,22 @@ export async function actionDeleteMember(memberId: string) {
   return { success: true };
 }
 
+export async function actionGetMasterMembers() {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return [];
+
+  try {
+    return await prisma.masterMember.findMany({
+      where: { userId: currentUser.id },
+      select: { id: true, name: true },
+      orderBy: { createdAt: 'asc' },
+    });
+  } catch (e) {
+    console.error('Failed to get master members:', e);
+    return [];
+  }
+}
+
 export async function actionCreateMasterMember(name: string) {
   const currentUser = await getCurrentUser();
   if (!currentUser) return { error: 'ログインが必要です。' };

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
-import FloatingCalculator from "@/components/FloatingCalculator";
+import FloatingActions from "@/components/FloatingActions";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,7 +43,7 @@ export default function RootLayout({
         <main className="flex-1 w-full max-w-6xl mx-auto px-3.5 py-4 sm:px-5 sm:py-6 md:p-8">
           {children}
         </main>
-        <FloatingCalculator />
+        <FloatingActions />
       </body>
     </html>
   );

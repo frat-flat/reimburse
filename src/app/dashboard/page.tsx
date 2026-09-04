@@ -265,8 +265,10 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* 右側：イベント作成フォーム */}
-        <CreateProjectForm masterMembers={masterMembers} />
+        {/* 右側：イベント作成フォーム (PC画面のみ表示、スマホでは右下の鉛筆ボタンから作成) */}
+        <div className="hidden lg:block">
+          <CreateProjectForm masterMembers={masterMembers} />
+        </div>
       </div>
     </div>
   );

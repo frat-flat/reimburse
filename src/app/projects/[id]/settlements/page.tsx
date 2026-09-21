@@ -347,7 +347,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
                             <SwipeStatusButton
                               settlementId={s.id}
                               currentStatus={s.status as 'pending' | 'paid' | 'receipt_issued'}
-                              canOperate={!!linkedMember && s.toUserId === linkedMember.id}
+                              canOperate={(!!linkedMember && s.toUserId === linkedMember.id) || isOwner}
                               isParticipant={isPayer || isReceiver}
                             />
                           </div>

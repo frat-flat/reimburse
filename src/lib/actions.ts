@@ -25,7 +25,7 @@ export async function actionLogin(formData: FormData) {
   }
 
   revalidatePath('/');
-  redirect('/dashboard');
+  return { success: true, redirectUrl: '/dashboard' };
 }
 
 export async function actionLogout() {
@@ -65,7 +65,7 @@ export async function actionRegister(formData: FormData) {
   }
 
   revalidatePath('/');
-  redirect('/dashboard');
+  return { success: true, redirectUrl: '/dashboard' };
 }
 
 // ==========================================
@@ -136,7 +136,7 @@ export async function actionCreateProject(formData: FormData) {
   }
 
   revalidatePath('/dashboard');
-  redirect(`/projects/${createdProjectId}`);
+  return { success: true, redirectUrl: `/projects/${createdProjectId}` };
 }
 
 export async function actionCreateMember(projectId: string, name: string) {

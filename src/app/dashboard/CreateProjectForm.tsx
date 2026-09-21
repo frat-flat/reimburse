@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { actionCreateProject } from '@/lib/actions';
+import { useRouter } from 'next/navigation';
 import { FolderPlus, Loader2 } from 'lucide-react';
 
 interface MasterMember {
@@ -14,6 +15,7 @@ interface CreateProjectFormProps {
 }
 
 export default function CreateProjectForm({ masterMembers }: CreateProjectFormProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -27,6 +29,20 @@ export default function CreateProjectForm({ masterMembers }: CreateProjectFormPr
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [allowBankTransfer, setAllowBankTransfer] = useState(true);
   const [allowPaypay, setAllowPaypay] = useState(true);
+
+  useEffect(() => {
+    if (masterMembers && masterMembers.length > 0) {
+      setSelectedNames((prev) => {
+        const next = { ...prev };
+        masterMembers.forEach((mm) => {
+          if (next[mm.name] === undefined) {
+            next[mm.name] = true;
+          }
+        });
+        return next;
+      });
+    }
+  }, [masterMembers]);
 
   const handleCheckboxChange = (mName: string) => {
     setSelectedNames((prev) => ({
@@ -57,6 +73,9 @@ export default function CreateProjectForm({ masterMembers }: CreateProjectFormPr
       const res = await actionCreateProject(formData);
       if (res && res.error) {
         setErrorMsg(res.error);
+      } else if (res && res.redirectUrl) {
+        router.push(res.redirectUrl);
+        router.refresh();
       }
     });
   };

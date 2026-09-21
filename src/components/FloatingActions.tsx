@@ -21,7 +21,7 @@ export default function FloatingActions() {
   const [isCopied, setIsCopied] = useState(false);
   const calculatorRef = useRef<HTMLDivElement>(null);
 
-  // マスタメンバーの読み込み（モーダル起動時のみオンデマンド取得）
+  // マスタメンバーの読み込み
   const loadMasterMembers = async () => {
     try {
       const members = await actionGetMasterMembers();
@@ -30,6 +30,10 @@ export default function FloatingActions() {
       console.error('Failed to load master members:', e);
     }
   };
+
+  useEffect(() => {
+    loadMasterMembers();
+  }, []);
 
   const handleOpenCreateModal = () => {
     loadMasterMembers();

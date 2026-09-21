@@ -41,6 +41,32 @@ export default function SwipeStatusButton({
     return containerRef.current.clientWidth - handleRef.current.clientWidth - 8; // 左右パディング分
   };
 
+  // ステータス更新トリガー共通処理
+  const triggerStatusUpdate = () => {
+    if (!canOperate || isPending || localStatus === 'receipt_issued') return;
+    const nextStatus = localStatus === 'pending' ? 'paid' : 'receipt_issued';
+    
+    // 1. クライアント側で即座に変更状態を反映してつまみをリセット
+    setLocalStatus(nextStatus);
+    setDragX(0);
+
+    // 2. バックグラウンドでサーバーを非同期更新
+    startTransition(async () => {
+      try {
+        const res = await actionUpdateSettlementStatus(settlementId, nextStatus);
+        if (res && 'error' in res && res.error) {
+          throw new Error(res.error);
+        }
+        router.refresh();
+      } catch (e) {
+        console.error(e);
+        // エラー時はロールバック
+        setLocalStatus(currentStatus);
+        alert('ステータスの更新に失敗しました。');
+      }
+    });
+  };
+
   const handleStart = (clientX: number) => {
     if (!canOperate || isPending || localStatus === 'receipt_issued') return;
     setIsDragging(true);
@@ -59,31 +85,14 @@ export default function SwipeStatusButton({
     setIsDragging(false);
 
     const maxW = getMaxSlideWidth();
-    const slideRatio = maxW > 0 ? dragX / maxW : 0;
+    const delta = Math.abs(dragX);
 
-    // 70%以上のスライドでステータス変更確定
-    if (slideRatio >= 0.7) {
-      const nextStatus = localStatus === 'pending' ? 'paid' : 'receipt_issued';
-      
-      // 1. クライアント側で即座に変更状態を反映してつまみをリセット
-      setLocalStatus(nextStatus);
-      setDragX(0);
-
-      // 2. バックグラウンドでサーバーを非同期更新
-      startTransition(async () => {
-        try {
-          const res = await actionUpdateSettlementStatus(settlementId, nextStatus);
-          if (res && 'error' in res && res.error) {
-            throw new Error(res.error);
-          }
-          router.refresh();
-        } catch (e) {
-          console.error(e);
-          // エラー時はロールバック
-          setLocalStatus(currentStatus);
-          alert('ステータスの更新に失敗しました。');
-        }
-      });
+    // 50%以上のスライド、またはタップ（移動量微小）で確定
+    if (maxW > 0 && dragX / maxW >= 0.45) {
+      triggerStatusUpdate();
+    } else if (delta < 5) {
+      // タップ/クリック判定
+      triggerStatusUpdate();
     } else {
       // 満たない場合は元の位置へ戻す
       setDragX(0);
@@ -213,18 +222,25 @@ export default function SwipeStatusButton({
   return (
     <div
       ref={containerRef}
-      className={`relative flex items-center h-10 w-48 rounded-full p-1 select-none overflow-hidden transition-all shadow-inner ${ui.bg}`}
+      onClick={(e) => {
+        // ドラッグ中でなければクリックで発火
+        if (!isDragging && dragX === 0) {
+          triggerStatusUpdate();
+        }
+      }}
+      className={`relative flex items-center h-10 w-48 rounded-full p-1 select-none overflow-hidden transition-all shadow-inner cursor-pointer active:scale-98 ${ui.bg}`}
+      title="クリックまたは右にスライドしてステータスを変更"
     >
       <button
         ref={handleRef}
         type="button"
         style={{ transform: `translateX(${dragX}px)` }}
-        className={`absolute left-1 h-8 w-8 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing shadow transition-transform duration-75 ease-out z-10 ${ui.btnBg}`}
+        className={`absolute left-1 h-8 w-8 rounded-full flex items-center justify-center cursor-pointer active:cursor-grabbing shadow transition-transform duration-75 ease-out z-10 ${ui.btnBg}`}
       >
         <ArrowRight className="h-4 w-4" />
       </button>
       
-      <span className="w-full text-center text-[10px] font-extrabold tracking-tight pl-7 pr-2">
+      <span className="w-full text-center text-[10px] font-extrabold tracking-tight pl-7 pr-2 pointer-events-none">
         {isPending ? '同期中...' : ui.text}
       </span>
     </div>

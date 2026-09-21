@@ -5,6 +5,7 @@ import { actionLogin, actionRegister, actionResetPassword } from '@/lib/actions'
 import { useRouter } from 'next/navigation';
 
 export default function LoginForm() {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState<'login' | 'register' | 'reset'>('login');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -19,6 +20,9 @@ export default function LoginForm() {
       const res = await actionLogin(formData);
       if (res && res.error) {
         setErrorMsg(res.error);
+      } else if (res && res.redirectUrl) {
+        router.push(res.redirectUrl);
+        router.refresh();
       }
     });
   };
@@ -33,6 +37,9 @@ export default function LoginForm() {
       const res = await actionRegister(formData);
       if (res && res.error) {
         setErrorMsg(res.error);
+      } else if (res && res.redirectUrl) {
+        router.push(res.redirectUrl);
+        router.refresh();
       }
     });
   };

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import { actionCreateProject } from '@/lib/actions';
+import { useRouter } from 'next/navigation';
 import { FolderPlus, Loader2, X, Users, Pencil, Check } from 'lucide-react';
 
 interface MasterMember {
@@ -20,6 +21,7 @@ export default function CreateProjectModal({
   isOpen,
   onClose,
 }: CreateProjectModalProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -33,6 +35,21 @@ export default function CreateProjectModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [allowBankTransfer, setAllowBankTransfer] = useState(true);
   const [allowPaypay, setAllowPaypay] = useState(true);
+
+  // マスタメンバー更新時に選択状態を自動反映
+  useEffect(() => {
+    if (masterMembers && masterMembers.length > 0) {
+      setSelectedNames((prev) => {
+        const next = { ...prev };
+        masterMembers.forEach((mm) => {
+          if (next[mm.name] === undefined) {
+            next[mm.name] = true;
+          }
+        });
+        return next;
+      });
+    }
+  }, [masterMembers]);
 
   if (!isOpen) return null;
 
@@ -76,6 +93,10 @@ export default function CreateProjectModal({
       const res = await actionCreateProject(formData);
       if (res && res.error) {
         setErrorMsg(res.error);
+      } else if (res && res.redirectUrl) {
+        onClose();
+        router.push(res.redirectUrl);
+        router.refresh();
       } else {
         onClose();
       }

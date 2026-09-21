@@ -11,39 +11,37 @@ export default async function DashboardPage() {
     redirect('/login');
   }
 
-  // 自分が管理しているプロジェクト一覧を取得
-  const projectsRaw = await prisma.project.findMany({
-    where: { createdBy: currentUser.id },
-    include: {
-      members: true,
-      expenses: true,
-    },
-  });
-
-  // 友達から共有されたプロジェクト一覧を取得
-  let sharedSharesRaw: any[] = [];
-  try {
-    sharedSharesRaw = await prisma.projectShare.findMany({
-      where: { userId: currentUser.id },
+  // プロジェクト一覧、共有プロジェクト、マスタメンバーを並列取得
+  const [projectsRaw, sharedSharesRaw, masterMembers] = await Promise.all([
+    prisma.project.findMany({
+      where: { createdBy: currentUser.id },
       include: {
-        project: {
-          include: {
-            members: true,
-            expenses: true,
-            creator: true,
+        members: true,
+        expenses: true,
+      },
+    }),
+    prisma.projectShare
+      .findMany({
+        where: { userId: currentUser.id },
+        include: {
+          project: {
+            include: {
+              members: true,
+              expenses: true,
+              creator: true,
+            },
           },
         },
-      },
-    });
-  } catch (err) {
-    console.error('Failed to fetch projectShares. Table might not exist yet:', err);
-  }
-
-  // ログインユーザーの共通マスタメンバーを取得
-  const masterMembers = await prisma.masterMember.findMany({
-    where: { userId: currentUser.id },
-    orderBy: { createdAt: 'asc' },
-  });
+      })
+      .catch((err) => {
+        console.error('Failed to fetch projectShares:', err);
+        return [];
+      }),
+    prisma.masterMember.findMany({
+      where: { userId: currentUser.id },
+      orderBy: { createdAt: 'asc' },
+    }),
+  ]);
 
   const projects = projectsRaw
     .map((proj) => {

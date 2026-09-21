@@ -1,11 +1,12 @@
+import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { prisma } from './prisma';
 import { User } from '@prisma/client';
 
 /**
- * クッキーセッションから現在のログインユーザーを取得する
+ * クッキーセッションから現在のログインユーザーを取得する（同一リクエスト内メモ化）
  */
-export async function getCurrentUser(): Promise<User | null> {
+export const getCurrentUser = cache(async (): Promise<User | null> => {
   const cookieStore = await cookies();
   const userId = cookieStore.get('session_user_id')?.value;
   if (!userId) return null;
@@ -13,7 +14,7 @@ export async function getCurrentUser(): Promise<User | null> {
   return prisma.user.findUnique({
     where: { id: userId },
   });
-}
+});
 
 /**
  * 簡易ログイン処理

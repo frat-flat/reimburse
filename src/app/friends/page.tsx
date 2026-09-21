@@ -15,65 +15,63 @@ export default async function FriendsPage() {
     redirect('/login');
   }
 
-  // 自分が申請して相手に承認された未読通知を既読にする
-  try {
-    await prisma.friendship.updateMany({
-      where: {
-        userId: currentUser.id,
-        status: 'accepted',
-        isReadBySender: false,
-      },
-      data: {
-        isReadBySender: true,
-      },
-    });
-  } catch (e) {
-    console.error('Failed to mark friendships as read:', e);
-  }
-
-  // 1. 友達一覧 (status === 'accepted') を取得
+  // 1. 友達一覧、受信申請、送信申請を並列取得（同時に未読フラグを更新）
   let friendships: any[] = [];
   let incomingRequests: any[] = [];
   let outgoingRequests: any[] = [];
   let dbError = false;
 
   try {
-    friendships = await prisma.friendship.findMany({
-      where: {
-        OR: [
-          { userId: currentUser.id, status: 'accepted' },
-          { friendId: currentUser.id, status: 'accepted' },
-        ],
-      },
-      include: {
-        user: true,
-        friend: true,
-      },
-    });
+    const [friendshipsRes, incomingRes, outgoingRes] = await Promise.all([
+      prisma.friendship.findMany({
+        where: {
+          OR: [
+            { userId: currentUser.id, status: 'accepted' },
+            { friendId: currentUser.id, status: 'accepted' },
+          ],
+        },
+        include: {
+          user: true,
+          friend: true,
+        },
+      }),
+      prisma.friendship.findMany({
+        where: {
+          friendId: currentUser.id,
+          status: 'pending',
+        },
+        include: {
+          user: true,
+        },
+      }),
+      prisma.friendship.findMany({
+        where: {
+          userId: currentUser.id,
+          status: 'pending',
+        },
+        include: {
+          friend: true,
+        },
+      }),
+      prisma.friendship
+        .updateMany({
+          where: {
+            userId: currentUser.id,
+            status: 'accepted',
+            isReadBySender: false,
+          },
+          data: {
+            isReadBySender: true,
+          },
+        })
+        .catch((e) => console.error('Failed to mark friendships as read:', e)),
+    ]);
 
-    // 2. 届いている申請 (friendId === 自分のID, status === 'pending')
-    incomingRequests = await prisma.friendship.findMany({
-      where: {
-        friendId: currentUser.id,
-        status: 'pending',
-      },
-      include: {
-        user: true,
-      },
-    });
-
-    // 3. 送信した申請 (userId === 自分のID, status === 'pending')
-    outgoingRequests = await prisma.friendship.findMany({
-      where: {
-        userId: currentUser.id,
-        status: 'pending',
-      },
-      include: {
-        friend: true,
-      },
-    });
+    friendships = friendshipsRes;
+    incomingRequests = incomingRes;
+    outgoingRequests = outgoingRes;
   } catch (err) {
-    console.error('Failed to fetch friendships. Tables might not exist yet:', err);
+    console.error('Failed to fetch friendships:', err);
     dbError = true;
   }
 

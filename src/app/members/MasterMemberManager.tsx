@@ -16,6 +16,7 @@ interface MasterMemberManagerProps {
 
 export default function MasterMemberManager({ initialMembers }: MasterMemberManagerProps) {
   const router = useRouter();
+  const [members, setMembers] = useState<MasterMember[]>(initialMembers);
   const [isPending, startTransition] = useTransition();
   const [newName, setNewName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -24,15 +25,23 @@ export default function MasterMemberManager({ initialMembers }: MasterMemberMana
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newName.trim()) return;
+    const nameToAdd = newName.trim();
+    if (!nameToAdd) return;
 
+    // 楽観的追加
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMember = { id: tempId, name: nameToAdd };
+    setMembers((prev) => [...prev, optimisticMember]);
+    setNewName('');
     setErrorMsg(null);
+
     startTransition(async () => {
-      const res = await actionCreateMasterMember(newName.trim());
+      const res = await actionCreateMasterMember(nameToAdd);
       if (res && res.error) {
         setErrorMsg(res.error);
+        // ロールバック
+        setMembers((prev) => prev.filter((m) => m.id !== tempId));
       } else {
-        setNewName('');
         router.refresh();
       }
     });
@@ -45,15 +54,24 @@ export default function MasterMemberManager({ initialMembers }: MasterMemberMana
   };
 
   const handleSaveEdit = async (id: string) => {
-    if (!editingName.trim()) return;
+    const updatedName = editingName.trim();
+    if (!updatedName) return;
 
+    const prevMembers = [...members];
+    // 楽観的更新
+    setMembers((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, name: updatedName } : m))
+    );
+    setEditingId(null);
     setErrorMsg(null);
+
     startTransition(async () => {
-      const res = await actionUpdateMasterMember(id, editingName.trim());
+      const res = await actionUpdateMasterMember(id, updatedName);
       if (res && res.error) {
         setErrorMsg(res.error);
+        // ロールバック
+        setMembers(prevMembers);
       } else {
-        setEditingId(null);
         router.refresh();
       }
     });
@@ -62,11 +80,17 @@ export default function MasterMemberManager({ initialMembers }: MasterMemberMana
   const handleDeleteMember = async (id: string, name: string) => {
     if (!confirm(`ベースクルー「${name}」を削除しますか？\n(すでに作成済みのイベント内のデータには影響しません)`)) return;
 
+    const prevMembers = [...members];
+    // 楽観的削除
+    setMembers((prev) => prev.filter((m) => m.id !== id));
     setErrorMsg(null);
+
     startTransition(async () => {
       const res = await actionDeleteMasterMember(id);
       if (res && res.error) {
         setErrorMsg(res.error);
+        // ロールバック
+        setMembers(prevMembers);
       } else {
         router.refresh();
       }
@@ -112,16 +136,16 @@ export default function MasterMemberManager({ initialMembers }: MasterMemberMana
       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
         <h3 className="text-base font-bold text-gray-900 pb-2 border-b border-gray-100 flex items-center gap-2">
           <Users className="h-5 w-5 text-indigo-650" />
-          <span>登録ベースクルー ({initialMembers.length}名)</span>
+          <span>登録ベースクルー ({members.length}名)</span>
         </h3>
 
-        {initialMembers.length === 0 ? (
+        {members.length === 0 ? (
           <div className="text-center py-8 text-gray-400 text-sm italic">
             ベースクルーは登録されていません。よくイベントに一緒に行くMateなどを追加してください。
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
-            {initialMembers.map((member) => {
+            {members.map((member) => {
               const isEditing = editingId === member.id;
 
               return (

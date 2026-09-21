@@ -20,59 +20,63 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
 
   const { id: projectId } = await params;
 
-  // プロジェクト情報とメンバー、支出情報を取得
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    include: {
-      members: {
-        orderBy: { name: 'asc' },
+  // プロジェクト情報、共有リスト、友達一覧を並列取得
+  const [project, projectShares, friendships] = await Promise.all([
+    prisma.project.findUnique({
+      where: { id: projectId },
+      include: {
+        members: {
+          orderBy: { name: 'asc' },
+        },
+        expenses: {
+          include: {
+            payments: { include: { member: true } },
+            shares: { include: { member: true } },
+            attachments: true,
+          },
+          orderBy: {
+            expenseDate: 'desc',
+          },
+        },
       },
-      expenses: {
+    }),
+    prisma.projectShare
+      .findMany({
+        where: { projectId },
+        include: { user: true },
+      })
+      .catch((err) => {
+        console.error('Failed to fetch project shares:', err);
+        return [];
+      }),
+    prisma.friendship
+      .findMany({
+        where: {
+          OR: [
+            { userId: currentUser.id, status: 'accepted' },
+            { friendId: currentUser.id, status: 'accepted' },
+          ],
+        },
         include: {
-          payments: { include: { member: true } },
-          shares: { include: { member: true } },
-          attachments: true,
+          user: true,
+          friend: true,
         },
-        orderBy: {
-          expenseDate: 'desc',
-        },
-      },
-    },
-  });
+      })
+      .catch((err) => {
+        console.error('Failed to fetch friendships:', err);
+        return [];
+      }),
+  ]);
 
   if (!project) {
     notFound();
   }
 
-  // プロジェクト共有リストを別途 try/catch で取得
-  let projectShares: any[] = [];
-  try {
-    projectShares = await prisma.projectShare.findMany({
-      where: { projectId },
-      include: { user: true },
-    });
-  } catch (err) {
-    console.error('Failed to fetch project shares. Table might not exist yet:', err);
-  }
-
   // アクセス権限チェック (作成者本人、または共有された友達)
   const isOwner = project.createdBy === currentUser.id;
-  let projectShare: any = null;
-
-  if (!isOwner) {
-    try {
-      projectShare = await prisma.projectShare.findUnique({
-        where: {
-          projectId_userId: {
-            projectId,
-            userId: currentUser.id,
-          },
-        },
-      });
-    } catch (err) {
-      console.error('Failed to check individual project share:', err);
-    }
-  }
+  const projectShare = !isOwner
+    ? projectShares.find((ps) => ps.userId === currentUser.id)
+    : null;
 
   if (!isOwner && !projectShare) {
     redirect('/dashboard');
@@ -83,25 +87,9 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
     userRole = 'viewer_all';
   }
 
-  // 友達一覧を取得（発起人の場合のみフェッチ）
-  let friends: { id: string; name: string; email: string }[] = [];
-  if (isOwner) {
-    const friendships = await prisma.friendship.findMany({
-      where: {
-        OR: [
-          { userId: currentUser.id, status: 'accepted' },
-          { friendId: currentUser.id, status: 'accepted' },
-        ],
-      },
-      include: {
-        user: true,
-        friend: true,
-      },
-    });
-    friends = friendships.map((f) => {
-      return f.userId === currentUser.id ? f.friend : f.user;
-    });
-  }
+  const friends: { id: string; name: string; email: string }[] = isOwner
+    ? friendships.map((f) => (f.userId === currentUser.id ? f.friend : f.user))
+    : [];
 
   // 自分に紐づいているメンバーを取得
   const linkedMember = project.members.find(

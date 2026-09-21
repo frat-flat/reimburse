@@ -11,40 +11,36 @@ export default async function Header() {
   
   if (!currentUser) return null;
 
-  // 未読のMate通知数をカウント
+  // 未読のMate通知数・未読通知数を並列カウント
   let mateNotificationCount = 0;
-  try {
-    const pendingReceivedCount = await prisma.friendship.count({
-      where: {
-        friendId: currentUser.id,
-        status: 'pending',
-      },
-    });
-
-    const unreadAcceptedCount = await prisma.friendship.count({
-      where: {
-        userId: currentUser.id,
-        status: 'accepted',
-        isReadBySender: false,
-      },
-    });
-
-    mateNotificationCount = pendingReceivedCount + unreadAcceptedCount;
-  } catch (e) {
-    console.error('Failed to load mate notification count:', e);
-  }
-
-  // 未読通知数をカウント
   let unreadNotificationCount = 0;
   try {
-    unreadNotificationCount = await prisma.notification.count({
-      where: {
-        userId: currentUser.id,
-        isRead: false,
-      },
-    });
+    const [pendingReceivedCount, unreadAcceptedCount, unreadCount] = await Promise.all([
+      prisma.friendship.count({
+        where: {
+          friendId: currentUser.id,
+          status: 'pending',
+        },
+      }),
+      prisma.friendship.count({
+        where: {
+          userId: currentUser.id,
+          status: 'accepted',
+          isReadBySender: false,
+        },
+      }),
+      prisma.notification.count({
+        where: {
+          userId: currentUser.id,
+          isRead: false,
+        },
+      }),
+    ]);
+
+    mateNotificationCount = pendingReceivedCount + unreadAcceptedCount;
+    unreadNotificationCount = unreadCount;
   } catch (e) {
-    console.error('Failed to load notification count:', e);
+    console.error('Failed to load header notification counts:', e);
   }
 
   return (

@@ -59,7 +59,7 @@ export default function NotificationDropdown({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // 通知データの取得
+  // 通知データの取得（ドロップダウン展開時のみオンデマンド取得）
   const fetchNotifications = async () => {
     setIsLoading(true);
     try {
@@ -72,10 +72,6 @@ export default function NotificationDropdown({
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
 
   const handleToggle = () => {
     const nextOpen = !isOpen;

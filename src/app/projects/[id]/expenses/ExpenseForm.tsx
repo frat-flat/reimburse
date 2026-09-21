@@ -402,7 +402,8 @@ export default function ExpenseForm({ projectId, members, expense }: ExpenseForm
       if (res && res.error) {
         setErrorMsg(res.error);
       } else if (res && res.redirectUrl) {
-        window.location.href = res.redirectUrl;
+        router.push(res.redirectUrl);
+        router.refresh();
       }
     });
   };

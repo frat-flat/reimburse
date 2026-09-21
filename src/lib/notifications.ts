@@ -28,31 +28,31 @@ export interface CreateNotificationInput {
  */
 export async function createNotification(input: CreateNotificationInput) {
   try {
-    const notification = await prisma.notification.create({
-      data: {
-        userId: input.userId,
-        senderId: input.senderId || null,
-        type: input.type,
-        title: input.title,
-        message: input.message,
-        link: input.link || null,
-      },
-    });
+    // 通知作成とユーザー情報取得を並列実行（3往復から1往復へ短縮）
+    const [notification, recipient, sender] = await Promise.all([
+      prisma.notification.create({
+        data: {
+          userId: input.userId,
+          senderId: input.senderId || null,
+          type: input.type,
+          title: input.title,
+          message: input.message,
+          link: input.link || null,
+        },
+      }),
+      prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { email: true, name: true },
+      }),
+      input.senderId
+        ? prisma.user.findUnique({
+            where: { id: input.senderId },
+            select: { name: true },
+          })
+        : Promise.resolve(null),
+    ]);
 
-    // 受信者の登録メールアドレスを取得してメール通知を配信
-    const recipient = await prisma.user.findUnique({
-      where: { id: input.userId },
-      select: { email: true, name: true },
-    });
-
-    let senderName: string | null = null;
-    if (input.senderId) {
-      const sender = await prisma.user.findUnique({
-        where: { id: input.senderId },
-        select: { name: true },
-      });
-      senderName = sender?.name || null;
-    }
+    const senderName = sender?.name || null;
 
     if (recipient?.email) {
       sendNotificationEmail({

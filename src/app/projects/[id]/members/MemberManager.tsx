@@ -18,24 +18,32 @@ interface MemberManagerProps {
 
 export default function MemberManager({ projectId, initialMembers, isLocked }: MemberManagerProps) {
   const router = useRouter();
+  const [members, setMembers] = useState<Member[]>(initialMembers);
   const [isPending, startTransition] = useTransition();
   const [newName, setNewName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // メンバー追加処理
+  // メンバー追加処理（楽観的UI）
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newName.trim()) return;
+    const nameToAdd = newName.trim();
+    if (!nameToAdd) return;
 
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMember = { id: tempId, name: nameToAdd };
+    setMembers((prev) => [...prev, optimisticMember]);
+    setNewName('');
     setErrorMsg(null);
+
     startTransition(async () => {
-      const res = await actionCreateMember(projectId, newName.trim());
+      const res = await actionCreateMember(projectId, nameToAdd);
       if (res && res.error) {
         setErrorMsg(res.error);
+        // ロールバック
+        setMembers((prev) => prev.filter((m) => m.id !== tempId));
       } else {
-        setNewName('');
         router.refresh();
       }
     });
@@ -48,31 +56,44 @@ export default function MemberManager({ projectId, initialMembers, isLocked }: M
     setErrorMsg(null);
   };
 
-  // 編集保存
+  // 編集保存（楽観的UI）
   const handleSaveEdit = async (id: string) => {
-    if (!editingName.trim()) return;
+    const updatedName = editingName.trim();
+    if (!updatedName) return;
 
+    const prevMembers = [...members];
+    setMembers((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, name: updatedName } : m))
+    );
+    setEditingId(null);
     setErrorMsg(null);
+
     startTransition(async () => {
-      const res = await actionUpdateMember(id, editingName.trim());
+      const res = await actionUpdateMember(id, updatedName);
       if (res && res.error) {
         setErrorMsg(res.error);
+        // ロールバック
+        setMembers(prevMembers);
       } else {
-        setEditingId(null);
         router.refresh();
       }
     });
   };
 
-  // 削除処理
+  // 削除処理（楽観的UI）
   const handleDeleteMember = async (id: string, name: string) => {
     if (!confirm(`メンバー「${name}」を削除しますか？`)) return;
 
+    const prevMembers = [...members];
+    setMembers((prev) => prev.filter((m) => m.id !== id));
     setErrorMsg(null);
+
     startTransition(async () => {
       const res = await actionDeleteMember(id);
       if (res && res.error) {
         setErrorMsg(res.error);
+        // ロールバック
+        setMembers(prevMembers);
       } else {
         router.refresh();
       }
@@ -116,14 +137,14 @@ export default function MemberManager({ projectId, initialMembers, isLocked }: M
       {/* メンバー一覧カード */}
       <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
         <h3 className="text-base font-bold text-gray-900 pb-2 border-b border-gray-100">
-          メンバー一覧 ({initialMembers.length}名)
+          メンバー一覧 ({members.length}名)
         </h3>
 
-        {initialMembers.length === 0 ? (
+        {members.length === 0 ? (
           <p className="text-center py-6 text-sm text-gray-400 italic">登録メンバーはいません</p>
         ) : (
           <div className="divide-y divide-gray-100">
-            {initialMembers.map((member) => {
+            {members.map((member) => {
               const isEditing = editingId === member.id;
 
               return (

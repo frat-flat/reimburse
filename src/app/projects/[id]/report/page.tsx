@@ -1,6 +1,7 @@
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect, notFound } from 'next/navigation';
+import { findLinkedMember, normalizeShareRole, canViewAll } from '@/lib/permissions';
 import ReportDashboard from '@/components/ReportDashboard';
 import { calculateSettlements } from '@/lib/settlement';
 
@@ -66,7 +67,7 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
   }
 
   // 閲覧権限ロール
-  const userRole = isOwner ? 'owner' : (userShare?.role as 'editor' | 'viewer_all' | 'viewer_personal' | undefined) || 'viewer_all';
+  const userRole = isOwner ? 'owner' : normalizeShareRole(userShare?.role);
 
   // 1. 各メンバーの支払・負担集計および個別明細の作成
   const memberSummaries = project.members.map((m) => {
@@ -127,20 +128,19 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
   });
 
   // 自分に紐づいているメンバーを取得
-  const linkedMember = project.members.find(
-    (m) => m.userId === currentUser.id || m.name === currentUser.name
-  );
+  const linkedMember = findLinkedMember(project.members, currentUser);
 
-  // メンバー別集計のフィルタリング（主催者と編集者以外は自身の分のみ）
+  // メンバー別集計のフィルタリング（個人閲覧は自身の分のみ）
   let displayMemberSummaries = memberSummaries;
-  if (userRole !== 'owner' && userRole !== 'editor' && linkedMember) {
-    displayMemberSummaries = memberSummaries.filter((m) => m.name === linkedMember.name);
+  if (!canViewAll(userRole)) {
+    displayMemberSummaries = memberSummaries.filter((m) => !!linkedMember && m.name === linkedMember.name);
   }
 
-  // 支出の個人フィルタリング（主催者と編集者以外は自身の分のみ）
+  // 支出の個人フィルタリング（個人閲覧は自身の分のみ）
   let displayExpenses = project.expenses;
-  if (userRole !== 'owner' && userRole !== 'editor' && linkedMember) {
+  if (!canViewAll(userRole)) {
     displayExpenses = project.expenses.filter((e) => {
+      if (!linkedMember) return false;
       const isPayer = e.payments.some((p) => p.memberId === linkedMember.id);
       const isSharer = e.shares.some((s) => s.memberId === linkedMember.id);
       return isPayer || isSharer;
@@ -169,7 +169,7 @@ export default async function ProjectReportPage({ params }: ReportPageProps) {
   // 3. 基本サマリー指標
   const totalExpense = displayExpenses.reduce((sum, e) => sum + e.amount, 0);
   const expenseCount = displayExpenses.length;
-  const memberCount = (userRole !== 'owner' && userRole !== 'editor') ? 1 : project.members.length;
+  const memberCount = canViewAll(userRole) ? project.members.length : 1;
 
   // 4. 精算・送金ルート指示の計算・構築
   const memberBalances = project.members.map((m) => {

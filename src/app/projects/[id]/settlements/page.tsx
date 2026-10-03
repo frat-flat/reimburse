@@ -1,6 +1,7 @@
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect, notFound } from 'next/navigation';
+import { findLinkedMember, normalizeShareRole, canViewAll } from '@/lib/permissions';
 import Link from 'next/link';
 import { calculateSettlements } from '@/lib/settlement';
 
@@ -68,10 +69,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
     redirect('/dashboard');
   }
 
-  const userRole = isOwner
-    ? 'owner'
-    : (userShare?.role as 'editor' | 'viewer_all' | 'viewer_personal' | undefined) ||
-      'viewer_all';
+  const userRole = isOwner ? 'owner' : normalizeShareRole(userShare?.role);
 
   // 1. 各メンバーの純残高を集計
   const memberBalances = project.members.map((m) => {
@@ -114,7 +112,7 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
   const isConfirmed = project.status === 'settlement_confirmed' || project.status === 'completed';
 
   // 紐づいているメンバーと領収書情報を解決
-  const linkedMember = project.members.find((m) => m.userId === currentUser.id || m.name === currentUser.name);
+  const linkedMember = findLinkedMember(project.members, currentUser);
   const dateString = new Date(project.updatedAt).toLocaleDateString('ja-JP', {
     year: 'numeric',
     month: '2-digit',
@@ -154,10 +152,10 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
     }));
   }
 
-  // 閲覧者の場合：自分に関係する（自分が支払う、または自分が受け取る）精算ルートのみに絞り込む
-  if (!isOwner && userRole !== 'editor' && linkedMember) {
+  // 個人閲覧の場合：自分に関係する（自分が支払う、または自分が受け取る）精算ルートのみに絞り込む
+  if (!canViewAll(userRole)) {
     settlementsList = settlementsList.filter(
-      (s) => s.fromUserId === linkedMember.id || s.toUserId === linkedMember.id
+      (s) => !!linkedMember && (s.fromUserId === linkedMember.id || s.toUserId === linkedMember.id)
     );
   }
 
@@ -504,11 +502,11 @@ export default async function SettlementsPage({ params }: SettlementsPageProps) 
           );
         })()}
 
-        {/* 2. 他のメンバーの格子カード (主催者・編集者のみ表示) */}
+        {/* 2. 他のメンバーの格子カード (個人閲覧以外に表示) */}
         {(() => {
           const otherBalances = memberBalances.filter((mb) => {
             if (linkedMember && mb.userId === linkedMember.id) return false;
-            return isOwner || userRole === 'editor';
+            return canViewAll(userRole);
           });
           if (otherBalances.length === 0) return null;
 

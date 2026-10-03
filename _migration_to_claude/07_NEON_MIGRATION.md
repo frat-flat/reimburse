@@ -71,7 +71,7 @@ Vercel → Project → Settings → Environment Variables で Production（必�
 ログイン、プロジェクト一覧、立替の登録、精算画面、領収書表示を一通り確認。Vercel の Runtime Logs に Prisma の接続エラーが出ていないか見る。
 
 ## 6. ロールバック
-問題があれば Vercel の `DATABASE_URL` / `DIRECT_URL` を Supabase の値に戻して Redeploy。切替後に Neon 側へ書かれたデータは Supabase に無いので、戻す場合はその分を手で移す。
+問題があれば Vercel の `DATABASE_URL` / `DIRECT_URL` を Supabase の値に戻して Redeploy。切替後に Neon 側へ書かれたデータは Supabase に無い。後日 Supabase へ戻す場合も、手順 2〜3 の `pg_dump` / `pg_restore` を向きを逆にして実行すれば移せる（アプリは標準 PostgreSQL + Prisma のみで Neon 固有機能を使っていないため、コード変更は不要）。
 
 ## 7. 後片付け
 1〜2 週間問題が無ければ Supabase プロジェクト `reimburse` を Pause（その後削除）。

@@ -10,7 +10,7 @@
 | **スタイリング** | Tailwind CSS v4 (`@tailwindcss/postcss`) | モダンユーティリティファーストCSS |
 | **アイコン** | Lucide React (`lucide-react` v1.34.0) | `strokeWidth: 1.8` アウトライン線画 |
 | **ORM / DBクライアント** | Prisma 6.4.0 (`@prisma/client`) | `engineType = "binary"` |
-| **データベース** | PostgreSQL (Supabase) | AWS 東京リージョンホスティング |
+| **データベース** | PostgreSQL (Neon) | AWS シンガポール (`aws-ap-southeast-1`)。移行手順は `07_NEON_MIGRATION.md` |
 | **メール配信** | Resend (`resend` SDK v6.26.0) | HTML/テキストマルチパート自動配信 |
 | **ホスティング環境** | Vercel | Production URL: `https://tatekaeta.vercel.app` |
 
@@ -64,8 +64,8 @@ npx prisma db push
 > [!IMPORTANT]
 > 秘密鍵・パスワード等の実際の値は含まれていません。ローカル検証時は `.env`、Vercel本番環境では Environment Variables に設定してください。
 
-- `DATABASE_URL` : Supabase PostgreSQL接続文字列（接続プール設定含む）。
-- `DIRECT_URL` : Supabase PostgreSQL直接接続文字列（Prismaマイグレーション用）。
+- `DATABASE_URL` : Neon の **pooled** 接続文字列（ホスト名に `-pooler` が付くもの、`sslmode=require`）。
+- `DIRECT_URL` : Neon の **direct** 接続文字列（`-pooler` なし。`prisma db push` / マイグレーション用）。
 - `RESEND_API_KEY` : ResendのAPIキー（`re_...`）。※未設定時は自動でモックログ出力にフォールバック。
 - `FROM_EMAIL` : メール送信元アドレス表記（例: `TaTekæTa <onboarding@resend.dev>` または独自ドメイン）。
 - `NEXT_PUBLIC_APP_URL` : アプリケーションの公開URL（例: `https://tatekaeta.vercel.app`）。
@@ -74,7 +74,7 @@ npx prisma db push
 
 ## 6. 重要な設計・実装規約
 - **Prisma接続プール**:
-  - `src/lib/prisma.ts` にて `connection_limit=10&pool_timeout=20` が設定されており、並列クエリを阻害しないよう構成。
+  - `src/lib/prisma.ts` にて `connection_limit=10&pool_timeout=20&connect_timeout=15` を（URL側で未指定のものだけ）補っており、並列クエリを阻害しないよう構成。`connect_timeout=15` は Neon のコールドスタート対策。
 - **エラーセーフ設計**:
   - 通知メール送信（`src/lib/email.ts`）は非同期非ブロッキングで実行され、外部ネットワークエラーが発生してもDBトランザクションやUI操作を中断させない。
 - **SPA画面遷移**:

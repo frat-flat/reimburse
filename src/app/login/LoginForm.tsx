@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { actionLogin, actionRegister, actionResetPassword } from '@/lib/actions';
+import { actionLogin, actionRegister, actionRequestPasswordReset } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
 
 export default function LoginForm() {
@@ -9,6 +9,7 @@ export default function LoginForm() {
   const [isPending, startTransition] = useTransition();
   const [activeTab, setActiveTab] = useState<'login' | 'register' | 'reset'>('login');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [resetSent, setResetSent] = useState(false);
 
   // 通常ログイン
   const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -51,12 +52,11 @@ export default function LoginForm() {
     const formData = new FormData(e.currentTarget);
 
     startTransition(async () => {
-      const res = await actionResetPassword(formData);
+      const res = await actionRequestPasswordReset(formData);
       if (res && res.error) {
         setErrorMsg(res.error);
       } else if (res && res.success) {
-        alert('パスワードの再設定が完了しました！新しいパスワードでログインしてください。');
-        setActiveTab('login');
+        setResetSent(true);
       }
     });
   };
@@ -114,7 +114,6 @@ export default function LoginForm() {
               name="email"
               type="email"
               required
-              defaultValue="admin@example.com"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition text-gray-900 bg-white"
               placeholder="name@example.com"
             />
@@ -126,8 +125,8 @@ export default function LoginForm() {
               </label>
               <button
                 type="button"
-                onClick={() => { setActiveTab('reset'); setErrorMsg(null); }}
-                className="text-xs font-semibold text-indigo-650 hover:text-indigo-850 focus:outline-none transition cursor-pointer"
+                onClick={() => { setActiveTab('reset'); setErrorMsg(null); setResetSent(false); }}
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 focus:outline-none transition cursor-pointer"
               >
                 パスワードを忘れた場合
               </button>
@@ -136,7 +135,6 @@ export default function LoginForm() {
               name="password"
               type="password"
               required
-              defaultValue="password"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition text-gray-900 bg-white"
               placeholder="••••••••"
             />
@@ -164,7 +162,7 @@ export default function LoginForm() {
               placeholder="例: 山田 太郎"
             />
             <p className="text-[10px] text-gray-400 mt-1">
-              ※ パスワード忘れ時の本人照合で使用するため、姓名（フルネーム）で登録してください。
+              ※ イベントのメンバー名との照合に使うため、姓名（フルネーム）で登録してください。
             </p>
           </div>
           <div>
@@ -176,7 +174,7 @@ export default function LoginForm() {
               type="email"
               required
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition text-gray-900 bg-white"
-              placeholder="admin@example.com"
+              placeholder="name@example.com"
             />
           </div>
           <div>
@@ -186,8 +184,11 @@ export default function LoginForm() {
             <input
               name="password"
               type="password"
+              required
+              minLength={8}
+              autoComplete="new-password"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:outline-none transition text-gray-900 bg-white"
-              placeholder="パスワードを入力してください（空欄時は 'password'）"
+              placeholder="8文字以上"
             />
           </div>
 
@@ -201,61 +202,47 @@ export default function LoginForm() {
         </form>
       ) : (
         <form onSubmit={handleResetSubmit} className="space-y-4">
-          <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 p-3 rounded-lg leading-relaxed font-semibold">
-            ※ デモ環境のため、登録済みの「メールアドレス」と「登録ユーザー名」が完全に一致した場合に、新しいパスワードへ直接再設定して更新できます。
-          </p>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
-              メールアドレス
-            </label>
-            <input
-              name="email"
-              type="email"
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition text-sm text-gray-900 bg-white"
-              placeholder="admin@example.com"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
-              登録ユーザー名（表示名）
-            </label>
-            <input
-              name="name"
-              type="text"
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition text-sm text-gray-900 bg-white"
-              placeholder="例: 吉田京平"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
-              新しいパスワード
-            </label>
-            <input
-              name="newPassword"
-              type="password"
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition text-sm text-gray-900 bg-white"
-              placeholder="新しいパスワードを入力"
-            />
-          </div>
+          {resetSent ? (
+            <p className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 p-3 rounded-lg leading-relaxed font-semibold">
+              登録されているメールアドレスであれば、パスワード再設定用のリンクを送信しました。メールのリンクから1時間以内に新しいパスワードを設定してください。
+            </p>
+          ) : (
+            <>
+              <p className="text-xs text-gray-600 leading-relaxed">
+                登録したメールアドレスを入力してください。パスワード再設定用のリンクをお送りします。
+              </p>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  メールアドレス
+                </label>
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition text-sm text-gray-900 bg-white"
+                  placeholder="name@example.com"
+                />
+              </div>
+            </>
+          )}
 
           <div className="flex items-center gap-2 pt-2">
             <button
               type="button"
               onClick={() => { setActiveTab('login'); setErrorMsg(null); }}
-              className="flex-1 bg-gray-100 hover:bg-gray-250 text-gray-700 font-bold py-2 rounded-lg text-xs transition border border-gray-200 cursor-pointer"
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2 rounded-lg text-xs transition border border-gray-200 cursor-pointer"
             >
-              キャンセル
+              ログインに戻る
             </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="flex-1 bg-indigo-600 hover:bg-indigo-750 text-white font-bold py-2 rounded-lg text-xs transition shadow-sm disabled:opacity-50 cursor-pointer"
-            >
-              {isPending ? '再設定中...' : 'パスワードを再設定する'}
-            </button>
+            {!resetSent && (
+              <button
+                type="submit"
+                disabled={isPending}
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs transition shadow-sm disabled:opacity-50 cursor-pointer"
+              >
+                {isPending ? '送信中...' : '再設定メールを送る'}
+              </button>
+            )}
           </div>
         </form>
       )}

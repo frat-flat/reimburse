@@ -5,7 +5,6 @@ import {
   actionAcceptFriendRequest, 
   actionRejectFriendRequest 
 } from '@/lib/actions';
-import DbMigrateButton from '@/components/DbMigrateButton';
 import AddMateForm from '@/components/AddMateForm';
 import { Users, Check, X, Clock, AlertCircle } from 'lucide-react';
 
@@ -105,18 +104,16 @@ export default async function FriendsPage() {
             登録ユーザー間でMateになることで、作成したイベントの共有 (crew登録) が可能になります。
           </p>
         </div>
-        {dbError && <DbMigrateButton />}
       </div>
 
       {dbError && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 shadow-sm text-sm text-amber-800 space-y-2">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-            <h3 className="font-bold">データベースのセットアップが必要です</h3>
+            <h3 className="font-bold">データベースに接続できません</h3>
           </div>
           <p className="leading-relaxed text-xs">
-            新機能（Mate機能・イベント共有 (crew登録) ・重複支出警告）用のテーブルが本番データベースにまだ作成されていません。<br />
-            右上の「<strong>データベース接続・テーブル更新</strong>」ボタンを押して、テーブルの自動作成を実行してください。
+            Mate機能用のデータを読み込めませんでした。データベースの接続設定とテーブル構成を管理者に確認してください。
           </p>
         </div>
       )}

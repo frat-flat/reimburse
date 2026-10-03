@@ -7,6 +7,7 @@
 - 現行 Supabase プロジェクト `reimburse` は **ap-south-1（ムンバイ）**。Postgres 17。
 - Neon に東京リージョンは無い。アジアは Singapore (`aws-ap-southeast-1`) と Sydney のみ。Vercel 関数は `hnd1`（東京）なので、**Singapore を推奨**（現在のムンバイより東京から近い）。
 - コード側の変更は `src/lib/prisma.ts` に `connect_timeout=15` を補うことのみ。Supabase のままでも動くので、この変更は移行前にマージしてよい。
+- Vercel は GitHub 未連携（2026-10-03 時点）。マージしても自動デプロイされない点に注意（手順 4 参照）。
 
 ## 1. Neon プロジェクトを作る
 1. https://console.neon.tech で新規プロジェクト。Postgres version **17**、Region **AWS Asia Pacific (Singapore)**。
@@ -59,7 +60,12 @@ Vercel → Project → Settings → Environment Variables で Production（必�
 - `DATABASE_URL` = Neon pooled URL
 - `DIRECT_URL` = Neon direct URL
 
-保存後、Deployments から最新の本番デプロイを **Redeploy**（環境変数は再デプロイで反映される）。
+保存後、再デプロイしないと反映されない（環境変数はビルド・デプロイ時に読み込まれる）。
+
+> [!IMPORTANT]
+> 2026-10-03 時点で Vercel プロジェクトは GitHub と未連携のため、`main` へのマージだけでは本番に反映されない（本番は 9/4 のデプロイのまま）。
+> - DB の切り替えだけなら、Deployments で現在の本番デプロイを **Redeploy** すればよい（9/4 時点のコードのまま接続先だけ Neon になる）。
+> - `main` の最新コード（このPRの `connect_timeout` を含む）を出すには、Vercel → Settings → Git で `frat-flat/reimburse` を連携して Production Branch を `main` にするか、手元で `vercel --prod` を実行する。DB切替とコード更新は別々に行うと、問題が出たときに原因を切り分けやすい。
 
 ## 5. 動作確認
 ログイン、プロジェクト一覧、立替の登録、精算画面、領収書表示を一通り確認。Vercel の Runtime Logs に Prisma の接続エラーが出ていないか見る。

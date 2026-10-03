@@ -1,6 +1,7 @@
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect, notFound } from 'next/navigation';
+import { findLinkedMember, normalizeShareRole, canViewAll } from '@/lib/permissions';
 import Link from 'next/link';
 import { actionCreateMember, actionConfirmSettlements } from '@/lib/actions';
 import DeleteProjectButton from '@/components/DeleteProjectButton';
@@ -82,24 +83,20 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
     redirect('/dashboard');
   }
 
-  let userRole = isOwner ? 'owner' : (projectShare?.role || 'viewer_all');
-  if (userRole === 'viewer') {
-    userRole = 'viewer_all';
-  }
+  const userRole = isOwner ? 'owner' : normalizeShareRole(projectShare?.role);
 
   const friends: { id: string; name: string; email: string }[] = isOwner
     ? friendships.map((f) => (f.userId === currentUser.id ? f.friend : f.user))
     : [];
 
   // 自分に紐づいているメンバーを取得
-  const linkedMember = project.members.find(
-    (m) => m.userId === currentUser.id || m.name === currentUser.name
-  );
+  const linkedMember = findLinkedMember(project.members, currentUser);
 
-  // 個人閲覧(viewer_personal)の場合、自分に関わる支出のみにフィルタリング
+  // 個人閲覧(viewer_personal)の場合、自分に関わる支出のみにフィルタリング（メンバー未紐付けなら何も表示しない）
   let displayExpenses = project.expenses;
-  if (userRole === 'viewer_personal' && linkedMember) {
+  if (!canViewAll(userRole)) {
     displayExpenses = project.expenses.filter((e) => {
+      if (!linkedMember) return false;
       const isPayer = e.payments.some((p) => p.memberId === linkedMember.id);
       const isSharer = e.shares.some((s) => s.memberId === linkedMember.id);
       return isPayer || isSharer;

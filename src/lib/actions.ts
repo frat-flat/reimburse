@@ -12,6 +12,7 @@ import {
   MIN_PASSWORD_LENGTH,
 } from './auth';
 import { sendNotificationEmail } from './email';
+import { getProjectRole, canEditAllExpenses, findLinkedMember } from './permissions';
 import { calculateShares, calculateSettlements } from './settlement';
 import { createNotification } from './notify';
 import { revalidatePath } from 'next/cache';
@@ -166,6 +167,10 @@ export async function actionCreateMember(projectId: string, name: string) {
     return { error: 'プロジェクトが見つかりません。' };
   }
 
+  if (!canEditAllExpenses(await getProjectRole(projectId, currentUser.id))) {
+    return { error: 'メンバーを追加する権限がありません。' };
+  }
+
   if (project.status !== 'active') {
     return { error: '精算確定または完了しているプロジェクトのメンバーは変更できません。' };
   }
@@ -208,6 +213,15 @@ export async function actionCreateMember(projectId: string, name: string) {
 // 3. 支出（Expense）関連 Server Actions
 // ==========================================
 
+/** 支払者・負担者がすべてこのプロジェクトのメンバーか確認する */
+async function areProjectMembers(projectId: string, memberIds: string[]): Promise<boolean> {
+  const uniqueIds = [...new Set(memberIds)];
+  const count = await prisma.member.count({
+    where: { projectId, id: { in: uniqueIds } },
+  });
+  return count === uniqueIds.length;
+}
+
 export async function actionCreateExpense(
   projectId: string,
   data: {
@@ -238,11 +252,18 @@ export async function actionCreateExpense(
   if (project.status !== 'active') {
     return { error: '精算が確定または完了しているため、支出を追加できません。' };
   }
+  // 支出の追加は閲覧権限を含む全員に許可（仕様）。ただしプロジェクトへのアクセス権は必須
+  if (!(await getProjectRole(projectId, currentUser.id))) {
+    return { error: 'このプロジェクトへのアクセス権がありません。' };
+  }
 
   const { title, amount, splitType, payerMemberId, expenseDate, shares: inputShares, attachments } = data;
 
   if (!title || amount <= 0) {
     return { error: '項目名および正しい金額を入力してください。' };
+  }
+  if (!(await areProjectMembers(projectId, [payerMemberId, ...inputShares.map((s) => s.memberId)]))) {
+    return { error: 'このプロジェクトに存在しないメンバーが指定されています。' };
   }
 
   const parsedDate = expenseDate ? new Date(expenseDate) : new Date();
@@ -397,8 +418,9 @@ export async function actionUpdateExpense(
     return { error: '精算が確定または完了しているため、支出を編集できません。' };
   }
 
-  // 権限検証：発起人(project.createdBy) または この支出の作成者(existingExpense.createdBy) のみ編集可能
-  if (existingExpense.project.createdBy !== currentUser.id && existingExpense.createdBy !== currentUser.id) {
+  // 権限検証：主催者・編集可能権限、または この支出の作成者のみ編集可能
+  const role = await getProjectRole(existingExpense.projectId, currentUser.id);
+  if (!role || (!canEditAllExpenses(role) && existingExpense.createdBy !== currentUser.id)) {
     return { error: '他人が登録した支出を編集・削除する権限はありません。' };
   }
 
@@ -406,6 +428,9 @@ export async function actionUpdateExpense(
 
   if (!title || amount <= 0) {
     return { error: '項目名および正しい金額を入力してください。' };
+  }
+  if (!(await areProjectMembers(existingExpense.projectId, [payerMemberId, ...inputShares.map((s) => s.memberId)]))) {
+    return { error: 'このプロジェクトに存在しないメンバーが指定されています。' };
   }
 
   // 1. 各人の負担金額の端数調整計算
@@ -540,8 +565,9 @@ export async function actionDeleteExpense(expenseId: string) {
     return { error: '精算が確定または完了しているため、支出を削除できません。' };
   }
 
-  // 権限検証：発起人(project.createdBy) または この支出の作成者(existingExpense.createdBy) のみ削除可能
-  if (existingExpense.project.createdBy !== currentUser.id && existingExpense.createdBy !== currentUser.id) {
+  // 権限検証：主催者・編集可能権限、または この支出の作成者のみ削除可能
+  const role = await getProjectRole(existingExpense.projectId, currentUser.id);
+  if (!role || (!canEditAllExpenses(role) && existingExpense.createdBy !== currentUser.id)) {
     return { error: '他人が登録した支出を削除する権限はありません。' };
   }
 
@@ -686,53 +712,6 @@ export async function actionUnlockSettlements(projectId: string) {
   return { success: true };
 }
 
-export async function actionToggleSettlementPaid(settlementId: string, isPaid: boolean) {
-  const currentUser = await getCurrentUser();
-  if (!currentUser) return { error: 'ログインが必要です。' };
-
-  const settlement = await prisma.settlement.findUnique({
-    where: { id: settlementId },
-    include: { project: true },
-  });
-
-  if (!settlement) return { error: '精算レコードが見つかりません。' };
-
-  try {
-    await prisma.$transaction(async (tx) => {
-      // 支払ステータス更新
-      await tx.settlement.update({
-        where: { id: settlementId },
-        data: {
-          status: isPaid ? 'paid' : 'pending',
-          paidAt: isPaid ? new Date() : null,
-        },
-      });
-
-      // そのプロジェクトのすべての精算が支払済みになったか確認
-      const allSettlements = await tx.settlement.findMany({
-        where: { projectId: settlement.projectId },
-      });
-
-      const allPaid = allSettlements.every(s => s.status === 'paid');
-
-      // 全て支払済みなら completed、そうでないなら settlement_confirmed
-      await tx.project.update({
-        where: { id: settlement.projectId },
-        data: {
-          status: allPaid ? 'completed' : 'settlement_confirmed',
-        },
-      });
-    });
-  } catch (e) {
-    console.error(e);
-    return { error: '支払ステータスの更新中にエラーが発生しました。' };
-  }
-
-  revalidatePath(`/projects/${settlement.projectId}`);
-  revalidatePath(`/projects/${settlement.projectId}/settlements`);
-  return { success: true };
-}
-
 export async function actionUpdateSettlementStatus(
   settlementId: string,
   newStatus: 'pending' | 'paid' | 'receipt_issued'
@@ -754,6 +733,23 @@ export async function actionUpdateSettlementStatus(
   });
 
   if (!settlement) return { error: '精算レコードが見つかりません。' };
+
+  // 権限検証：主催者、または受取人本人のみ操作可能（画面の操作可否と同じ条件）
+  const isOwner = settlement.project.createdBy === currentUser.id;
+  if (!isOwner) {
+    const role = await getProjectRole(settlement.projectId, currentUser.id);
+    const members = await prisma.member.findMany({
+      where: { projectId: settlement.projectId },
+      select: { id: true, userId: true, name: true },
+    });
+    const linkedMember = findLinkedMember(members, currentUser);
+    if (!role || linkedMember?.id !== settlement.receiverMemberId) {
+      return { error: 'この精算のステータスを変更する権限がありません。' };
+    }
+  }
+  if (settlement.project.status !== 'settlement_confirmed' && settlement.project.status !== 'completed') {
+    return { error: '精算が確定していないため、ステータスを変更できません。' };
+  }
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -785,7 +781,8 @@ export async function actionUpdateSettlementStatus(
     });
 
     // 通知送信処理（支払者宛て）
-    const targetUserId = settlement.payerMember.userId || (await prisma.user.findFirst({ where: { name: settlement.payerMember.name } }))?.id;
+    // 名前一致での送信先推定は別人に届く恐れがあるため、アカウント紐付け済みのメンバーにのみ通知する
+    const targetUserId = settlement.payerMember.userId;
     if (targetUserId && targetUserId !== currentUser.id) {
       if (newStatus === 'paid') {
         await createNotification({
@@ -1403,18 +1400,23 @@ export async function actionConfirmDuplicate(expenseId: string) {
   if (!currentUser) return { error: 'ログインが必要です。' };
 
   try {
+    const exp = await prisma.expense.findUnique({
+      where: { id: expenseId },
+    });
+    if (!exp) return { error: '支出が見つかりません。' };
+
+    const role = await getProjectRole(exp.projectId, currentUser.id);
+    if (!role || (!canEditAllExpenses(role) && exp.createdBy !== currentUser.id)) {
+      return { error: 'この支出を確認済みにする権限がありません。' };
+    }
+
     await prisma.expense.update({
       where: { id: expenseId },
       data: { duplicateConfirmed: true },
     });
 
     // 関連するリロードを走らせる
-    const exp = await prisma.expense.findUnique({
-      where: { id: expenseId },
-    });
-    if (exp) {
-      revalidatePath(`/projects/${exp.projectId}`);
-    }
+    revalidatePath(`/projects/${exp.projectId}`);
   } catch (e) {
     console.error(e);
     return { error: '重複の確認処理中にエラーが発生しました。' };

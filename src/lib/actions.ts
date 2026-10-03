@@ -1,9 +1,19 @@
 'use server';
 
 import { prisma } from './prisma';
-import { getCurrentUser, login, logout } from './auth';
+import {
+  getCurrentUser,
+  login,
+  logout,
+  hashPassword,
+  startSession,
+  createPasswordResetToken,
+  verifyPasswordResetToken,
+  MIN_PASSWORD_LENGTH,
+} from './auth';
+import { sendNotificationEmail } from './email';
 import { calculateShares, calculateSettlements } from './settlement';
-import { createNotification } from './notifications';
+import { createNotification } from './notify';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
@@ -15,8 +25,8 @@ export async function actionLogin(formData: FormData) {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
-  if (!email) {
-    return { error: 'メールアドレスを入力してください。' };
+  if (!email || !password) {
+    return { error: 'メールアドレスとパスワードを入力してください。' };
   }
 
   const user = await login(email, password);
@@ -37,10 +47,13 @@ export async function actionLogout() {
 export async function actionRegister(formData: FormData) {
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
-  const password = formData.get('password') as string || 'password';
+  const password = formData.get('password') as string;
 
-  if (!name || !email) {
-    return { error: 'ユーザー名とメールアドレスは必須です。' };
+  if (!name || !email || !password) {
+    return { error: 'ユーザー名・メールアドレス・パスワードは必須です。' };
+  }
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    return { error: `パスワードは${MIN_PASSWORD_LENGTH}文字以上で入力してください。` };
   }
 
   try {
@@ -49,16 +62,16 @@ export async function actionRegister(formData: FormData) {
       return { error: 'このメールアドレスは既に登録されています。' };
     }
 
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         name,
         email,
-        password,
+        password: await hashPassword(password),
         status: 'active',
       },
     });
 
-    await login(email, password);
+    await startSession(user.id);
   } catch (e) {
     console.error(e);
     return { error: 'ユーザー登録中にエラーが発生しました。' };
@@ -1411,119 +1424,63 @@ export async function actionConfirmDuplicate(expenseId: string) {
 }
 
 // ==========================================
-// 8. データベース自動マイグレーション用臨時 Server Action
-// ==========================================
-
-export async function actionRunDDL() {
-  try {
-    console.log('Running manual DDL migrations...');
-
-    // 1. Friendship テーブルの作成
-    await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "Friendship" (
-        "id" TEXT NOT NULL,
-        "userId" TEXT NOT NULL,
-        "friendId" TEXT NOT NULL,
-        "status" TEXT NOT NULL,
-        "isReadBySender" BOOLEAN NOT NULL DEFAULT false,
-        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "updatedAt" TIMESTAMP(3) NOT NULL,
-        CONSTRAINT "Friendship_pkey" PRIMARY KEY ("id")
-      );
-    `);
-    await prisma.$executeRawUnsafe(`
-      CREATE UNIQUE INDEX IF NOT EXISTS "Friendship_userId_friendId_key" ON "Friendship"("userId", "friendId");
-    `);
-
-    // 1.5. Friendship テーブルに isReadBySender カラムを追加（既にテーブルが存在する場合用）
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE "Friendship" ADD COLUMN IF NOT EXISTS "isReadBySender" BOOLEAN NOT NULL DEFAULT false;
-    `);
-
-    // 2. ProjectShare テーブルの作成
-    await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "ProjectShare" (
-        "id" TEXT NOT NULL,
-        "projectId" TEXT NOT NULL,
-        "userId" TEXT NOT NULL,
-        "role" TEXT NOT NULL,
-        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "updatedAt" TIMESTAMP(3) NOT NULL,
-        CONSTRAINT "ProjectShare_pkey" PRIMARY KEY ("id")
-      );
-    `);
-    await prisma.$executeRawUnsafe(`
-      CREATE UNIQUE INDEX IF NOT EXISTS "ProjectShare_projectId_userId_key" ON "ProjectShare"("projectId", "userId");
-    `);
-
-    // 3. Member テーブルへの userId カラムの追加
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE "Member" ADD COLUMN IF NOT EXISTS "userId" TEXT;
-    `);
-
-    // 4. Expense テーブルへの duplicateConfirmed カラムの追加
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE "Expense" ADD COLUMN IF NOT EXISTS "duplicateConfirmed" BOOLEAN NOT NULL DEFAULT false;
-    `);
-
-    // 5. User テーブルへの印影座標・透過率カラムの追加
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "stampOffsetX" INTEGER NOT NULL DEFAULT 0;
-    `);
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "stampOffsetY" INTEGER NOT NULL DEFAULT 0;
-    `);
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "stampOpacity" DOUBLE PRECISION NOT NULL DEFAULT 0.85;
-    `);
-
-    console.log('Manual DDL migrations completed successfully.');
-    return { success: true };
-  } catch (err: any) {
-    console.error('Error running manual DDL migrations:', err);
-    return { error: err.message || 'DDL実行中にエラーが発生しました。' };
-  }
-}
-
-// ==========================================
 // 9. パスワード再設定用 Server Action
 // ==========================================
 
-export async function actionResetPassword(formData: FormData) {
-  const email = formData.get('email') as string;
-  const name = formData.get('name') as string;
-  const newPassword = formData.get('newPassword') as string;
-
-  if (!email || !name || !newPassword) {
-    return { error: 'すべての項目を入力してください。' };
+export async function actionRequestPasswordReset(formData: FormData) {
+  const email = (formData.get('email') as string)?.trim();
+  if (!email) {
+    return { error: 'メールアドレスを入力してください。' };
   }
 
   try {
-    // メールアドレスと登録名が一致するユーザーを検索
-    const user = await prisma.user.findFirst({
-      where: {
-        email: email.trim(),
-        name: name.trim(),
-      },
-    });
+    const user = await prisma.user.findUnique({ where: { email }, omit: { password: false } });
+    // 登録有無が分からないよう、ユーザーが居なくても同じ応答を返す
+    if (user) {
+      const token = createPasswordResetToken(user);
+      await sendNotificationEmail({
+        to: user.email,
+        toName: user.name,
+        title: 'パスワード再設定のご案内',
+        message:
+          'パスワード再設定のリクエストを受け付けました。下のボタンから1時間以内に新しいパスワードを設定してください。心当たりがない場合はこのメールを破棄してください。',
+        link: `/reset-password?token=${encodeURIComponent(token)}`,
+        type: 'SYSTEM',
+      });
+    }
+  } catch (err) {
+    console.error('Error during password reset request:', err);
+  }
 
+  return { success: true };
+}
+
+export async function actionCompletePasswordReset(formData: FormData) {
+  const token = formData.get('token') as string;
+  const newPassword = formData.get('newPassword') as string;
+
+  if (!token || !newPassword) {
+    return { error: 'すべての項目を入力してください。' };
+  }
+  if (newPassword.length < MIN_PASSWORD_LENGTH) {
+    return { error: `パスワードは${MIN_PASSWORD_LENGTH}文字以上で入力してください。` };
+  }
+
+  try {
+    const user = await verifyPasswordResetToken(token);
     if (!user) {
-      return { error: '入力されたメールアドレスとユーザー名の組み合わせが見つかりません。' };
+      return { error: '再設定リンクが無効か期限切れです。もう一度メールを送信してください。' };
     }
 
-    // パスワードを更新
     await prisma.user.update({
       where: { id: user.id },
-      data: {
-        password: newPassword,
-      },
+      data: { password: await hashPassword(newPassword) },
     });
 
-    console.log(`Password reset successfully for user: ${email}`);
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error('Error during password reset:', err);
-    return { error: err.message || 'パスワードの再設定中にエラーが発生しました。' };
+    return { error: 'パスワードの再設定中にエラーが発生しました。' };
   }
 }
 

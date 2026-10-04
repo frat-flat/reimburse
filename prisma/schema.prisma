@@ -59,6 +59,21 @@ model User {
   // 通知
   notifications        Notification[] @relation("UserNotifications")
   sentNotifications    Notification[] @relation("SentNotifications")
+
+  // ログインセッション
+  sessions             Session[]
+}
+
+// 1.1 ログインセッション（サーバー側で管理し、ログアウト時に削除して即時失効させる）
+model Session {
+  id        String   @id // セッショントークンの SHA-256（トークン自体は保存しない）
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // 1.5 共通メンバーマスタ（事前に登録するよく使うメンバー）

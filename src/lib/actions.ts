@@ -8,8 +8,10 @@ import {
   hashPassword,
   startSession,
   createPasswordResetToken,
+  isReservedEmail,
+  validateNewPassword,
+  revokeAllSessions,
   verifyPasswordResetToken,
-  MIN_PASSWORD_LENGTH,
 } from './auth';
 import { sendNotificationEmail } from './email';
 import { getProjectRole, canEditAllExpenses, findLinkedMember } from './permissions';
@@ -53,8 +55,12 @@ export async function actionRegister(formData: FormData) {
   if (!name || !email || !password) {
     return { error: 'ユーザー名・メールアドレス・パスワードは必須です。' };
   }
-  if (password.length < MIN_PASSWORD_LENGTH) {
-    return { error: `パスワードは${MIN_PASSWORD_LENGTH}文字以上で入力してください。` };
+  if (isReservedEmail(email)) {
+    return { error: 'このメールアドレスは登録に使用できません。実際に受信できるメールアドレスを入力してください。' };
+  }
+  const passwordError = validateNewPassword(password, email);
+  if (passwordError) {
+    return { error: passwordError };
   }
 
   try {
@@ -1464,8 +1470,9 @@ export async function actionCompletePasswordReset(formData: FormData) {
   if (!token || !newPassword) {
     return { error: 'すべての項目を入力してください。' };
   }
-  if (newPassword.length < MIN_PASSWORD_LENGTH) {
-    return { error: `パスワードは${MIN_PASSWORD_LENGTH}文字以上で入力してください。` };
+  const passwordError = validateNewPassword(newPassword);
+  if (passwordError) {
+    return { error: passwordError };
   }
 
   try {
@@ -1478,6 +1485,8 @@ export async function actionCompletePasswordReset(formData: FormData) {
       where: { id: user.id },
       data: { password: await hashPassword(newPassword) },
     });
+    // 再設定前のログイン状態はすべて無効にする（他端末に残ったセッションも含む）
+    await revokeAllSessions(user.id);
 
     return { success: true };
   } catch (err) {
